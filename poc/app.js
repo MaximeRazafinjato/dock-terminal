@@ -169,3 +169,4 @@ let leader=false,leaderTimer;function clearLeader(){leader=false;$('#leader-stat
 if(state.panelDesignVersion!==1){state.panelStyle='tree';state.panelDesignVersion=1}
 const panelFromUrl=new URLSearchParams(location.search).get('panel');if(['compact','tree','cards','minimal','original'].includes(panelFromUrl)){state.panelStyle=panelFromUrl;history.replaceState(null,'',location.pathname)}
 render();save();if(loadError)notify('La sauvegarde précédente était indisponible ou invalide. Une session de démonstration a été ouverte.');
+delete commandLabels.find;delete actions.find;document.querySelector('[data-action="find"]')?.remove();

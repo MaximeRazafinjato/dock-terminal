@@ -29,6 +29,7 @@ Le panneau de droite présente les workspaces et leurs onglets. Les états d’a
 - Gestion avancée des worktrees et création automatique de workspaces liée à leur cycle de vie.
 - Modèles de workspace et mode focus dédié.
 - Recherche globale dans le contenu des fichiers du projet.
+- Recherche dans la sortie des terminaux : ce besoin a été retiré du périmètre.
 - Catalogue permanent de thèmes : la direction retenue est Dock vert avec panneau en arborescence.
 
 ## 3. Modèle fonctionnel
@@ -54,15 +55,15 @@ Exemple : « Perso » peut contenir un terminal dans Documents, un autre dans un
 | Zone | Contenu attendu |
 | --- | --- |
 | En-tête compact | Identité de l’application, nom du workspace éditable inline, accès à la palette, bouton de visibilité du panneau. |
-| Barre d’onglets | Onglets du workspace actif, bouton « + », actions compactes de split, recherche et dossier. |
+| Barre d’onglets | Onglets du workspace actif, bouton « + », actions compactes de split et actions du dossier. |
 | Zone de travail | Panes et séparateurs, occupant la hauteur restante. |
 | En-tête d’un pane | Shell, dossier courant et action de fermeture ; chemin tronqué si nécessaire et consultable intégralement. |
 | Panneau droit | Workspaces, chevrons de dépliage, onglets enfants, accès aux projets et indications d’attention. |
 
 ### Règles de présentation
 
-- Pas de bordure ou barre colorée pour signaler un onglet sélectionné, un workspace sélectionné ou un résultat de recherche sélectionné. Utiliser un fond discret.
-- Pas de contour permanent autour des champs de recherche. Le focus clavier reste perceptible, notamment par le fond.
+- Pas de bordure ou barre colorée pour signaler un onglet sélectionné, un workspace sélectionné ou un résultat de palette sélectionné. Utiliser un fond discret.
+- Pas de contour permanent autour du champ de recherche de la palette. Le focus clavier reste perceptible, notamment par le fond.
 - Conserver les lignes fines de l’arborescence : elles représentent la hiérarchie, pas une sélection.
 - Éviter titres de section redondants, slogan, texte d’aide permanent, chemin global répété, barre d’état sans utilité immédiate et gros blocs de présentation.
 - Préférer les infobulles et noms accessibles pour les boutons compacts.
@@ -147,20 +148,20 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 
 ## 8. Terminal réel et shells
 
-**Retenu.** L’application finale héberge de vrais terminaux interactifs. PowerShell est le shell par défaut ; CMD et Git Bash sont disponibles en alternative.
+**Retenu.** L’application finale héberge de vrais terminaux interactifs. Windows PowerShell 5.1 est le shell par défaut afin de charger le profil existant ; CMD, Git Bash et PowerShell 7 sont disponibles en alternative configurée.
 
 - Charger le profil PowerShell habituel avec ses alias, fonctions, modules et prompt.
 - Préserver l’utilisation de wtr et rmwt depuis le profil.
-- Permettre sélection de texte, copier/coller, recherche dans la sortie, défilement et exécution libre des programmes.
+- Permettre sélection de texte, copier/coller, défilement et exécution libre des programmes.
 - Prendre en charge les interactions des outils utilisés : couleurs, curseur, touches de contrôle, programmes plein écran et redimensionnement.
 - Suivre le dossier courant réel après les commandes de navigation, y compris après une fonction du profil qui change le dossier.
 - Ne pas remplacer le shell par un interpréteur limité à quelques commandes reconnues par l’interface.
 
 **Conventions proposées.** Préserver l’historique et le processus lors des changements de workspace. Si un shell est introuvable ou échoue au démarrage, afficher un état local au pane avec actions de relance ou de choix du shell. Ne pas basculer silencieusement vers un autre shell.
 
-**À décider.** Version de PowerShell, chemins exécutables, paramètres de lancement, profils effectivement chargés et raccourcis de copier/coller. Ces choix doivent être vérifiés sur l’environnement réel de l’utilisateur.
+**Décision prise.** Le profil contenant `wtr` et `rmwt` est `%USERPROFILE%\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`. WezTerm utilise actuellement `powershell.exe -NoLogo`. PowerShell 7 est installé mais son profil utilisateur correspondant n’a pas été trouvé dans `Documents\\PowerShell`; il reste une alternative à configurer explicitement. Les chemins de CMD et Git Bash doivent rester configurables.
 
-## 9. Palette, recherche et clavier
+## 9. Palette et clavier
 
 ### Palette de commandes
 
@@ -174,12 +175,6 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 - La palette rejoint les workspaces, onglets et panes ; elle déclenche les éditeurs inline plutôt que des formulaires modaux supplémentaires.
 
 **Convention proposée.** Conserver Ctrl + Maj + P comme alias du POC. Prévoir retour du focus à l’élément d’origine à la fermeture ; lorsqu’une commande ouvre un terminal ou un éditeur inline, son nouveau champ reçoit le focus.
-
-### Recherche dans la sortie
-
-La recherche s’ouvre dans une petite zone intégrée, sans popup bloquante. La saisie met à jour les correspondances et le compteur. Les résultats ne doivent pas effacer la commande en cours de saisie.
-
-**Convention proposée.** Chercher dans les panes de l’onglet actif, comme dans le POC ; fermer la recherche efface la mise en évidence. À décider : recherche exclusivement dans le pane actif, navigation résultat suivant/précédent, casse et expressions régulières.
 
 ### Touche Leader
 
@@ -199,11 +194,11 @@ Le principe d’une touche Leader est retenu. Le mapping précis ci-dessous prov
 
 ## 10. Sélecteur de projets
 
-**Retenu.** Chercher rapidement un dossier dans le répertoire « Projets », puis ouvrir un workspace avec un premier terminal dans ce dossier. Le raccourci WezTerm Leader + F existant sert de référence fonctionnelle.
+**Retenu.** Chercher rapidement un dossier dans `C:\\Files\\Projects`, puis ouvrir un workspace avec un premier terminal dans ce dossier. Le raccourci WezTerm Leader + F existant sert de référence fonctionnelle.
 
 Ce sélecteur recherche des dossiers, pas du texte dans les fichiers. L’interface doit rester compacte et intégrée, comme l’exploration de projets du POC. La navigation clavier suit le principe ↑ / ↓ / Entrée / Échap.
 
-**À décider.** Chemin exact de « Projets », profondeur de recherche, dossiers exclus, tri, règle de nommage initial et comportement si un workspace correspondant est déjà ouvert. Ne pas imposer une association permanente workspace/projet pour résoudre ce dernier cas.
+**Décision prise.** Le chemin est `C:\\Files\\Projects`. Reprendre la profondeur de premier niveau de WezTerm, exclure `worktrees` de la liste des projets puis l’exposer séparément si nécessaire. Le sélecteur ne recherche que des dossiers et ne détecte pas les workspaces déjà ouverts : chaque sélection peut créer un nouveau workspace. Le nom initial est celui du dossier sélectionné.
 
 ## 11. Actions contextuelles et worktrees
 
@@ -225,7 +220,7 @@ La gestion actuelle des worktrees reste celle des fonctions wtr et rmwt du profi
 
 ## 12. Attention, agents et notifications
 
-**Retenu.** Les workspaces restent les éléments principaux. Les activités d’agents s’y rattachent pour aider à trouver où une intervention est nécessaire.
+**Retenu.** Les workspaces restent les éléments principaux. Les activités de **Claude Code** (`claude`) et du **Codex CLI** (`codex`) s’y rattachent pour aider à trouver où une intervention est nécessaire.
 
 | État | Signification |
 | --- | --- |
@@ -244,7 +239,7 @@ La gestion actuelle des worktrees reste celle des fonctions wtr et rmwt du profi
 
 **Conventions proposées.** Agréger le nombre d’attentes par workspace, éviter les notifications répétées pour le même événement et offrir l’accès au pane sans prise de focus forcée. Si plusieurs panes attendent, permettre de choisir la destination.
 
-**À décider.** Outils agents réellement utilisés, mécanismes d’intégration, états détectables, notification native Windows ou interne, événements de fin/erreur à notifier et visibilité des attentes lorsque le panneau est masqué.
+**À décider.** Mécanismes d’intégration Claude Code/Codex CLI, états détectables, notification native Windows ou interne, événements de fin/erreur à notifier et visibilité des attentes lorsque le panneau est masqué.
 
 ## 13. Sauvegarde, fermeture et restauration
 
@@ -295,7 +290,7 @@ Cette section décrit une séparation des responsabilités, sans choisir de fram
 
 - **Interface** : navigation, édition inline, palette, arborescence et affichage des états.
 - **Modèle de session** : identifiants stables, ownership des onglets/panes, arbre de splits et sélection.
-- **Moteur de terminal** : rendu, entrées clavier, sélection, historique et recherche.
+- **Moteur de terminal** : rendu, entrées clavier, sélection et historique.
 - **Gestionnaire de processus** : lancement des shells, communication avec les terminaux, redimensionnement et fermeture des processus associés.
 - **Intégration shell** : obtention fiable du dossier courant et chargement de la configuration habituelle.
 - **Services locaux** : dossiers de projets, presse-papiers, éditeur, explorateur et contexte Git.
@@ -347,7 +342,6 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | R08 | Replier le panneau avec une commande terminal non soumise, puis le rouvrir. | Pleine largeur disponible ; saisie et largeur précédente conservées. |
 | R09 | Créer des splits imbriqués, les redimensionner et changer de pane au clavier. | Dossiers hérités et disposition cohérente. |
 | R10 | Ctrl + P, filtrage, flèches, Entrée, recherche sans résultat et Échap. | Navigation correcte, sélection visible sans bordure, aucun déclenchement accidentel. |
-| R11 | Rechercher dans la sortie pendant qu’une commande est saisie. | Correspondances visibles sans perte de saisie ni popup bloquante. |
 | R12 | Charger le vrai profil PowerShell et exécuter ses alias/fonctions. | Comportement conforme à la session PowerShell habituelle. |
 | R13 | Changer de dossier avec cd puis une fonction ; ouvrir onglet et split. | Dossier courant réel hérité. |
 | R14 | Ouvrir un outil interactif plein écran, redimensionner et utiliser les touches de contrôle. | Rendu et interactions corrects avec le moteur terminal. |
@@ -362,7 +356,7 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | R23 | Fermer puis rouvrir un onglet. | Données prévues restaurées avec processus neufs. |
 | R24 | Export/import et import invalide. | Préférences récupérables ; aucune mutation si validation échoue. |
 | R25 | Tester noms longs, espaces, accents, IME, mise à l’échelle Windows. | Interface lisible, saisie fiable, chemins correctement traités. |
-| R26 | Inspecter onglets, workspaces, palette et champs de recherche. | Pas de bordures de sélection colorées ; fond et focus restent lisibles. |
+| R26 | Inspecter onglets, workspaces et palette. | Pas de bordures de sélection colorées ; fond et focus restent lisibles. |
 
 ## 18. État du POC et écarts à combler
 
@@ -376,7 +370,6 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | Actions locales | Certaines actions affichent un message explicatif. | Intégration éditeur/explorateur/Git réelle. |
 | Sauvegarde | Stockage navigateur, 500 lignes par pane. | Persistance robuste avec limites définies. |
 | Onglets fermés | Historique limité à la session du navigateur. | Rétention à décider. |
-| Recherche | Mise en évidence dans les panes de l’onglet courant. | Portée et navigation détaillées à finaliser. |
 | Navigation palette | Commandes, workspaces et onglets. | Ajouter les panes comme destinations explicites. |
 | Variantes du panneau | Styles exploratoires encore accessibles. | Arborescence par défaut ; sélecteur exploratoire non requis. |
 
@@ -384,15 +377,15 @@ Le POC est une référence de conception, pas une implémentation technique prê
 
 ## 19. Décisions restantes avant développement
 
-1. Inspecter le profil PowerShell, wtr/rmwt et la configuration WezTerm Leader + F.
-2. Identifier les shells installés, l’éditeur, le dossier Projets et les agents utilisés.
+1. Inspecter le profil PowerShell, wtr/rmwt et la configuration WezTerm Leader + F. **Fait :** voir `docs/inspection-environnement.md`.
+2. Identifier les shells installés, l’éditeur, le dossier Projets et les agents utilisés. **Fait :** Windows PowerShell 5.1 par défaut, PowerShell 7/CMD/Git Bash disponibles, VS Code, `C:\\Files\\Projects`, Claude Code et Codex CLI.
 3. Choisir et valider la pile Windows avec de vrais programmes terminal.
 4. Fixer la fermeture du dernier onglet/pane et le cycle de vie des workspaces.
 5. Définir terminaison des processus, sauvegarde du texte et récupération des sessions.
 6. Confirmer les raccourcis Leader et leur coexistence avec les outils interactifs.
 7. Finaliser schéma de configuration, export/import et séparation de l’historique.
-8. Définir recherche de projets déjà ouverts, noms automatiques et règles de Git sans branche courante.
-9. Choisir les intégrations d’agents, états et notifications disponibles.
+8. Définir noms automatiques et règles de Git sans branche courante.
+9. Choisir les intégrations Claude Code/Codex CLI, états et notifications disponibles.
 10. Fixer les critères mesurables de performance et les versions de Windows prises en charge.
 
 Ces décisions ne bloquent pas la compréhension du produit ; elles évitent de traiter un comportement accidentel du prototype comme une exigence validée.

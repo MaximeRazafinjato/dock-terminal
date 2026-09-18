@@ -72,13 +72,14 @@ const tasks=[
 'Assurer un focus visible et le fonctionnement avec IME/composition.'
 ],['F09'],'Mapping exact et navigation spatiale ou séquentielle à confirmer ; reprendre le tableau du POC comme proposition.'],
 ['F11','Exécuter de vrais shells et charger le profil PowerShell','8','R12, R13, R14','Utiliser l’application comme un terminal Windows complet.',[
-'Lancer PowerShell par défaut ainsi que CMD et Git Bash configurés.',
-'Charger le vrai profil avec alias, fonctions, modules et prompt.',
+ 'Lancer Windows PowerShell 5.1 par défaut ; proposer PowerShell 7, CMD et Git Bash lorsque les chemins sont configurés.',
+ 'Charger le vrai profil avec alias, fonctions, modules et prompt.',
+ 'Charger notamment wtr et rmwt depuis %USERPROFILE%\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1.',
 'Supporter commandes libres, sélection, copier/coller, couleurs, Unicode et outils plein écran.',
 'Suivre le dossier courant réel après cd et fonctions du profil.',
 'Signaler localement un shell introuvable avec relance ou choix alternatif, sans substitution silencieuse.',
 'Valider redimensionnement et touches de contrôle avec les outils réels.'
-],[],'Choix technique nécessaire, mais issue formulée en capacité utilisateur. Aucun interpréteur de commandes simulées ne satisfait cette tâche.'],
+],[],'VS Code est l’éditeur retenu. Le profil observé est celui de Windows PowerShell 5.1 ; le profil PowerShell 7 n’a pas été trouvé dans Documents\\PowerShell et ne doit pas être supposé identique.'],
 ['F12','Palette Ctrl + P avec navigation clavier et destinations','9','R10','Trouver une commande ou rejoindre une activité rapidement.',[
 'Ouvrir avec Ctrl + P ; conserver Ctrl + Maj + P comme alias proposé.',
 'Rechercher les commandes, workspaces, onglets et panes.',
@@ -87,20 +88,13 @@ const tasks=[
 'Afficher la sélection par le fond uniquement et déclencher les éditeurs inline appropriés.',
 'Restaurer le focus correctement sans perdre la saisie terminal.'
 ],['F03','F05'],'La navigation directe vers un pane dépasse la liste actuelle du POC et fait partie de la cible.'],
-['F13','Rechercher dans la sortie du terminal sans popup','9','R11','Retrouver du texte tout en conservant le contexte de saisie.',[
-'Ouvrir une zone compacte intégrée plutôt qu’une fenêtre modale.',
-'Filtrer en direct, mettre en évidence les correspondances et afficher leur nombre.',
-'Ne pas effacer la commande en cours de saisie.',
-'Gérer recherche vide, aucun résultat et fermeture.',
-'Documenter et tester la portée retenue et l’effacement des surbrillances.'
-],['F11'],'Portée pane/onglet, résultat suivant/précédent, casse et regex à décider.'],
 ['F14','Ouvrir un workspace depuis le sélecteur de projets','10','R16','Trouver rapidement un dossier dans Projets.',[
-'Lire le vrai dossier Projets configuré, pas une liste fictive.',
+ 'Lire le vrai dossier C:\\Files\\Projects, pas une liste fictive.',
 'Rechercher des dossiers et naviguer avec flèches, Entrée et Échap.',
 'Créer un workspace avec son premier terminal dans le dossier choisi.',
 'Conserver une interface compacte intégrée et l’accès par Leader/palette.',
 'Traiter dossiers absents/inaccessibles sans modifier le contexte courant par erreur.'
-],['F02','F11'],'Inspecter le raccourci WezTerm existant ; profondeur, tri et projet déjà ouvert restent à décider.'],
+],['F02','F11'],'Le sélecteur reprend le premier niveau de C:\\Files\\Projects, exclut worktrees de la liste des projets et crée toujours un nouveau workspace.'],
 ['F15','Actions de dossier et de branche sur le pane actif','11','R17','Agir sur le contexte réel du terminal sélectionné.',[
 'Copier le chemin réel et ouvrir le dossier dans l’éditeur configuré ou l’explorateur.',
 'Copier la branche du dépôt/worktree courant lorsqu’elle existe.',
@@ -109,12 +103,12 @@ const tasks=[
 'Gérer hors dépôt, HEAD détachée et chemins avec espaces sans valeur fictive.'
 ],['F11'],'Éditeur et paramètres d’ouverture à configurer ; aucune commande locale ne doit être composée naïvement avec les chemins.'],
 ['F16','Préserver wtr/rmwt et synchroniser leur contexte','11','R15','Continuer à utiliser les fonctions worktree existantes depuis le terminal.',[
-'Inspecter et documenter les fonctions réelles du profil avant développement.',
+ 'Prendre en compte la lecture du profil et la documentation de wtr/rmwt dans docs/inspection-environnement.md.',
 'Pouvoir exécuter wtr et rmwt dans PowerShell.',
 'Suivre leurs effets observables sur dossier courant et contexte Git.',
 'Documenter puis vérifier le contrat de synchronisation avec l’interface.',
 'Ne pas créer de cycle de vie automatique de workspaces non demandé.'
-],['F11','F15'],'Bloqué fonctionnellement sur la connaissance des fonctions, pas sur une autorisation supplémentaire d’implémenter la gestion avancée.'],
+],['F11','F15'],'wtr crée un worktree sous C:\\Files\\Projects\\worktrees, installe les dépendances et peut répliquer une base ; rmwt supprime le worktree, une base répliquée et la branche sauf -KeepBranch. Ne pas reproduire ces opérations dans l’interface sans contrat explicite.'],
 ['F17','Sauvegarder et restaurer automatiquement les sessions visuelles','13','R19, R21, R22','Retrouver l’environnement de travail à la réouverture.',[
 'Sauvegarder automatiquement workspaces, onglets, ordre, noms, shells, chemins et splits.',
 'Conserver sélections, largeur/visibilité du panneau et dépliage des groupes.',
@@ -137,13 +131,13 @@ const tasks=[
 'Valider l’import intégralement avant toute mutation ; conserver la session si invalide.',
 'Définir migrations et politique de fusion/remplacement avec protection des données existantes.'
 ],['F17'],'Format/emplacement à décider ; l’export actuel du POC est un export de disposition, pas l’ensemble des préférences.'],
-['F20','Afficher les états d’agents dans les workspaces','12','R18','Repérer une activité nécessitant une intervention sans quitter la logique de workspaces.',[
+['F20','Afficher les états de Claude Code et Codex CLI dans les workspaces','12','R18','Repérer une activité nécessitant une intervention sans quitter la logique de workspaces.',[
 'Supporter en cours, attente de réponse/autorisation, terminé, erreur et inconnu.',
 'Rattacher les états au pane puis les résumer sur onglet/workspace.',
 'Mettre en évidence les attentes et rejoindre le pane correspondant.',
 'Ne pas déduire un état fiable de la simple présence d’un processus.',
 'Ne pas restaurer des activités anciennes comme vivantes.'
-],['F03','F11'],'Identifier les outils et leurs événements réels ; le simulateur agent du POC ne satisfait pas cette tâche.'],
+],['F03','F11'],'Les agents retenus sont Claude Code (`claude`) et Codex CLI (`codex`). Identifier leurs événements réels ; le simulateur agent du POC ne satisfait pas cette tâche.'],
 ['F21','Notifier les demandes d’attention sans interrompre le travail','12','R18','Être prévenu lorsqu’une intervention devient nécessaire.',[
 'Émettre une notification discrète et ciblée pour une nouvelle attente.',
 'Éviter les doublons et changements automatiques de workspace ou de focus.',
@@ -153,8 +147,8 @@ const tasks=[
 ],['F20'],'Canal Windows/interne et événements de fin/erreur à confirmer.']
 ];
 const manifest=tasks.map(([id,title,sections,tests,goal,checks,deps,open])=>({id,title:`[${id}] ${title}`,dependencies:deps,body:`## Besoin utilisateur\n\n${goal}\n\n## Critères d’acceptation\n\n${checks.map(c=>'- [ ] '+c).join('\n')}\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections ${sections}.\n- Recette : ${tests}.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\n${deps.length?deps.join(', '):'Aucune dépendance fonctionnelle imposée.'}\n\n## Points à préciser\n\n${open}\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n`}));
-manifest.push({id:'D01',title:'[D01] Trancher les comportements fonctionnels encore ouverts',dependencies:[],body:`## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [ ] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [ ] Noms automatiques et retour au nom automatique.\n- [ ] Navigation spatiale/séquentielle et raccourcis Leader.\n- [ ] Dossier Projets, profondeur et projet déjà ouvert.\n- [ ] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [ ] Arrêt des processus et éventuelles confirmations.\n- [ ] Recherche terminal, portée et navigation des résultats.\n- [ ] Outils agents, notifications et visibilité des attentes lorsque le panneau est masqué.\n- [ ] Format/emplacement de configuration, imports et éditeur.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Aucune priorité fixée.\n`});
+manifest.push({id:'D01',title:'[D01] Trancher les comportements fonctionnels encore ouverts',dependencies:[],body:`## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [ ] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [ ] Noms automatiques et retour au nom automatique.\n- [ ] Navigation spatiale/séquentielle et raccourcis Leader.\n- [x] Dossier Projets : C:\\Files\\Projects, premier niveau, sans détection de projet déjà ouvert.\n- [ ] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [ ] Arrêt des processus et éventuelles confirmations.\n- [x] Recherche dans les terminaux retirée du périmètre.\n- [ ] Claude Code/Codex CLI, états et notifications lorsque le panneau est masqué.\n- [ ] Format/emplacement de configuration, imports et éditeur.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Aucune priorité fixée.\n`});
 fs.writeFileSync('backlog/issues.json',JSON.stringify(manifest,null,2)+'\n');
 for(const issue of manifest)fs.writeFileSync(`backlog/${issue.id}.md`,issue.body);
-fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+manifest.length+' tâches sans ordre de priorité : 21 fonctionnalités et une tâche de clarification. Les dépendances expriment des relations fonctionnelles, pas un planning.\n\n| ID | Tâche | Dépendances |\n| --- | --- | --- |\n'+manifest.map(i=>`| ${i.id} | [${i.title}](backlog/${i.id}.md) | ${i.dependencies.join(', ')||'—'} |`).join('\n')+'\n\nLes liens vers les issues GitHub seront ajoutés après publication.\n');
+fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+manifest.length+' tâches sans ordre de priorité : 20 fonctionnalités actives, une fonctionnalité retirée du périmètre et une tâche de clarification. Les dépendances expriment des relations fonctionnelles, pas un planning.\n\n| ID | Tâche | Dépendances |\n| --- | --- | --- |\n'+manifest.map(i=>`| ${i.id} | [${i.title}](backlog/${i.id}.md) | ${i.dependencies.join(', ')||'—'} |`).join('\n')+'\n\nLes liens vers les issues GitHub seront ajoutés après publication.\n');
 console.log(`${manifest.length} issue drafts generated.`);
