@@ -1,0 +1,134 @@
+[
+  {
+    "id": "F01",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/1",
+    "number": 1,
+    "title": "[F01] Interface Dock verte, compacte et sans contours de sélection"
+  },
+  {
+    "id": "F02",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/2",
+    "number": 2,
+    "title": "[F02] Créer, sélectionner et renommer les workspaces inline"
+  },
+  {
+    "id": "F03",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/3",
+    "number": 3,
+    "title": "[F03] Naviguer dans les workspaces et onglets en arborescence"
+  },
+  {
+    "id": "F04",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/4",
+    "number": 4,
+    "title": "[F04] Replier et redimensionner le panneau des workspaces"
+  },
+  {
+    "id": "F05",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/5",
+    "number": 5,
+    "title": "[F05] Ouvrir les onglets et choisir le shell au clic droit sur « + »"
+  },
+  {
+    "id": "F06",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/6",
+    "number": 6,
+    "title": "[F06] Renommer les onglets inline et préserver les noms manuels"
+  },
+  {
+    "id": "F07",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/7",
+    "number": 7,
+    "title": "[F07] Réordonner et transférer les onglets entre workspaces"
+  },
+  {
+    "id": "F08",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/8",
+    "number": 8,
+    "title": "[F08] Fermer et rouvrir un onglet fermé accidentellement"
+  },
+  {
+    "id": "F09",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/9",
+    "number": 9,
+    "title": "[F09] Créer, fermer et redimensionner des splits imbriqués"
+  },
+  {
+    "id": "F10",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/10",
+    "number": 10,
+    "title": "[F10] Naviguer au clavier et gérer le Leader sans perte de saisie"
+  },
+  {
+    "id": "F11",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/11",
+    "number": 11,
+    "title": "[F11] Exécuter de vrais shells et charger le profil PowerShell"
+  },
+  {
+    "id": "F12",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/12",
+    "number": 12,
+    "title": "[F12] Palette Ctrl + P avec navigation clavier et destinations"
+  },
+  {
+    "id": "F13",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/13",
+    "number": 13,
+    "title": "[F13] Rechercher dans la sortie du terminal sans popup"
+  },
+  {
+    "id": "F14",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/14",
+    "number": 14,
+    "title": "[F14] Ouvrir un workspace depuis le sélecteur de projets"
+  },
+  {
+    "id": "F15",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/15",
+    "number": 15,
+    "title": "[F15] Actions de dossier et de branche sur le pane actif"
+  },
+  {
+    "id": "F16",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/16",
+    "number": 16,
+    "title": "[F16] Préserver wtr/rmwt et synchroniser leur contexte"
+  },
+  {
+    "id": "F17",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/17",
+    "number": 17,
+    "title": "[F17] Sauvegarder et restaurer automatiquement les sessions visuelles"
+  },
+  {
+    "id": "F18",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/18",
+    "number": 18,
+    "title": "[F18] Arrêter proprement les processus à la fermeture"
+  },
+  {
+    "id": "F19",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/19",
+    "number": 19,
+    "title": "[F19] Sauvegarder, exporter et importer les préférences"
+  },
+  {
+    "id": "F20",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/20",
+    "number": 20,
+    "title": "[F20] Afficher les états d’agents dans les workspaces"
+  },
+  {
+    "id": "F21",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/21",
+    "number": 21,
+    "title": "[F21] Notifier les demandes d’attention sans interrompre le travail"
+  },
+  {
+    "id": "D01",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/22",
+    "number": 22,
+    "title": "[D01] Trancher les comportements fonctionnels encore ouverts"
+  }
+]
