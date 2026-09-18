@@ -1,134 +1,128 @@
 [
   {
     "id": "F01",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/1",
     "number": 1,
-    "title": "[F01] Interface Dock verte, compacte et sans contours de sélection"
+    "title": "[F01] Interface Dock verte, compacte et sans contours de sélection",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/1"
   },
   {
     "id": "F02",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/2",
     "number": 2,
-    "title": "[F02] Créer, sélectionner et renommer les workspaces inline"
+    "title": "[F02] Créer, sélectionner et renommer les workspaces inline",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/2"
   },
   {
     "id": "F03",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/3",
     "number": 3,
-    "title": "[F03] Naviguer dans les workspaces et onglets en arborescence"
+    "title": "[F03] Naviguer dans les workspaces et onglets en arborescence",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/3"
   },
   {
     "id": "F04",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/4",
     "number": 4,
-    "title": "[F04] Replier et redimensionner le panneau des workspaces"
+    "title": "[F04] Replier et redimensionner le panneau des workspaces",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/4"
   },
   {
     "id": "F05",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/5",
     "number": 5,
-    "title": "[F05] Ouvrir les onglets et choisir le shell au clic droit sur « + »"
+    "title": "[F05] Ouvrir les onglets et choisir le shell au clic droit sur « + »",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/5"
   },
   {
     "id": "F06",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/6",
     "number": 6,
-    "title": "[F06] Renommer les onglets inline et préserver les noms manuels"
+    "title": "[F06] Renommer les onglets inline et préserver les noms manuels",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/6"
   },
   {
     "id": "F07",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/7",
     "number": 7,
-    "title": "[F07] Réordonner et transférer les onglets entre workspaces"
+    "title": "[F07] Réordonner et transférer les onglets entre workspaces",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/7"
   },
   {
     "id": "F08",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/8",
     "number": 8,
-    "title": "[F08] Fermer et rouvrir un onglet fermé accidentellement"
+    "title": "[F08] Fermer et rouvrir un onglet fermé accidentellement",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/8"
   },
   {
     "id": "F09",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/9",
     "number": 9,
-    "title": "[F09] Créer, fermer et redimensionner des splits imbriqués"
+    "title": "[F09] Créer, fermer et redimensionner des splits imbriqués",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/9"
   },
   {
     "id": "F10",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/10",
     "number": 10,
-    "title": "[F10] Naviguer au clavier et gérer le Leader sans perte de saisie"
+    "title": "[F10] Naviguer au clavier et gérer le Leader sans perte de saisie",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/10"
   },
   {
     "id": "F11",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/11",
     "number": 11,
-    "title": "[F11] Exécuter de vrais shells et charger le profil PowerShell"
+    "title": "[F11] Exécuter de vrais shells et charger le profil PowerShell",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/11"
   },
   {
     "id": "F12",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/12",
     "number": 12,
-    "title": "[F12] Palette Ctrl + P avec navigation clavier et destinations"
-  },
-  {
-    "id": "F13",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/13",
-    "number": 13,
-    "title": "[F13] Rechercher dans la sortie du terminal sans popup"
+    "title": "[F12] Palette Ctrl + P avec navigation clavier et destinations",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/12"
   },
   {
     "id": "F14",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/14",
     "number": 14,
-    "title": "[F14] Ouvrir un workspace depuis le sélecteur de projets"
+    "title": "[F14] Ouvrir un workspace depuis le sélecteur de projets",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/14"
   },
   {
     "id": "F15",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/15",
     "number": 15,
-    "title": "[F15] Actions de dossier et de branche sur le pane actif"
+    "title": "[F15] Actions de dossier et de branche sur le pane actif",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/15"
   },
   {
     "id": "F16",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/16",
     "number": 16,
-    "title": "[F16] Préserver wtr/rmwt et synchroniser leur contexte"
+    "title": "[F16] Préserver wtr/rmwt et synchroniser leur contexte",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/16"
   },
   {
     "id": "F17",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/17",
     "number": 17,
-    "title": "[F17] Sauvegarder et restaurer automatiquement les sessions visuelles"
+    "title": "[F17] Sauvegarder et restaurer automatiquement les sessions visuelles",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/17"
   },
   {
     "id": "F18",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/18",
     "number": 18,
-    "title": "[F18] Arrêter proprement les processus à la fermeture"
+    "title": "[F18] Arrêter proprement les processus à la fermeture",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/18"
   },
   {
     "id": "F19",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/19",
     "number": 19,
-    "title": "[F19] Sauvegarder, exporter et importer les préférences"
+    "title": "[F19] Sauvegarder, exporter et importer les préférences",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/19"
   },
   {
     "id": "F20",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/20",
     "number": 20,
-    "title": "[F20] Afficher les états d’agents dans les workspaces"
+    "title": "[F20] Afficher les états d’agents dans les workspaces",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/20"
   },
   {
     "id": "F21",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/21",
     "number": 21,
-    "title": "[F21] Notifier les demandes d’attention sans interrompre le travail"
+    "title": "[F21] Notifier les demandes d’attention sans interrompre le travail",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/21"
   },
   {
     "id": "D01",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/22",
     "number": 22,
-    "title": "[D01] Trancher les comportements fonctionnels encore ouverts"
+    "title": "[D01] Trancher les comportements fonctionnels encore ouverts",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/22"
   }
 ]
