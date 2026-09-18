@@ -1,0 +1,183 @@
+[
+  {
+    "id": "F01",
+    "title": "[F01] Interface Dock verte, compacte et sans contours de sélection",
+    "dependencies": [],
+    "body": "## Besoin utilisateur\n\nRetrouver une interface compacte donnant la priorité aux terminaux.\n\n## Critères d’acceptation\n\n- [ ] Reprendre Dock vert et le panneau en arborescence du POC retenu.\n- [ ] Conserver en-tête compact, barre d’onglets et terminaux occupant la hauteur restante.\n- [ ] Identifier les éléments sélectionnés par un fond discret, sans bordure colorée sur onglets, workspaces et résultats.\n- [ ] Éviter les aides permanentes et popups pour les actions courantes ; fournir noms accessibles et focus perceptible.\n- [ ] Respecter la mise à l’échelle Windows et les noms/chemins longs.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 4, 16.\n- Recette : R26.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nAucune dépendance fonctionnelle imposée.\n\n## Points à préciser\n\nPolice, zoom et dimensions minimales restent à préciser.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F02",
+    "title": "[F02] Créer, sélectionner et renommer les workspaces inline",
+    "dependencies": [
+      "F01"
+    ],
+    "body": "## Besoin utilisateur\n\nOrganiser des terminaux dans des groupes libres, sans couche projet.\n\n## Critères d’acceptation\n\n- [ ] Disposer d’un workspace par défaut et interdire les terminaux sans workspace.\n- [ ] Créer un workspace directement depuis le panneau et éditer son nom inline.\n- [ ] Permettre des onglets dans des dossiers sans rapport entre eux.\n- [ ] Renommer depuis le titre ou la palette ; Entrée/perte de focus valide, Échap annule, nom vide conserve le précédent.\n- [ ] Synchroniser le nom et la sélection entre en-tête et panneau.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 3, 5.\n- Recette : R01, R02.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF01\n\n## Points à préciser\n\nNom provisoire, dossier initial et comportement de suppression de workspace à confirmer.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F03",
+    "title": "[F03] Naviguer dans les workspaces et onglets en arborescence",
+    "dependencies": [
+      "F02"
+    ],
+    "body": "## Besoin utilisateur\n\nVoir les onglets de chaque workspace et rejoindre une activité directement.\n\n## Critères d’acceptation\n\n- [ ] Déplier et replier chaque workspace indépendamment avec un chevron accessible.\n- [ ] Cliquer sur un onglet enfant active son workspace, son onglet et son pane mémorisé.\n- [ ] Synchroniser noms, ordre et sélection avec la barre supérieure.\n- [ ] Conserver les états de dépliage ; replier ne change pas la sélection.\n- [ ] Afficher les nombres d’onglets et les attentes sans ajouter de bordures de sélection.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 5.\n- Recette : R07.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF02\n\n## Points à préciser\n\nLe panneau reste centré sur les workspaces et non sur une liste indépendante d’agents.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F04",
+    "title": "[F04] Replier et redimensionner le panneau des workspaces",
+    "dependencies": [
+      "F03"
+    ],
+    "body": "## Besoin utilisateur\n\nLibérer la largeur des terminaux sans perdre le contexte.\n\n## Critères d’acceptation\n\n- [ ] Replier/réafficher le panneau depuis un bouton toujours accessible ou la palette.\n- [ ] Redimensionner par séparateur et fournir un accès clavier.\n- [ ] Conserver la largeur après réouverture et mémoriser la visibilité.\n- [ ] Préserver les commandes en cours de saisie, processus et dispositions des panes.\n- [ ] Le panneau masqué ne conserve pas d’éléments focusables invisibles.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 5, 16.\n- Recette : R08.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF03\n\n## Points à préciser\n\nLes états du panneau sont sauvegardés avec la session.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F05",
+    "title": "[F05] Ouvrir les onglets et choisir le shell au clic droit sur « + »",
+    "dependencies": [
+      "F02",
+      "F11"
+    ],
+    "body": "## Besoin utilisateur\n\nOuvrir un terminal sans formulaire et choisir un autre shell au besoin.\n\n## Critères d’acceptation\n\n- [ ] Clic gauche sur « + » ouvre directement PowerShell.\n- [ ] Clic droit sur le même bouton affiche PowerShell, CMD et Git Bash dans un menu contextuel.\n- [ ] Le menu accepte flèches, Entrée, Échap, clic extérieur et Maj + F10.\n- [ ] Le nouvel onglet reprend le dossier réel du pane actif.\n- [ ] Aucun bouton séparé de choix du shell ; garder une action équivalente dans la palette.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 6.\n- Recette : R03, R04.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF02, F11\n\n## Points à préciser\n\nLes chemins de shells sont configurés, pas codés avec des valeurs de démonstration.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F06",
+    "title": "[F06] Renommer les onglets inline et préserver les noms manuels",
+    "dependencies": [
+      "F05"
+    ],
+    "body": "## Besoin utilisateur\n\nNommer une activité directement dans la barre d’onglets.\n\n## Critères d’acceptation\n\n- [ ] Double-clic sur le nom ou commande de palette active un éditeur inline.\n- [ ] Entrée/perte de focus valide, Échap annule et un nom vide est refusé sans perdre le nom précédent.\n- [ ] Synchroniser immédiatement le nom dans l’arborescence.\n- [ ] Ne jamais écraser un nom manuel par une mise à jour automatique.\n- [ ] Gérer les noms longs et la composition de texte sans validation prématurée.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 6.\n- Recette : R05.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF05\n\n## Points à préciser\n\nRègles de nommage automatique et retour au nom automatique à décider.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F07",
+    "title": "[F07] Réordonner et transférer les onglets entre workspaces",
+    "dependencies": [
+      "F03",
+      "F05"
+    ],
+    "body": "## Besoin utilisateur\n\nRéorganiser une activité sans relancer ses terminaux.\n\n## Critères d’acceptation\n\n- [ ] Glisser les onglets depuis la barre supérieure ou l’arborescence.\n- [ ] Réordonner dans un workspace ou transférer vers un autre.\n- [ ] Conserver processus actifs, dossiers, historique, noms et splits.\n- [ ] Synchroniser les deux représentations et sauvegarder le nouvel ordre.\n- [ ] Fournir un équivalent clavier pour les déplacements essentiels.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 6.\n- Recette : R06.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF03, F05\n\n## Points à préciser\n\nInsertion avant la cible et cas du dernier onglet source à trancher ; ne pas imposer silencieusement le remplacement du POC.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F08",
+    "title": "[F08] Fermer et rouvrir un onglet fermé accidentellement",
+    "dependencies": [
+      "F05",
+      "F17"
+    ],
+    "body": "## Besoin utilisateur\n\nRécupérer un contexte fermé par erreur.\n\n## Critères d’acceptation\n\n- [ ] Fermer l’onglet et gérer ses processus selon la politique de fermeture retenue.\n- [ ] Proposer la réouverture via les commandes.\n- [ ] Restaurer noms, shells, chemins, splits et texte avec de nouveaux processus.\n- [ ] Marquer l’ancienne session et ne pas rejouer de commandes.\n- [ ] Tester la fermeture du dernier onglet selon la décision documentée.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 6, 13.\n- Recette : R23.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF05, F17\n\n## Points à préciser\n\nDurée/profondeur de rétention et dernier onglet à décider avant finalisation.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F09",
+    "title": "[F09] Créer, fermer et redimensionner des splits imbriqués",
+    "dependencies": [
+      "F05"
+    ],
+    "body": "## Besoin utilisateur\n\nOrganiser plusieurs terminaux dans un même onglet.\n\n## Critères d’acceptation\n\n- [ ] Créer des splits côte à côte et haut/bas depuis le pane actif.\n- [ ] Hériter du dossier réel du pane actif.\n- [ ] Supporter des divisions imbriquées avec séparateurs redimensionnables.\n- [ ] La fermeture retire un pane et agrandit la zone restante.\n- [ ] Sauvegarder orientations et proportions sans relancer les processus.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 7.\n- Recette : R09.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF05\n\n## Points à préciser\n\nHéritage du shell, ratio initial et fermeture du dernier pane sont des conventions à confirmer.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F10",
+    "title": "[F10] Naviguer au clavier et gérer le Leader sans perte de saisie",
+    "dependencies": [
+      "F09"
+    ],
+    "body": "## Besoin utilisateur\n\nPiloter le terminal et ses vues au clavier.\n\n## Critères d’acceptation\n\n- [ ] Activer un pane à la souris et naviguer entre panes au clavier.\n- [ ] Proposer les actions via une touche Leader et documenter les séquences retenues.\n- [ ] Gérer expiration, annulation et collisions avec les applications terminal.\n- [ ] Préserver les saisies lors des opérations de présentation.\n- [ ] Assurer un focus visible et le fonctionnement avec IME/composition.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 7, 9, 16.\n- Recette : R09, R25.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF09\n\n## Points à préciser\n\nMapping exact et navigation spatiale ou séquentielle à confirmer ; reprendre le tableau du POC comme proposition.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F11",
+    "title": "[F11] Exécuter de vrais shells et charger le profil PowerShell",
+    "dependencies": [],
+    "body": "## Besoin utilisateur\n\nUtiliser l’application comme un terminal Windows complet.\n\n## Critères d’acceptation\n\n- [ ] Lancer PowerShell par défaut ainsi que CMD et Git Bash configurés.\n- [ ] Charger le vrai profil avec alias, fonctions, modules et prompt.\n- [ ] Supporter commandes libres, sélection, copier/coller, couleurs, Unicode et outils plein écran.\n- [ ] Suivre le dossier courant réel après cd et fonctions du profil.\n- [ ] Signaler localement un shell introuvable avec relance ou choix alternatif, sans substitution silencieuse.\n- [ ] Valider redimensionnement et touches de contrôle avec les outils réels.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 8.\n- Recette : R12, R13, R14.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nAucune dépendance fonctionnelle imposée.\n\n## Points à préciser\n\nChoix technique nécessaire, mais issue formulée en capacité utilisateur. Aucun interpréteur de commandes simulées ne satisfait cette tâche.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F12",
+    "title": "[F12] Palette Ctrl + P avec navigation clavier et destinations",
+    "dependencies": [
+      "F03",
+      "F05"
+    ],
+    "body": "## Besoin utilisateur\n\nTrouver une commande ou rejoindre une activité rapidement.\n\n## Critères d’acceptation\n\n- [ ] Ouvrir avec Ctrl + P ; conserver Ctrl + Maj + P comme alias proposé.\n- [ ] Rechercher les commandes, workspaces, onglets et panes.\n- [ ] ↑/↓ sélectionne, Entrée valide, Échap ferme ; faire défiler la sélection en vue.\n- [ ] Revenir au premier résultat après filtrage et ne rien exécuter sur liste vide.\n- [ ] Afficher la sélection par le fond uniquement et déclencher les éditeurs inline appropriés.\n- [ ] Restaurer le focus correctement sans perdre la saisie terminal.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 9.\n- Recette : R10.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF03, F05\n\n## Points à préciser\n\nLa navigation directe vers un pane dépasse la liste actuelle du POC et fait partie de la cible.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F13",
+    "title": "[F13] Rechercher dans la sortie du terminal sans popup",
+    "dependencies": [
+      "F11"
+    ],
+    "body": "## Besoin utilisateur\n\nRetrouver du texte tout en conservant le contexte de saisie.\n\n## Critères d’acceptation\n\n- [ ] Ouvrir une zone compacte intégrée plutôt qu’une fenêtre modale.\n- [ ] Filtrer en direct, mettre en évidence les correspondances et afficher leur nombre.\n- [ ] Ne pas effacer la commande en cours de saisie.\n- [ ] Gérer recherche vide, aucun résultat et fermeture.\n- [ ] Documenter et tester la portée retenue et l’effacement des surbrillances.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 9.\n- Recette : R11.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF11\n\n## Points à préciser\n\nPortée pane/onglet, résultat suivant/précédent, casse et regex à décider.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F14",
+    "title": "[F14] Ouvrir un workspace depuis le sélecteur de projets",
+    "dependencies": [
+      "F02",
+      "F11"
+    ],
+    "body": "## Besoin utilisateur\n\nTrouver rapidement un dossier dans Projets.\n\n## Critères d’acceptation\n\n- [ ] Lire le vrai dossier Projets configuré, pas une liste fictive.\n- [ ] Rechercher des dossiers et naviguer avec flèches, Entrée et Échap.\n- [ ] Créer un workspace avec son premier terminal dans le dossier choisi.\n- [ ] Conserver une interface compacte intégrée et l’accès par Leader/palette.\n- [ ] Traiter dossiers absents/inaccessibles sans modifier le contexte courant par erreur.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 10.\n- Recette : R16.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF02, F11\n\n## Points à préciser\n\nInspecter le raccourci WezTerm existant ; profondeur, tri et projet déjà ouvert restent à décider.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F15",
+    "title": "[F15] Actions de dossier et de branche sur le pane actif",
+    "dependencies": [
+      "F11"
+    ],
+    "body": "## Besoin utilisateur\n\nAgir sur le contexte réel du terminal sélectionné.\n\n## Critères d’acceptation\n\n- [ ] Copier le chemin réel et ouvrir le dossier dans l’éditeur configuré ou l’explorateur.\n- [ ] Copier la branche du dépôt/worktree courant lorsqu’elle existe.\n- [ ] Ouvrir un terminal supplémentaire dans ce dossier.\n- [ ] Indiquer le chemin ciblé ; ne pas supposer un dossier unique de workspace.\n- [ ] Gérer hors dépôt, HEAD détachée et chemins avec espaces sans valeur fictive.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 11.\n- Recette : R17.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF11\n\n## Points à préciser\n\nÉditeur et paramètres d’ouverture à configurer ; aucune commande locale ne doit être composée naïvement avec les chemins.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F16",
+    "title": "[F16] Préserver wtr/rmwt et synchroniser leur contexte",
+    "dependencies": [
+      "F11",
+      "F15"
+    ],
+    "body": "## Besoin utilisateur\n\nContinuer à utiliser les fonctions worktree existantes depuis le terminal.\n\n## Critères d’acceptation\n\n- [ ] Inspecter et documenter les fonctions réelles du profil avant développement.\n- [ ] Pouvoir exécuter wtr et rmwt dans PowerShell.\n- [ ] Suivre leurs effets observables sur dossier courant et contexte Git.\n- [ ] Documenter puis vérifier le contrat de synchronisation avec l’interface.\n- [ ] Ne pas créer de cycle de vie automatique de workspaces non demandé.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 11.\n- Recette : R15.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF11, F15\n\n## Points à préciser\n\nBloqué fonctionnellement sur la connaissance des fonctions, pas sur une autorisation supplémentaire d’implémenter la gestion avancée.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F17",
+    "title": "[F17] Sauvegarder et restaurer automatiquement les sessions visuelles",
+    "dependencies": [
+      "F03",
+      "F04",
+      "F09",
+      "F11"
+    ],
+    "body": "## Besoin utilisateur\n\nRetrouver l’environnement de travail à la réouverture.\n\n## Critères d’acceptation\n\n- [ ] Sauvegarder automatiquement workspaces, onglets, ordre, noms, shells, chemins et splits.\n- [ ] Conserver sélections, largeur/visibilité du panneau et dépliage des groupes.\n- [ ] Restaurer le texte avec un séparateur explicite et démarrer des shells neufs.\n- [ ] Ne pas réexécuter les anciennes commandes ou rétablir de faux états actifs.\n- [ ] Résister à un arrêt inattendu ; signaler échec de sauvegarde et données corrompues sans écrasement silencieux.\n- [ ] Gérer dossiers disparus et shells indisponibles avec un état local compréhensible.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 13.\n- Recette : R19, R21, R22.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF03, F04, F09, F11\n\n## Points à préciser\n\nQuotas, fréquence de sauvegarde du texte et fidélité plein écran à décider ; 500 lignes est une limite de POC.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F18",
+    "title": "[F18] Arrêter proprement les processus à la fermeture",
+    "dependencies": [
+      "F11",
+      "F17"
+    ],
+    "body": "## Besoin utilisateur\n\nFermer l’application sans laisser volontairement agents et serveurs en arrière-plan.\n\n## Critères d’acceptation\n\n- [ ] Définir le traitement des shells et de leurs processus enfants.\n- [ ] Appliquer la politique aux fermetures de pane, onglet et application.\n- [ ] Ne pas introduire de service persistant qui reprend les anciens agents.\n- [ ] Sauvegarder la disposition avant fermeture lorsque possible.\n- [ ] Tester avec serveur et agent actifs ainsi qu’un programme qui ne se termine pas immédiatement.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 8, 13.\n- Recette : R20.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF11, F17\n\n## Points à préciser\n\nDélais, terminaison forcée et éventuelles confirmations restent à décider.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F19",
+    "title": "[F19] Sauvegarder, exporter et importer les préférences",
+    "dependencies": [
+      "F17"
+    ],
+    "body": "## Besoin utilisateur\n\nVersionner la configuration et la réutiliser.\n\n## Critères d’acceptation\n\n- [ ] Définir un format versionné pour shells, raccourcis, éditeur, Projets et préférences visuelles.\n- [ ] Séparer préférences, disposition et historique terminal.\n- [ ] Ne pas inclure implicitement le texte des terminaux dans l’export.\n- [ ] Valider l’import intégralement avant toute mutation ; conserver la session si invalide.\n- [ ] Définir migrations et politique de fusion/remplacement avec protection des données existantes.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 14.\n- Recette : R24.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF17\n\n## Points à préciser\n\nFormat/emplacement à décider ; l’export actuel du POC est un export de disposition, pas l’ensemble des préférences.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F20",
+    "title": "[F20] Afficher les états d’agents dans les workspaces",
+    "dependencies": [
+      "F03",
+      "F11"
+    ],
+    "body": "## Besoin utilisateur\n\nRepérer une activité nécessitant une intervention sans quitter la logique de workspaces.\n\n## Critères d’acceptation\n\n- [ ] Supporter en cours, attente de réponse/autorisation, terminé, erreur et inconnu.\n- [ ] Rattacher les états au pane puis les résumer sur onglet/workspace.\n- [ ] Mettre en évidence les attentes et rejoindre le pane correspondant.\n- [ ] Ne pas déduire un état fiable de la simple présence d’un processus.\n- [ ] Ne pas restaurer des activités anciennes comme vivantes.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 12.\n- Recette : R18.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF03, F11\n\n## Points à préciser\n\nIdentifier les outils et leurs événements réels ; le simulateur agent du POC ne satisfait pas cette tâche.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "F21",
+    "title": "[F21] Notifier les demandes d’attention sans interrompre le travail",
+    "dependencies": [
+      "F20"
+    ],
+    "body": "## Besoin utilisateur\n\nÊtre prévenu lorsqu’une intervention devient nécessaire.\n\n## Critères d’acceptation\n\n- [ ] Émettre une notification discrète et ciblée pour une nouvelle attente.\n- [ ] Éviter les doublons et changements automatiques de workspace ou de focus.\n- [ ] Permettre de rejoindre précisément le pane concerné.\n- [ ] Définir le choix de destination lorsque plusieurs panes attendent.\n- [ ] Définir un comportement utile lorsque le panneau est replié.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 12.\n- Recette : R18.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF20\n\n## Points à préciser\n\nCanal Windows/interne et événements de fin/erreur à confirmer.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
+    "id": "D01",
+    "title": "[D01] Trancher les comportements fonctionnels encore ouverts",
+    "dependencies": [],
+    "body": "## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [ ] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [ ] Noms automatiques et retour au nom automatique.\n- [ ] Navigation spatiale/séquentielle et raccourcis Leader.\n- [ ] Dossier Projets, profondeur et projet déjà ouvert.\n- [ ] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [ ] Arrêt des processus et éventuelles confirmations.\n- [ ] Recherche terminal, portée et navigation des résultats.\n- [ ] Outils agents, notifications et visibilité des attentes lorsque le panneau est masqué.\n- [ ] Format/emplacement de configuration, imports et éditeur.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Aucune priorité fixée.\n"
+  }
+]
