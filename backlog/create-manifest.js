@@ -77,6 +77,7 @@ const tasks=[
  'Charger notamment wtr et rmwt depuis %USERPROFILE%\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1.',
 'Supporter commandes libres, sélection, copier/coller, couleurs, Unicode et outils plein écran.',
 'Suivre le dossier courant réel après cd et fonctions du profil.',
+'Obtenir ce dossier par une intégration shell propre à Dock (variable d’environnement dédiée et séquence OSC émise par le prompt), compatible avec le profil et oh-my-posh, sans simuler WezTerm.',
 'Signaler localement un shell introuvable avec relance ou choix alternatif, sans substitution silencieuse.',
 'Valider redimensionnement et touches de contrôle avec les outils réels.'
 ],[],'VS Code est l’éditeur retenu. Le profil observé est celui de Windows PowerShell 5.1 ; le profil PowerShell 7 n’a pas été trouvé dans Documents\\PowerShell et ne doit pas être supposé identique.'],
@@ -119,6 +120,7 @@ const tasks=[
 ],['F03','F04','F09','F11'],'Valeurs par défaut configurables : 10 000 lignes par pane, 256 Mio d’historique global, texte sauvegardé toutes les 30 secondes, cinq onglets fermés restaurables et historique conservé après redémarrage.'],
 ['F18','Arrêter proprement les processus à la fermeture','8, 13','R20','Fermer l’application sans laisser volontairement agents et serveurs en arrière-plan.',[
 'Définir le traitement des shells et de leurs processus enfants.',
+'Rattacher chaque pane à un Job Object Windows afin que la fermeture arrête tout l’arbre de processus, y compris les enfants détachés du shell.',
 'Appliquer la politique aux fermetures de pane, onglet et application.',
 'Ne pas introduire de service persistant qui reprend les anciens agents.',
 'Sauvegarder la disposition avant fermeture lorsque possible.',
@@ -146,14 +148,19 @@ const tasks=[
 'Définir un comportement utile lorsque le panneau est replié.'
 ],['F20'],'Les canaux et événements seront définis avec les adaptateurs réels ; afficher « état inconnu » lorsque la source ne permet pas de conclure.']
 ,
-['T01','Valider la pile Windows et le pipeline de terminal','15','R27','Valider la recommandation WinUI 3 + ConPTY + WebView2/xterm.js avant l’implémentation complète.',[
-'Créer un spike WinUI 3 avec Windows App SDK, C# et .NET 10 LTS.',
-'Lancer Windows PowerShell 5.1 dans ConPTY et transmettre entrée, sortie, redimensionnement et fermeture.',
-'Afficher le terminal dans WebView2 avec xterm.js ; vérifier Unicode, couleurs, sélection, copier/coller et IME.',
-'Mesurer au moins deux panes et un flux de sortie soutenu sans perte de saisie.',
-'Produire un installeur Windows autonome à mise à jour manuelle, sans auto-updater.',
-'Documenter les versions minimales de Windows et les limites découvertes.'
-],[],'La distribution recommandée est un installeur Inno Setup pour l’application dépaquetée ; MSIX reste une option ultérieure. Le spike doit confirmer ou invalider ce choix avant le développement produit.']
+['T01','Valider la pile Windows et le pipeline de terminal','8, 15','R27','Valider la pile retenue avant l’implémentation complète : hôte C# .NET 10 (WinUI 3), une seule WebView2 portant toute l’interface avec xterm.js, ConPTY et Job Objects côté hôte.',[
+'Créer un spike C# .NET 10 LTS avec une fenêtre WinUI 3 (Windows App SDK) hébergeant une WebView2 unique ; l’hôte ne définit aucun KeyboardAccelerator.',
+'Afficher dans cette WebView2 une interface minimale (deux panes, changement de pane) et un terminal xterm.js par pane avec renderer WebGL et repli canvas.',
+'Lancer Windows PowerShell 5.1 dans ConPTY avec le profil réel et transmettre entrée, sortie, redimensionnement et fermeture.',
+'Vérifier Unicode, couleurs, sélection, copier/coller, IME et clavier français (AltGr, touches mortes) dans xterm.js sous WebView2.',
+'Vérifier le clavier de bout en bout : Ctrl + Espace puis touche, Ctrl + P, Ctrl + C vers le shell, Alt + F4, changement de pane à la souris puis frappe immédiate, sans perte ni doublon.',
+'Obtenir le dossier courant réel après cd et après wtr par une intégration shell propre à Dock (variable d’environnement dédiée et séquence OSC), avec oh-my-posh chargé et sans variable WezTerm.',
+'Rattacher chaque pane à un Job Object et vérifier qu’aucun processus enfant ne survit à la fermeture du pane.',
+'Mesurer le pont hôte / WebView2 sur un flux de sortie soutenu de plusieurs Mo avec deux panes actifs ; comparer PostWebMessage à un canal dédié si le débit décroche.',
+'Comparer la ConPTY intégrée à Windows et une conpty.dll embarquée (OpenConsole) sur le redimensionnement et les applications plein écran.',
+'Produire un installeur Windows autonome à mise à jour manuelle, sans auto-updater, qui détecte ou installe le runtime WebView2 Evergreen et embarque le runtime Windows App SDK ; tester sur une machine vierge.',
+'Documenter les versions minimales de Windows, les mesures et les limites découvertes ; confirmer WinUI 3 ou acter le repli WPF pour l’hôte.'
+],[],'Décision prise : interface entière dans une seule WebView2, hôte natif sans interface métier. Alternatives écartées : interface hybride XAML + WebView2 par pane (clavier et focus partagés), contrôle Windows Terminal (aucun paquet officiel WinUI 3), Electron, Tauri 2. La distribution recommandée est un installeur Inno Setup pour l’application dépaquetée ; MSIX reste une option ultérieure. Le spike doit confirmer ou invalider ce choix avant le développement produit.']
 ];
 const manifest=tasks.map(([id,title,sections,tests,goal,checks,deps,open])=>({id,title:`[${id}] ${title}`,dependencies:deps,body:`## Besoin utilisateur\n\n${goal}\n\n## Critères d’acceptation\n\n${checks.map(c=>'- [ ] '+c).join('\n')}\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections ${sections}.\n- Recette : ${tests}.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\n${deps.length?deps.join(', '):'Aucune dépendance fonctionnelle imposée.'}\n\n## Points à préciser\n\n${open}\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n`}));
 manifest.push({id:'D01',title:'[D01] Trancher les comportements fonctionnels encore ouverts',dependencies:[],body:`## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [x] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [x] Noms automatiques et priorité aux noms manuels.\n- [x] Navigation spatiale et raccourcis Leader : Ctrl + Espace, 5 secondes, personnalisables.\n- [x] Dossier Projets : C:\\Files\\Projects, premier niveau, sans détection de projet déjà ouvert.\n- [x] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [x] Arrêt forcé des processus et confirmations ciblées si une activité est détectée.\n- [x] Recherche dans les terminaux retirée du périmètre.\n- [x] Extensibilité Claude Code/Codex CLI ; intégration réelle reportée à une évolution dédiée.\n- [x] JSON, séparation préférences/session/historique et import par remplacement.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Le spike technique T01 et les critères de performance restent à réaliser.\n`});

@@ -160,7 +160,7 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 
 **Conventions proposées.** Préserver l’historique et le processus lors des changements de workspace. Si un shell est introuvable ou échoue au démarrage, afficher un état local au pane avec actions de relance ou de choix du shell. Ne pas basculer silencieusement vers un autre shell.
 
-**Décision prise.** Le profil contenant `wtr` et `rmwt` est `%USERPROFILE%\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`. WezTerm utilise actuellement `powershell.exe -NoLogo`. PowerShell 7 est installé mais son profil utilisateur correspondant n’a pas été trouvé dans `Documents\\PowerShell`; il reste une alternative à configurer explicitement. Les chemins de CMD et Git Bash doivent rester configurables.
+**Décision prise.** Le profil contenant `wtr` et `rmwt` est `%USERPROFILE%\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`. WezTerm utilise actuellement `powershell.exe -NoLogo`. PowerShell 7 est installé mais son profil utilisateur correspondant n’a pas été trouvé dans `Documents\\PowerShell`; il reste une alternative à configurer explicitement. Les chemins de CMD et Git Bash doivent rester configurables. Le dossier courant est obtenu par une intégration shell propre à Dock (variable d’environnement dédiée et séquence OSC émise par le prompt), décrite en section 15 ; aucune variable WezTerm n’est simulée.
 
 ## 9. Palette et clavier
 
@@ -302,12 +302,14 @@ Les déplacements et changements de présentation agissent sur le modèle et la 
 
 ### Recommandation retenue pour le prototype technique
 
-- **Application Windows :** WinUI 3 avec Windows App SDK et C# sur .NET 10 LTS. Le shell, l’arborescence, les menus et les raccourcis restent natifs et accessibles.
-- **Pseudo-terminal :** ConPTY, isolé derrière un service de gestion des processus. Commencer par une preuve de concept C# avec P/Invoke ; isoler ensuite le code Win32 si la gestion des handles et des redimensionnements le justifie.
-- **Rendu terminal :** WebView2 hébergeant xterm.js, avec un pont explicite entre l’UI et ConPTY. Cette voie couvre sélection, copier/coller, Unicode, IME, couleurs et applications plein écran ; le renderer WebGL est optionnel selon les mesures.
-- **Distribution :** build Windows autonome distribuée manuellement dans une release GitHub. Recommandation initiale : installeur Inno Setup pour l’application dépaquetée, sans mise à jour automatique ; l’installeur remplace la version précédente. Une distribution MSIX signée pourra être ajoutée si les contraintes de signature et de sideloading deviennent acceptables.
+- **Hôte Windows :** application C# sur .NET 10 LTS avec une seule fenêtre WinUI 3 (Windows App SDK). L’hôte ne porte aucune interface métier : il gère la fenêtre, le gestionnaire de processus, les services locaux, les adaptateurs d’agents et la persistance. WPF est le repli accepté si WinUI 3 non empaqueté pose problème au spike ; l’interface n’en dépend pas.
+- **Interface :** une WebView2 unique héberge toute l’interface (arborescence, onglets, splits, palette, Leader) et un terminal xterm.js par pane, avec le renderer WebGL et un repli canvas. Le modèle de session du POC est repris côté web. Les raccourcis sont interceptés dans xterm.js, jamais par des accélérateurs XAML, afin qu’un seul moteur traite le clavier et le focus.
+- **Pseudo-terminal :** ConPTY, isolé derrière le gestionnaire de processus en C# avec P/Invoke. Chaque pane est rattaché à un Job Object Windows pour garantir l’arrêt de l’arbre de processus. Le spike compare la ConPTY intégrée à Windows et une `conpty.dll` embarquée issue d’OpenConsole.
+- **Dossier courant :** ConPTY ne le fournit pas. Dock l’obtient par intégration shell propre (variable d’environnement dédiée et wrapper de prompt non intrusif émettant une séquence OSC), compatible avec Windows PowerShell 5.1 et oh-my-posh, sans imiter WezTerm.
+- **Pont hôte / interface :** messages JSON pour les commandes et un canal dédié pour les octets PTY. Mesurer d’abord `PostWebMessage` ; basculer sur un WebSocket local ou un flux binaire si le débit soutenu décroche.
+- **Distribution :** build Windows autonome distribuée manuellement dans une release GitHub. Recommandation initiale : installeur Inno Setup pour l’application dépaquetée, sans mise à jour automatique ; l’installeur remplace la version précédente, détecte ou installe le runtime WebView2 Evergreen et embarque le runtime Windows App SDK (build autonome). Une distribution MSIX signée pourra être ajoutée si les contraintes de signature et de sideloading deviennent acceptables.
 
-Cette recommandation doit être validée par un spike avant de construire l’application complète : ouvrir PowerShell réel, gérer ConPTY, redimensionner un pane, restituer Unicode/IME/sélection et installer une version autonome.
+Cette recommandation doit être validée par un spike avant de construire l’application complète : ouvrir PowerShell réel, gérer ConPTY, redimensionner un pane, restituer Unicode/IME/sélection, obtenir le dossier courant, arrêter un arbre de processus, mesurer le pont hôte / interface et installer une version autonome. Les alternatives écartées sont l’interface hybride XAML + WebView2 par pane (clavier et focus partagés entre deux moteurs), le contrôle de Windows Terminal (aucun paquet officiel WinUI 3), Electron (empreinte) et Tauri 2 (introduit Rust dans une équipe .NET).
 
 ### Structure conceptuelle des données
 
@@ -368,6 +370,7 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | R24 | Export/import et import invalide. | Préférences récupérables ; aucune mutation si validation échoue. |
 | R25 | Tester noms longs, espaces, accents, IME, mise à l’échelle Windows. | Interface lisible, saisie fiable, chemins correctement traités. |
 | R26 | Inspecter onglets, workspaces et palette. | Pas de bordures de sélection colorées ; fond et focus restent lisibles. |
+| R27 | Exécuter le spike T01 : deux panes xterm.js dans une WebView2 unique, PowerShell 5.1 réel, raccourcis, dossier courant, Job Object, flux soutenu, installeur sur machine vierge. | Aucune perte ni doublon de frappe, dossier courant exact, aucun processus survivant, débit mesuré, installation fonctionnelle ; sinon la pile est rejetée. |
 
 ## 18. État du POC et écarts à combler
 
@@ -390,7 +393,7 @@ Le POC est une référence de conception, pas une implémentation technique prê
 
 1. Inspecter le profil PowerShell, wtr/rmwt et la configuration WezTerm Leader + F. **Fait :** voir `docs/inspection-environnement.md`.
 2. Identifier les shells installés, l’éditeur, le dossier Projets et les agents utilisés. **Fait :** Windows PowerShell 5.1 par défaut, PowerShell 7/CMD/Git Bash disponibles, VS Code, `C:\\Files\\Projects`, Claude Code et Codex CLI.
-3. **À faire :** valider la pile WinUI 3 + ConPTY + WebView2/xterm.js avec le spike technique et l’installeur manuel.
+3. **À faire :** valider la pile hôte C# + WebView2 unique (xterm.js) + ConPTY avec le spike technique et l’installeur manuel. **Décidé :** l’interface entière est web dans une seule WebView2 ; l’hôte natif ne porte pas d’interface métier.
 4. **Fait :** fermer le dernier onglet/pane supprime le workspace ; confirmer avant suppression d’un workspace actif ; état vide si nécessaire.
 5. **Fait :** arrêt forcé avec confirmation si serveur, agent ou programme actif ; limites 10 000 lignes/256 Mio, sauvegarde texte toutes les 30 s, cinq onglets fermés.
 6. **Fait :** Leader Ctrl + Espace, délai de 5 s, mapping personnalisable ; navigation spatiale.

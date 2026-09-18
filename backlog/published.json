@@ -121,9 +121,9 @@
   },
   {
     "id": "T01",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/23",
     "number": 23,
-    "title": "[T01] Valider la pile Windows et le pipeline de terminal"
+    "title": "[T01] Valider la pile Windows et le pipeline de terminal",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/23"
   },
   {
     "id": "D01",
