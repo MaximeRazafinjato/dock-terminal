@@ -120,6 +120,12 @@
     "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/21"
   },
   {
+    "id": "T01",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/23",
+    "number": 23,
+    "title": "[T01] Valider la pile Windows et le pipeline de terminal"
+  },
+  {
     "id": "D01",
     "number": 22,
     "title": "[D01] Trancher les comportements fonctionnels encore ouverts",

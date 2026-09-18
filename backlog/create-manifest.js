@@ -14,7 +14,7 @@ const tasks=[
 'Permettre des onglets dans des dossiers sans rapport entre eux.',
 'Renommer depuis le titre ou la palette ; Entrée/perte de focus valide, Échap annule, nom vide conserve le précédent.',
 'Synchroniser le nom et la sélection entre en-tête et panneau.'
-],['F01'],'Nom provisoire, dossier initial et comportement de suppression de workspace à confirmer.'],
+],['F01'],'Nom automatique selon le dossier ; le nom manuel reste prioritaire. Fermer le dernier onglet supprime le workspace ; confirmer la suppression explicite si des onglets ou processus sont actifs, puis arrêter les processus.'],
 ['F03','Naviguer dans les workspaces et onglets en arborescence','5','R07','Voir les onglets de chaque workspace et rejoindre une activité directement.',[
 'Déplier et replier chaque workspace indépendamment avec un chevron accessible.',
 'Cliquer sur un onglet enfant active son workspace, son onglet et son pane mémorisé.',
@@ -56,21 +56,21 @@ const tasks=[
 'Restaurer noms, shells, chemins, splits et texte avec de nouveaux processus.',
 'Marquer l’ancienne session et ne pas rejouer de commandes.',
 'Tester la fermeture du dernier onglet selon la décision documentée.'
-],['F05','F17'],'Durée/profondeur de rétention et dernier onglet à décider avant finalisation.'],
+],['F05','F17'],'Conserver les cinq derniers onglets fermés, y compris après redémarrage. La fermeture du dernier onglet supprime le workspace et affiche l’état vide si nécessaire.'],
 ['F09','Créer, fermer et redimensionner des splits imbriqués','7','R09','Organiser plusieurs terminaux dans un même onglet.',[
 'Créer des splits côte à côte et haut/bas depuis le pane actif.',
 'Hériter du dossier réel du pane actif.',
 'Supporter des divisions imbriquées avec séparateurs redimensionnables.',
 'La fermeture retire un pane et agrandit la zone restante.',
 'Sauvegarder orientations et proportions sans relancer les processus.'
-],['F05'],'Héritage du shell, ratio initial et fermeture du dernier pane sont des conventions à confirmer.'],
+],['F05'],'Le split hérite du shell et du dossier du pane actif ; fermer le dernier pane applique la politique de fermeture du dernier onglet.'],
 ['F10','Naviguer au clavier et gérer le Leader sans perte de saisie','7, 9, 16','R09, R25','Piloter le terminal et ses vues au clavier.',[
 'Activer un pane à la souris et naviguer entre panes au clavier.',
 'Proposer les actions via une touche Leader et documenter les séquences retenues.',
 'Gérer expiration, annulation et collisions avec les applications terminal.',
 'Préserver les saisies lors des opérations de présentation.',
 'Assurer un focus visible et le fonctionnement avec IME/composition.'
-],['F09'],'Mapping exact et navigation spatiale ou séquentielle à confirmer ; reprendre le tableau du POC comme proposition.'],
+],['F09'],'Leader par défaut Ctrl + Espace, délai 5 secondes, mapping personnalisable ; navigation spatiale selon la position visuelle.'],
 ['F11','Exécuter de vrais shells et charger le profil PowerShell','8','R12, R13, R14','Utiliser l’application comme un terminal Windows complet.',[
  'Lancer Windows PowerShell 5.1 par défaut ; proposer PowerShell 7, CMD et Git Bash lorsque les chemins sont configurés.',
  'Charger le vrai profil avec alias, fonctions, modules et prompt.',
@@ -116,39 +116,48 @@ const tasks=[
 'Ne pas réexécuter les anciennes commandes ou rétablir de faux états actifs.',
 'Résister à un arrêt inattendu ; signaler échec de sauvegarde et données corrompues sans écrasement silencieux.',
 'Gérer dossiers disparus et shells indisponibles avec un état local compréhensible.'
-],['F03','F04','F09','F11'],'Quotas, fréquence de sauvegarde du texte et fidélité plein écran à décider ; 500 lignes est une limite de POC.'],
+],['F03','F04','F09','F11'],'Valeurs par défaut configurables : 10 000 lignes par pane, 256 Mio d’historique global, texte sauvegardé toutes les 30 secondes, cinq onglets fermés restaurables et historique conservé après redémarrage.'],
 ['F18','Arrêter proprement les processus à la fermeture','8, 13','R20','Fermer l’application sans laisser volontairement agents et serveurs en arrière-plan.',[
 'Définir le traitement des shells et de leurs processus enfants.',
 'Appliquer la politique aux fermetures de pane, onglet et application.',
 'Ne pas introduire de service persistant qui reprend les anciens agents.',
 'Sauvegarder la disposition avant fermeture lorsque possible.',
 'Tester avec serveur et agent actifs ainsi qu’un programme qui ne se termine pas immédiatement.'
-],['F11','F17'],'Délais, terminaison forcée et éventuelles confirmations restent à décider.'],
+],['F11','F17'],'Arrêt forcé. Demander une confirmation ciblée si un serveur, un agent ou un programme est actif, puis arrêter tous les processus concernés.'],
 ['F19','Sauvegarder, exporter et importer les préférences','14','R24','Versionner la configuration et la réutiliser.',[
 'Définir un format versionné pour shells, raccourcis, éditeur, Projets et préférences visuelles.',
 'Séparer préférences, disposition et historique terminal.',
 'Ne pas inclure implicitement le texte des terminaux dans l’export.',
 'Valider l’import intégralement avant toute mutation ; conserver la session si invalide.',
 'Définir migrations et politique de fusion/remplacement avec protection des données existantes.'
-],['F17'],'Format/emplacement à décider ; l’export actuel du POC est un export de disposition, pas l’ensemble des préférences.'],
+],['F17'],'JSON ; préférences, session et historique séparés ; import validé puis appliqué par remplacement. L’emplacement Windows exact reste une décision d’implémentation documentée.'],
 ['F20','Afficher les états de Claude Code et Codex CLI dans les workspaces','12','R18','Repérer une activité nécessitant une intervention sans quitter la logique de workspaces.',[
 'Supporter en cours, attente de réponse/autorisation, terminé, erreur et inconnu.',
 'Rattacher les états au pane puis les résumer sur onglet/workspace.',
 'Mettre en évidence les attentes et rejoindre le pane correspondant.',
 'Ne pas déduire un état fiable de la simple présence d’un processus.',
 'Ne pas restaurer des activités anciennes comme vivantes.'
-],['F03','F11'],'Les agents retenus sont Claude Code (`claude`) et Codex CLI (`codex`). Identifier leurs événements réels ; le simulateur agent du POC ne satisfait pas cette tâche.'],
+],['F03','F11'],'Préparer des adaptateurs extensibles pour Claude Code (`claude`) et Codex CLI (`codex`) ; leur détection fiable est reportée à une évolution dédiée.'],
 ['F21','Notifier les demandes d’attention sans interrompre le travail','12','R18','Être prévenu lorsqu’une intervention devient nécessaire.',[
 'Émettre une notification discrète et ciblée pour une nouvelle attente.',
 'Éviter les doublons et changements automatiques de workspace ou de focus.',
 'Permettre de rejoindre précisément le pane concerné.',
 'Définir le choix de destination lorsque plusieurs panes attendent.',
 'Définir un comportement utile lorsque le panneau est replié.'
-],['F20'],'Canal Windows/interne et événements de fin/erreur à confirmer.']
+],['F20'],'Les canaux et événements seront définis avec les adaptateurs réels ; afficher « état inconnu » lorsque la source ne permet pas de conclure.']
+,
+['T01','Valider la pile Windows et le pipeline de terminal','15','R27','Valider la recommandation WinUI 3 + ConPTY + WebView2/xterm.js avant l’implémentation complète.',[
+'Créer un spike WinUI 3 avec Windows App SDK, C# et .NET 10 LTS.',
+'Lancer Windows PowerShell 5.1 dans ConPTY et transmettre entrée, sortie, redimensionnement et fermeture.',
+'Afficher le terminal dans WebView2 avec xterm.js ; vérifier Unicode, couleurs, sélection, copier/coller et IME.',
+'Mesurer au moins deux panes et un flux de sortie soutenu sans perte de saisie.',
+'Produire un installeur Windows autonome à mise à jour manuelle, sans auto-updater.',
+'Documenter les versions minimales de Windows et les limites découvertes.'
+],[],'La distribution recommandée est un installeur Inno Setup pour l’application dépaquetée ; MSIX reste une option ultérieure. Le spike doit confirmer ou invalider ce choix avant le développement produit.']
 ];
 const manifest=tasks.map(([id,title,sections,tests,goal,checks,deps,open])=>({id,title:`[${id}] ${title}`,dependencies:deps,body:`## Besoin utilisateur\n\n${goal}\n\n## Critères d’acceptation\n\n${checks.map(c=>'- [ ] '+c).join('\n')}\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections ${sections}.\n- Recette : ${tests}.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\n${deps.length?deps.join(', '):'Aucune dépendance fonctionnelle imposée.'}\n\n## Points à préciser\n\n${open}\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n`}));
-manifest.push({id:'D01',title:'[D01] Trancher les comportements fonctionnels encore ouverts',dependencies:[],body:`## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [ ] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [ ] Noms automatiques et retour au nom automatique.\n- [ ] Navigation spatiale/séquentielle et raccourcis Leader.\n- [x] Dossier Projets : C:\\Files\\Projects, premier niveau, sans détection de projet déjà ouvert.\n- [ ] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [ ] Arrêt des processus et éventuelles confirmations.\n- [x] Recherche dans les terminaux retirée du périmètre.\n- [ ] Claude Code/Codex CLI, états et notifications lorsque le panneau est masqué.\n- [ ] Format/emplacement de configuration, imports et éditeur.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Aucune priorité fixée.\n`});
+manifest.push({id:'D01',title:'[D01] Trancher les comportements fonctionnels encore ouverts',dependencies:[],body:`## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [x] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [x] Noms automatiques et priorité aux noms manuels.\n- [x] Navigation spatiale et raccourcis Leader : Ctrl + Espace, 5 secondes, personnalisables.\n- [x] Dossier Projets : C:\\Files\\Projects, premier niveau, sans détection de projet déjà ouvert.\n- [x] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [x] Arrêt forcé des processus et confirmations ciblées si une activité est détectée.\n- [x] Recherche dans les terminaux retirée du périmètre.\n- [x] Extensibilité Claude Code/Codex CLI ; intégration réelle reportée à une évolution dédiée.\n- [x] JSON, séparation préférences/session/historique et import par remplacement.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Le spike technique T01 et les critères de performance restent à réaliser.\n`});
 fs.writeFileSync('backlog/issues.json',JSON.stringify(manifest,null,2)+'\n');
 for(const issue of manifest)fs.writeFileSync(`backlog/${issue.id}.md`,issue.body);
-fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+manifest.length+' tâches sans ordre de priorité : 20 fonctionnalités actives, une fonctionnalité retirée du périmètre et une tâche de clarification. Les dépendances expriment des relations fonctionnelles, pas un planning.\n\n| ID | Tâche | Dépendances |\n| --- | --- | --- |\n'+manifest.map(i=>`| ${i.id} | [${i.title}](backlog/${i.id}.md) | ${i.dependencies.join(', ')||'—'} |`).join('\n')+'\n\nLes liens vers les issues GitHub seront ajoutés après publication.\n');
+fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+manifest.length+' tâches sans ordre de priorité : 20 fonctionnalités, une tâche technique et une tâche de clarification. F13 est retirée du périmètre. Les dépendances expriment des relations fonctionnelles, pas un planning.\n\n| ID | Tâche | Dépendances |\n| --- | --- | --- |\n'+manifest.map(i=>`| ${i.id} | [${i.title}](backlog/${i.id}.md) | ${i.dependencies.join(', ')||'—'} |`).join('\n')+'\n\nLes liens vers les issues GitHub seront ajoutés après publication.\n');
 console.log(`${manifest.length} issue drafts generated.`);

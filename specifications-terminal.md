@@ -96,9 +96,9 @@ Le « + » du panneau crée directement un workspace et permet de modifier son n
 
 La commande « Renommer le workspace » dans la palette active le même éditeur inline. Le panneau reflète immédiatement le nouveau nom.
 
-**Convention proposée.** À la création, nom temporaire « Nouveau workspace », premier onglet PowerShell et dossier du pane précédemment actif ; lors du tout premier lancement, dossier utilisateur. Un clic sur un workspace rejoint son dernier onglet et son dernier pane actifs. Replier une branche ne change pas la sélection.
+**Décision prise.** Un workspace créé depuis le sélecteur de projets porte automatiquement le nom du dossier choisi. Un workspace créé sans projet reçoit un nom automatique descriptif ; un nom saisi manuellement reste prioritaire et n’est jamais écrasé. Le premier onglet PowerShell reprend le dossier du pane actif ou, au premier lancement, le dossier utilisateur. Un clic sur un workspace rejoint son dernier onglet et son dernier pane actifs. Replier une branche ne change pas la sélection.
 
-**À décider.** Fermeture/suppression d’un workspace, réorganisation des workspaces et traitement de leurs terminaux actifs. Ces actions n’ont pas encore fait l’objet d’une décision explicite.
+**Décision prise.** Fermer le dernier onglet ou le dernier pane d’un workspace ferme ce workspace et arrête ses processus. S’il ne reste aucun workspace, afficher un état vide avec un message accueillant et une action pour en créer un. La suppression explicite d’un workspace demande une confirmation lorsqu’il contient des onglets ou des processus actifs ; la confirmation arrête alors tous ses processus et supprime le workspace.
 
 ## 6. Onglets
 
@@ -110,6 +110,7 @@ La commande « Renommer le workspace » dans la palette active le même éditeur
 | TAB-04 | Le nouvel onglet reprend le dossier courant du pane actif au moment de l’action. |
 | TAB-05 | Double-clic sur le nom d’un onglet : renommage inline. La palette offre aussi cette action. |
 | TAB-06 | Entrée ou clic ailleurs valide le nom ; Échap annule ; le nom manuel prime sur les noms automatiques. |
+| TAB-06a | Le nom automatique d’un onglet est le nom du dossier courant au moment de sa création ; il reste synchronisé tant qu’aucun nom manuel n’a été saisi. |
 | TAB-07 | Réordonner les onglets et les déplacer entre workspaces, notamment par glisser-déposer. |
 | TAB-08 | Fermer un onglet et pouvoir rouvrir un onglet fermé accidentellement. |
 | TAB-09 | La barre d’onglets et l’arborescence reflètent la même sélection, le même ordre et les mêmes noms. |
@@ -126,9 +127,9 @@ Le déplacement conserve le shell, le dossier, l’historique, les processus act
 
 ### Cas de fermeture
 
-**À décider.** Comportement après fermeture ou déplacement du dernier onglet : workspace vide avec action d’ouverture, ou nouvel onglet automatique. Le POC crée automatiquement un onglet de remplacement ; ce choix reste provisoire.
+**Décision prise.** La fermeture du dernier onglet supprime le workspace après arrêt de ses processus. Aucun onglet vide de remplacement n’est créé. Si aucun workspace ne subsiste, afficher l’état vide et son action de création.
 
-**Convention proposée.** Rouvrir restaure noms, shells, chemins, splits et texte avec de nouveaux processus et un séparateur de restauration. Ne pas réexécuter les anciennes commandes. La durée et la profondeur de l’historique des onglets fermés restent à décider.
+**Décision prise.** Rouvrir restaure noms, shells, chemins, splits et texte avec de nouveaux processus et un séparateur de restauration. Ne pas réexécuter les anciennes commandes. Conserver les cinq derniers onglets fermés, y compris après redémarrage.
 
 ## 7. Panes et splits
 
@@ -144,7 +145,7 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 
 **Conventions proposées.** Le split hérite aussi du shell du pane actif, commence à parts égales et active le nouveau pane. La fermeture du dernier pane utilise les règles de fermeture d’un onglet. Préserver les saisies, processus et sélections lorsque le panneau latéral est masqué, lorsqu’un groupe est déplié ou lorsqu’une zone est redimensionnée.
 
-**À décider.** Navigation spatiale avec les flèches ou parcours séquentiel des panes. Le POC utilise un ordre séquentiel ; ne pas l’assimiler à une navigation géométrique validée.
+**Décision prise.** La navigation au clavier est spatiale : chaque direction choisit le pane dont la position visuelle est la plus proche dans cette direction. En l’absence de cible dans la direction demandée, conserver le pane actif.
 
 ## 8. Terminal réel et shells
 
@@ -178,7 +179,7 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 
 ### Touche Leader
 
-Le principe d’une touche Leader est retenu. Le mapping précis ci-dessous provient du POC et reste configurable/à confirmer avant de figer les raccourcis.
+Le principe d’une touche Leader est retenu. Le raccourci par défaut est **Ctrl + Espace** et son délai d’expiration est de **5 secondes**. Le mapping et le délai sont personnalisables.
 
 | Raccourci du POC | Action |
 | --- | --- |
@@ -190,7 +191,7 @@ Le principe d’une touche Leader est retenu. Le mapping précis ci-dessous prov
 | Ctrl + Espace, puis W | Nouveau workspace |
 | Ctrl + Espace, puis flèche | Navigation entre panes |
 
-**À décider.** Délai d’expiration du Leader, personnalisation et transmission d’un raccourci aux applications terminal lorsque leurs touches entrent en conflit avec celles de l’interface. Ctrl + T a été évoqué initialement ; son maintien direct n’est pas acté.
+Les séquences Leader sont consommées par l’application uniquement lorsqu’elles correspondent à une commande active. Une commande non reconnue ou expirée rend la saisie au pane actif ; les raccourcis personnalisés peuvent désactiver ou remplacer les valeurs par défaut.
 
 ## 10. Sélecteur de projets
 
@@ -212,11 +213,11 @@ Les actions utilisent le **dossier du pane actif**, jamais un hypothétique doss
 | Copier la branche | Résoudre et copier la branche Git du contexte courant lorsque disponible. |
 | Terminal supplémentaire | Ouvrir un terminal dans le même dossier, notamment dans le même worktree. |
 
-**Convention proposée.** Montrer le chemin ciblé dans le menu ou la zone d’actions. Désactiver ou expliquer les actions Git indisponibles hors dépôt ; ne pas afficher une branche fictive.
+**Décision prise.** Montrer le chemin ciblé dans le menu ou la zone d’actions. Afficher explicitement « Aucun dépôt Git », « Aucune branche » ou « HEAD détachée » selon le contexte. Désactiver ou masquer les actions Git hors dépôt ; ne jamais afficher une branche fictive.
 
 La gestion actuelle des worktrees reste celle des fonctions wtr et rmwt du profil. L’interface doit suivre les changements observables depuis le shell. Aucun comportement de création/suppression automatique de workspace n’est validé.
 
-**À décider après inspection du profil.** Effets exacts des fonctions, suivi du dossier, des branches et des éventuels terminaux ouverts. Définir ce contrat avant de développer une intégration dédiée.
+**Contrat de synchronisation.** Après `wtr`, le pane qui exécute la commande devient la source de vérité pour le dossier courant et le contexte Git ; l’interface relit ces valeurs et met à jour le workspace ou l’onglet déjà associé sans créer de doublon automatiquement. Après `rmwt`, elle relit le dossier et Git, marque comme indisponibles les panes dont le chemin n’existe plus et propose de les fermer ou de choisir un dossier de repli. L’interface n’exécute pas elle-même les effets de `wtr`/`rmwt` et ne supprime pas un workspace sans action explicite de l’utilisateur.
 
 ## 12. Attention, agents et notifications
 
@@ -239,7 +240,7 @@ La gestion actuelle des worktrees reste celle des fonctions wtr et rmwt du profi
 
 **Conventions proposées.** Agréger le nombre d’attentes par workspace, éviter les notifications répétées pour le même événement et offrir l’accès au pane sans prise de focus forcée. Si plusieurs panes attendent, permettre de choisir la destination.
 
-**À décider.** Mécanismes d’intégration Claude Code/Codex CLI, états détectables, notification native Windows ou interne, événements de fin/erreur à notifier et visibilité des attentes lorsque le panneau est masqué.
+**Décision de périmètre.** L’architecture doit permettre des adaptateurs Claude Code et Codex CLI, mais leur détection fiable et leurs notifications sont reportées à une évolution dédiée. Tant qu’un adaptateur ne peut pas établir un état, afficher « État inconnu » plutôt que d’inférer une activité depuis le seul processus.
 
 ## 13. Sauvegarde, fermeture et restauration
 
@@ -264,11 +265,11 @@ Le texte restauré est accompagné d’un séparateur explicite, par exemple « 
 - Si les données sont corrompues, conserver le fichier fautif pour récupération et ouvrir une session de secours plutôt que l’écraser silencieusement.
 - Si un dossier a disparu, conserver le pane et demander ou proposer un dossier de repli avec indication locale.
 
-**À décider.** Limites de lignes/octets, fréquence de sauvegarde du texte, fidélité de restitution des couleurs et applications plein écran, rétention des onglets fermés, politique de terminaison des processus enfants et éventuelle confirmation en cas d’activité en cours.
+**Décisions prises.** La valeur par défaut est de 10 000 lignes conservées par pane et de 256 Mio pour l’historique global ; ces deux limites sont configurables. Sauvegarder le texte toutes les 30 secondes, fréquence configurable. Conserver cinq onglets fermés restaurables et leur historique après redémarrage. À la fermeture d’un pane, d’un onglet, d’un workspace ou de l’application, utiliser l’arrêt forcé ; demander une confirmation si un serveur, un agent ou un programme est encore actif, puis arrêter tous les processus concernés.
 
 ## 14. Configuration exportable
 
-**Retenu.** La configuration doit être sauvegardable, exportable et versionnable. L’import doit permettre de retrouver les préférences sauvegardées.
+**Retenu.** La configuration doit être sauvegardable, exportable et versionnable au format **JSON**. L’import doit permettre de retrouver les préférences sauvegardées.
 
 **Convention proposée.** Séparer trois ensembles :
 
@@ -278,15 +279,15 @@ Le texte restauré est accompagné d’un séparateur explicite, par exemple « 
 | État de session local | Workspaces, onglets, chemins courants, sélection et disposition. |
 | Historique local | Texte terminal et éventuelles données nécessaires à la réouverture d’un onglet. |
 
-L’export de préférences ne doit pas embarquer implicitement la sortie des terminaux. Un export volontaire de disposition peut être proposé séparément ; il contient alors des chemins locaux.
+L’export de préférences ne doit pas embarquer implicitement la sortie des terminaux. Un export volontaire de disposition peut être proposé séparément ; il contient alors des chemins locaux. L’import valide l’ensemble avant mutation et **remplace** la configuration courante ; il ne fusionne pas silencieusement les valeurs.
 
 **Limite du POC.** Son export JSON contient principalement la disposition et les chemins, sans texte terminal. Il ne constitue pas encore le format complet de préférences de l’application finale.
 
-**À décider.** Format JSON/TOML/autre, emplacement, versionnement du schéma, stratégie de migration et politique de fusion/remplacement à l’import. Une confirmation peut être justifiée avant le remplacement d’une disposition existante ; la réduction des popups ne supprime pas la nécessité de protéger une action destructive.
+**Convention de fichiers.** Les préférences exportables, l’état de session et l’historique restent séparés, chacun avec une version de schéma. L’emplacement exact peut être choisi par l’implémentation dans les répertoires de données Windows appropriés ; il doit être documenté et stable. Une confirmation est requise avant un import qui remplace une configuration existante.
 
-## 15. Architecture fonctionnelle proposée
+## 15. Architecture fonctionnelle et choix techniques
 
-Cette section décrit une séparation des responsabilités, sans choisir de framework ni de bibliothèque.
+Cette section décrit une séparation des responsabilités puis fixe une recommandation technique à valider par un spike.
 
 - **Interface** : navigation, édition inline, palette, arborescence et affichage des états.
 - **Modèle de session** : identifiants stables, ownership des onglets/panes, arbre de splits et sélection.
@@ -299,6 +300,15 @@ Cette section décrit une séparation des responsabilités, sans choisir de fram
 
 Les déplacements et changements de présentation agissent sur le modèle et la visibilité, pas sur le cycle de vie des processus. Les identifiants servent à retrouver les éléments ; les noms servent à les présenter.
 
+### Recommandation retenue pour le prototype technique
+
+- **Application Windows :** WinUI 3 avec Windows App SDK et C# sur .NET 10 LTS. Le shell, l’arborescence, les menus et les raccourcis restent natifs et accessibles.
+- **Pseudo-terminal :** ConPTY, isolé derrière un service de gestion des processus. Commencer par une preuve de concept C# avec P/Invoke ; isoler ensuite le code Win32 si la gestion des handles et des redimensionnements le justifie.
+- **Rendu terminal :** WebView2 hébergeant xterm.js, avec un pont explicite entre l’UI et ConPTY. Cette voie couvre sélection, copier/coller, Unicode, IME, couleurs et applications plein écran ; le renderer WebGL est optionnel selon les mesures.
+- **Distribution :** build Windows autonome distribuée manuellement dans une release GitHub. Recommandation initiale : installeur Inno Setup pour l’application dépaquetée, sans mise à jour automatique ; l’installeur remplace la version précédente. Une distribution MSIX signée pourra être ajoutée si les contraintes de signature et de sideloading deviennent acceptables.
+
+Cette recommandation doit être validée par un spike avant de construire l’application complète : ouvrir PowerShell réel, gérer ConPTY, redimensionner un pane, restituer Unicode/IME/sélection et installer une version autonome.
+
 ### Structure conceptuelle des données
 
 | Objet | Champs conceptuels |
@@ -310,7 +320,7 @@ Les déplacements et changements de présentation agissent sur le modèle et la 
 | Pane | Identifiant, profil de shell, dossier courant, référence à l’historique, état de session. |
 | Activité | Identifiant, pane concerné, état, source, date de changement ; données de session vivante. |
 
-**À décider.** Conteneur d’application Windows, moteur de rendu terminal, mécanisme de pseudo-terminal, distribution et mise à jour. Évaluer les candidats avec les vrais shells et outils avant de choisir la pile.
+Le choix technique ci-dessus reste conditionné à la réussite du spike ; les critères de rejet sont un rendu terminal incomplet, des pertes de saisie ou une fermeture de processus non maîtrisée.
 
 ## 16. Qualité et accessibilité
 
@@ -334,13 +344,14 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | --- | --- | --- |
 | R01 | Créer Perso avec trois dossiers différents. | Aucun dossier ou projet commun imposé. |
 | R02 | Créer puis renommer un workspace inline ; tester Entrée, clic extérieur, Échap et nom vide. | Nom synchronisé, annulation correcte, aucun formulaire modal. |
+| R02a | Créer un workspace depuis un dossier puis ouvrir un onglet et changer de dossier. | Workspace nommé d’après le dossier choisi ; onglet nommé d’après son dossier initial ; les noms manuels restent prioritaires. |
 | R03 | Clic gauche sur « + ». | PowerShell s’ouvre immédiatement dans le dossier actif. |
 | R04 | Clic droit ou Maj + F10 sur « + », puis choix CMD/Git Bash au clavier. | Menu contextuel accessible et shell choisi réellement lancé. |
 | R05 | Double-cliquer sur un onglet, saisir un nom, puis changer son contexte. | Nom manuel conservé dans la barre et le panneau. |
 | R06 | Réordonner/transférer un onglet avec un processus et plusieurs panes. | Ordre mis à jour sans relancer les processus ni perdre la disposition. |
 | R07 | Déplier/replier plusieurs workspaces et cliquer sur un onglet enfant. | Groupes indépendants et navigation vers le bon onglet. |
 | R08 | Replier le panneau avec une commande terminal non soumise, puis le rouvrir. | Pleine largeur disponible ; saisie et largeur précédente conservées. |
-| R09 | Créer des splits imbriqués, les redimensionner et changer de pane au clavier. | Dossiers hérités et disposition cohérente. |
+| R09 | Créer des splits imbriqués, les redimensionner et changer de pane au clavier. | Dossiers hérités, navigation spatiale et disposition cohérente. |
 | R10 | Ctrl + P, filtrage, flèches, Entrée, recherche sans résultat et Échap. | Navigation correcte, sélection visible sans bordure, aucun déclenchement accidentel. |
 | R12 | Charger le vrai profil PowerShell et exécuter ses alias/fonctions. | Comportement conforme à la session PowerShell habituelle. |
 | R13 | Changer de dossier avec cd puis une fonction ; ouvrir onglet et split. | Dossier courant réel hérité. |
@@ -350,7 +361,7 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | R17 | Actions contextuelles depuis deux panes dans des dossiers différents. | Éditeur, explorateur, chemin et branche ciblent le pane actif. |
 | R18 | Déclencher une attente avec une intégration d’agent réelle. | Workspace/onglet signalés et accès au bon pane sans focus forcé. |
 | R19 | Fermer puis rouvrir l’application. | Disposition et texte restaurés, séparation explicite, shells neufs, aucune ancienne commande rejouée. |
-| R20 | Fermer l’application avec serveur et agent actifs. | Comportement de terminaison conforme à la politique définie, pas de maintien volontaire. |
+| R20 | Fermer l’application avec serveur et agent actifs. | Confirmation ciblée puis arrêt forcé de tous les processus concernés, sans maintien volontaire. |
 | R21 | Interrompre l’application après modification de disposition. | Dernière sauvegarde automatique exploitable, fichier non partiellement écrit. |
 | R22 | Restaurer avec dossier disparu ou shell indisponible. | État local compréhensible et solution de repli sans perte silencieuse. |
 | R23 | Fermer puis rouvrir un onglet. | Données prévues restaurées avec processus neufs. |
@@ -368,8 +379,8 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | Projets | Liste fictive. | Lecture du dossier configuré. |
 | Agents | Attente et fin simulées. | Adaptateurs fiables, état inconnu sinon. |
 | Actions locales | Certaines actions affichent un message explicatif. | Intégration éditeur/explorateur/Git réelle. |
-| Sauvegarde | Stockage navigateur, 500 lignes par pane. | Persistance robuste avec limites définies. |
-| Onglets fermés | Historique limité à la session du navigateur. | Rétention à décider. |
+| Sauvegarde | Stockage navigateur, 500 lignes par pane. | Persistance robuste avec limites configurables et sauvegarde périodique. |
+| Onglets fermés | Historique limité à la session du navigateur. | Cinq onglets fermés restaurables, avec historique conservé après redémarrage. |
 | Navigation palette | Commandes, workspaces et onglets. | Ajouter les panes comme destinations explicites. |
 | Variantes du panneau | Styles exploratoires encore accessibles. | Arborescence par défaut ; sélecteur exploratoire non requis. |
 
@@ -379,13 +390,13 @@ Le POC est une référence de conception, pas une implémentation technique prê
 
 1. Inspecter le profil PowerShell, wtr/rmwt et la configuration WezTerm Leader + F. **Fait :** voir `docs/inspection-environnement.md`.
 2. Identifier les shells installés, l’éditeur, le dossier Projets et les agents utilisés. **Fait :** Windows PowerShell 5.1 par défaut, PowerShell 7/CMD/Git Bash disponibles, VS Code, `C:\\Files\\Projects`, Claude Code et Codex CLI.
-3. Choisir et valider la pile Windows avec de vrais programmes terminal.
-4. Fixer la fermeture du dernier onglet/pane et le cycle de vie des workspaces.
-5. Définir terminaison des processus, sauvegarde du texte et récupération des sessions.
-6. Confirmer les raccourcis Leader et leur coexistence avec les outils interactifs.
-7. Finaliser schéma de configuration, export/import et séparation de l’historique.
-8. Définir noms automatiques et règles de Git sans branche courante.
-9. Choisir les intégrations Claude Code/Codex CLI, états et notifications disponibles.
-10. Fixer les critères mesurables de performance et les versions de Windows prises en charge.
+3. **À faire :** valider la pile WinUI 3 + ConPTY + WebView2/xterm.js avec le spike technique et l’installeur manuel.
+4. **Fait :** fermer le dernier onglet/pane supprime le workspace ; confirmer avant suppression d’un workspace actif ; état vide si nécessaire.
+5. **Fait :** arrêt forcé avec confirmation si serveur, agent ou programme actif ; limites 10 000 lignes/256 Mio, sauvegarde texte toutes les 30 s, cinq onglets fermés.
+6. **Fait :** Leader Ctrl + Espace, délai de 5 s, mapping personnalisable ; navigation spatiale.
+7. **Fait :** JSON, préférences/session/historique séparés, import par remplacement.
+8. **Fait :** noms automatiques dossier, branche absente/HEAD détachée et actions Git indisponibles hors dépôt ; contrat wtr/rmwt documenté.
+9. **Reporté :** implémenter les adaptateurs Claude Code/Codex CLI et définir leurs événements fiables dans une évolution dédiée.
+10. **À faire :** fixer les critères mesurables de performance et les versions minimales de Windows après le spike.
 
 Ces décisions ne bloquent pas la compréhension du produit ; elles évitent de traiter un comportement accidentel du prototype comme une exigence validée.
