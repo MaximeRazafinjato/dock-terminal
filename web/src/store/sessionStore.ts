@@ -10,6 +10,8 @@ import {
   pruneNode,
   replaceNode,
   updatePane,
+  SIDEBAR_MAX,
+  SIDEBAR_MIN,
   SplitAxis,
   type Session,
   type SplitNode,
@@ -25,6 +27,7 @@ interface SessionState {
   selectPane: (paneId: string) => void
   toggleWorkspace: (workspaceId: string) => void
   toggleSidebar: () => void
+  setSidebarWidth: (width: number) => void
   newWorkspace: (name: string, path: string, shell: string) => string
   renameWorkspace: (workspaceId: string, name: string) => void
   newTab: (shell: string) => void
@@ -87,6 +90,11 @@ export const useSessionStore = create<SessionState>()((set) => ({
 
   toggleSidebar: () =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.sidebarCollapsed = !draft.sidebarCollapsed }) })),
+
+  setSidebarWidth: (width) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => { draft.sidebar = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(width))) }),
+    })),
 
   newWorkspace: (name, path, shell) => {
     const workspace = createWorkspace(name, path, shell)
