@@ -1,11 +1,17 @@
+import { InlineNameEditor } from './InlineNameEditor'
+
 interface HeaderProps {
   workspaceName: string
+  renaming: boolean
   sidebarCollapsed: boolean
   leaderActive: boolean
   onToggleSidebar: () => void
+  onStartRename: () => void
+  onCommitRename: (name: string) => void
+  onCancelRename: () => void
 }
 
-export function Header({ workspaceName, sidebarCollapsed, leaderActive, onToggleSidebar }: HeaderProps) {
+export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive, onToggleSidebar, onStartRename, onCommitRename, onCancelRename }: HeaderProps) {
   return (
     <header className="flex h-[42px] shrink-0 items-center gap-4 border-b border-dock-line bg-dock-panel px-3 text-dock-ink">
       <button
@@ -18,7 +24,13 @@ export function Header({ workspaceName, sidebarCollapsed, leaderActive, onToggle
       </button>
       <div className="flex min-w-0 items-baseline gap-4">
         <span className="text-[17px] font-semibold text-dock-green">Dock</span>
-        <span className="truncate text-[16px]">{workspaceName}</span>
+        {renaming ? (
+          <InlineNameEditor value={workspaceName} label="Nom du workspace" className="w-64 text-[16px]" onCommit={onCommitRename} onCancel={onCancelRename} />
+        ) : (
+          <button type="button" className="truncate rounded px-1 text-[16px] hover:bg-dock-green-hover" title="Renommer le workspace" onClick={onStartRename}>
+            {workspaceName}
+          </button>
+        )}
       </div>
       {leaderActive && <span className="rounded bg-dock-focus px-2 py-0.5 text-xs font-semibold text-dock-terminal">Leader…</span>}
     </header>

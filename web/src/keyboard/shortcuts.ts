@@ -2,6 +2,7 @@ import { bridge } from '../bridge/bridge'
 import { useHostStore } from '../store/hostStore'
 import { activePane, activeTab, activeWorkspace, panesOf, SplitAxis } from '../model/session'
 import { useSessionStore } from '../store/sessionStore'
+import { useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'AltGraph', 'Meta'])
@@ -123,7 +124,7 @@ export const runCommand = (command: Command): void => {
       sessionStore.splitPane(SplitAxis.Vertical)
       break
     case Command.NewWorkspace:
-      sessionStore.newWorkspace(`Workspace ${(sessionStore.session?.workspaces.length ?? 0) + 1}`, hostStore.home, DEFAULT_SHELL)
+      useUiStore.getState().startRenamingWorkspace(sessionStore.newWorkspace(`Workspace ${(sessionStore.session?.workspaces.length ?? 0) + 1}`, hostStore.home, DEFAULT_SHELL))
       break
     case Command.ClosePane:
       sessionStore.closePane(currentPaneId())
