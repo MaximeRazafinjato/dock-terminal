@@ -30,6 +30,10 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
           const expanded = workspace.expanded ?? selected
           const tabsId = `workspace-tabs-${workspace.id}`
           const handleToggle = () => onToggle(workspace.id)
+          const handleChevron = (event: React.MouseEvent) => {
+            event.stopPropagation()
+            onToggle(workspace.id)
+          }
           const renaming = workspace.id === renamingWorkspaceId
           const stopClick = (event: React.MouseEvent) => event.stopPropagation()
           const handleSelect = (event: React.MouseEvent) => {
@@ -52,7 +56,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                   aria-controls={tabsId}
                   aria-label={`${expanded ? 'Replier' : 'Afficher'} les onglets de ${workspace.name}`}
                   className="w-6 shrink-0 cursor-pointer self-center rounded text-center text-sm text-dock-green hover:bg-dock-line"
-                  onClick={handleToggle}
+                  onClick={handleChevron}
                 >
                   {expanded ? '▾' : '▸'}
                 </button>
