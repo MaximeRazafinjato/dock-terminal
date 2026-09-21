@@ -181,15 +181,18 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 
 Le principe d’une touche Leader est retenu. Le raccourci par défaut est **Ctrl + Espace** et son délai d’expiration est de **5 secondes**. Le mapping et le délai sont personnalisables.
 
-| Raccourci du POC | Action |
-| --- | --- |
-| Ctrl + Espace, puis P | Palette |
-| Ctrl + Espace, puis T | Nouvel onglet PowerShell |
-| Ctrl + Espace, puis V | Split côte à côte |
-| Ctrl + Espace, puis H | Split haut/bas |
-| Ctrl + Espace, puis F | Sélecteur de projets |
-| Ctrl + Espace, puis W | Nouveau workspace |
-| Ctrl + Espace, puis flèche | Navigation entre panes |
+**Retenu (21 septembre 2026).** Chaque commande Leader dispose aussi d’un raccourci direct, sans passer par le Leader. Les raccourcis directs utilisent Ctrl + Maj + lettre (jamais Ctrl + lettre seul, réservé au shell) et Alt + flèche pour la navigation (Ctrl + Maj + flèche est utilisé par PSReadLine). Ctrl + Maj + C et Ctrl + Maj + V restent copier et coller ; le split côte à côte direct utilise donc D.
+
+| Séquence Leader | Raccourci direct | Action |
+| --- | --- | --- |
+| Ctrl + Espace, puis P | Ctrl + P ou Ctrl + Maj + P | Palette |
+| Ctrl + Espace, puis T | Ctrl + Maj + T | Nouvel onglet PowerShell |
+| Ctrl + Espace, puis V | Ctrl + Maj + D | Split côte à côte |
+| Ctrl + Espace, puis H | Ctrl + Maj + H | Split haut/bas |
+| Ctrl + Espace, puis F | À définir avec le sélecteur | Sélecteur de projets |
+| Ctrl + Espace, puis W | Ctrl + Maj + W | Nouveau workspace |
+| Ctrl + Espace, puis X | Ctrl + Maj + X | Fermer le pane actif |
+| Ctrl + Espace, puis flèche | Alt + flèche | Navigation entre panes |
 
 Les séquences Leader sont consommées par l’application uniquement lorsqu’elles correspondent à une commande active. Une commande non reconnue ou expirée rend la saisie au pane actif ; les raccourcis personnalisés peuvent désactiver ou remplacer les valeurs par défaut.
 
