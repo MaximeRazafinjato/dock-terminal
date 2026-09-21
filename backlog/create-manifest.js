@@ -28,7 +28,7 @@ const tasks=[
 'Conserver la largeur après réouverture et mémoriser la visibilité.',
 'Préserver les commandes en cours de saisie, processus et dispositions des panes.',
 'Le panneau masqué ne conserve pas d’éléments focusables invisibles.'
-],['F03'],'Les états du panneau sont sauvegardés avec la session.'],
+],['F03'],'Les états du panneau sont sauvegardés avec la session.',true],
 ['F05','Ouvrir les onglets et choisir le shell au clic droit sur « + »','6','R03, R04','Ouvrir un terminal sans formulaire et choisir un autre shell au besoin.',[
 'Clic gauche sur « + » ouvre directement PowerShell.',
 'Clic droit sur le même bouton affiche PowerShell, CMD et Git Bash dans un menu contextuel.',
