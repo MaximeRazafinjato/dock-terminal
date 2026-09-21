@@ -63,6 +63,9 @@ const DIRECT_ARROW_KEYS: Record<string, Command> = {
 let leaderTimer: ReturnType<typeof setTimeout> | undefined
 
 const letterOf = (event: KeyboardEvent): string => {
+  if (/^[a-zA-Z]$/.test(event.key)) {
+    return event.key.toLowerCase()
+  }
   const fromCode = /^Key([A-Z])$/.exec(event.code)
   return fromCode ? fromCode[1].toLowerCase() : event.key.toLowerCase()
 }
