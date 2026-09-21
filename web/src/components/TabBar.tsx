@@ -16,6 +16,8 @@ interface TabBarProps {
   onNew: (shellId: string) => void
 }
 
+const MIDDLE_BUTTON = 1
+
 const isMenuKey = (event: KeyboardEvent): boolean => (event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu'
 
 export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew }: TabBarProps) {
@@ -49,10 +51,17 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
         const handleSelect = () => onSelect(tab.id)
         const handleStartRename = () => onStartRename(tab.id)
         const handleClose = () => onClose(tab.id)
+        const handleAuxClick = (event: MouseEvent) => {
+          if (event.button === MIDDLE_BUTTON) {
+            event.preventDefault()
+            onClose(tab.id)
+          }
+        }
         return (
           <div
             key={tab.id}
             className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'}`}
+            onAuxClick={handleAuxClick}
           >
             {tab.id === renamingTabId ? (
               <InlineNameEditor value={tab.name} label="Nom de l’onglet" className="mx-1 my-1 min-w-0 flex-1 text-xs" onCommit={onCommitRename} onCancel={onCancelRename} />
