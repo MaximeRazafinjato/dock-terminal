@@ -20,7 +20,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ session }: AppShellProps) {
-  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, closeTab, closePane } = useSessionStore()
+  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, closeTab, closePane } = useSessionStore()
   const { status, leaderActive, home, shells } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab } = useUiStore()
   const workspace = activeWorkspace(session)
@@ -89,6 +89,7 @@ export function AppShell({ session }: AppShellProps) {
               onSelectTab={handleSelectTab}
               onToggle={toggleWorkspace}
               onNewWorkspace={handleNewWorkspace}
+              onMoveTab={moveTab}
             />
             <SidebarResizer width={session.sidebar} onResize={setSidebarWidth} />
           </>
@@ -104,6 +105,7 @@ export function AppShell({ session }: AppShellProps) {
             onCancelRename={finishTabRename}
             onClose={closeTab}
             onNew={newTab}
+            onMove={moveTab}
           />
           <div className="min-h-0 flex-1 border-t border-dock-line bg-dock-panel p-1">
             <SplitView key={tab.id} node={tab.tree} activePaneId={tab.active} onFocus={selectPane} onClose={closePane} />

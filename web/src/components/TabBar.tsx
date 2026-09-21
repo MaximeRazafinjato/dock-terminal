@@ -1,8 +1,10 @@
-import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { Fragment, useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
 import type { ShellProfile } from '../bridge/messages'
 import { DEFAULT_SHELL, type Workspace } from '../model/session'
+import { useUiStore } from '../store/uiStore'
 import { InlineNameEditor } from './InlineNameEditor'
 import { ShellMenu } from './ShellMenu'
+import { beginTabDrag, isDropTarget, type MoveTabHandler } from './tabDrag'
 
 interface TabBarProps {
   workspace: Workspace
@@ -14,15 +16,17 @@ interface TabBarProps {
   onCancelRename: () => void
   onClose: (tabId: string) => void
   onNew: (shellId: string) => void
+  onMove: MoveTabHandler
 }
 
 const MIDDLE_BUTTON = 1
 
 const isMenuKey = (event: KeyboardEvent): boolean => (event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu'
 
-export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew }: TabBarProps) {
+export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew, onMove }: TabBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const addButtonRef = useRef<HTMLButtonElement>(null)
+  const { draggingTabId, tabDropTarget } = useUiStore()
 
   const handleNewDefault = () => onNew(DEFAULT_SHELL)
   const handleContextMenu = (event: MouseEvent) => {
@@ -43,11 +47,17 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
     setMenuOpen(false)
     onNew(shellId)
   }
+  const dropLine = (targeted: boolean) => `h-6 w-0.5 shrink-0 rounded ${targeted ? 'bg-dock-focus' : 'bg-transparent'}`
 
   return (
-    <div role="tablist" className="flex shrink-0 items-center gap-1 px-2 pt-1">
+    <div
+      role="tablist"
+      data-drop-workspace={workspace.id}
+      className="flex shrink-0 items-center gap-0.5 px-2 pt-1 select-none"
+    >
       {workspace.tabs.map((tab) => {
         const active = tab.id === workspace.active
+        const targeted = isDropTarget(tabDropTarget, workspace.id, tab.id)
         const handleSelect = () => onSelect(tab.id)
         const handleStartRename = () => onStartRename(tab.id)
         const handleClose = () => onClose(tab.id)
@@ -57,33 +67,40 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
             onClose(tab.id)
           }
         }
+        const handlePointerDown = (event: PointerEvent<HTMLElement>) => beginTabDrag(event, tab.id, onMove)
         return (
-          <div
-            key={tab.id}
-            className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'}`}
-            onAuxClick={handleAuxClick}
-          >
-            {tab.id === renamingTabId ? (
-              <InlineNameEditor value={tab.name} label="Nom de l’onglet" className="mx-1 my-1 min-w-0 flex-1 text-xs" onCommit={onCommitRename} onCancel={onCancelRename} />
-            ) : (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={active}
-                title="Double-clic pour renommer"
-                className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs"
-                onClick={handleSelect}
-                onDoubleClick={handleStartRename}
-              >
-                {tab.name}
+          <Fragment key={tab.id}>
+            <span aria-hidden="true" className={dropLine(targeted)} />
+            <div
+              data-drop-workspace={workspace.id}
+              data-drop-tab={tab.id}
+              className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
+              onAuxClick={handleAuxClick}
+            >
+              {tab.id === renamingTabId ? (
+                <InlineNameEditor value={tab.name} label="Nom de l’onglet" className="mx-1 my-1 min-w-0 flex-1 text-xs" onCommit={onCommitRename} onCancel={onCancelRename} />
+              ) : (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  title="Double-clic pour renommer, glisser pour déplacer"
+                  className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs"
+                  onClick={handleSelect}
+                  onDoubleClick={handleStartRename}
+                  onPointerDown={handlePointerDown}
+                >
+                  {tab.name}
+                </button>
+              )}
+              <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" title="Fermer l’onglet" onClick={handleClose}>
+                ×
               </button>
-            )}
-            <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" title="Fermer l’onglet" onClick={handleClose}>
-              ×
-            </button>
-          </div>
+            </div>
+          </Fragment>
         )
       })}
+      <span aria-hidden="true" className={dropLine(isDropTarget(tabDropTarget, workspace.id))} />
       <div className="relative">
         <button
           ref={addButtonRef}

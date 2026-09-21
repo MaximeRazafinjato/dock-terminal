@@ -16,6 +16,8 @@ export enum Command {
   ClosePane = 'closePane',
   NextPane = 'nextPane',
   PreviousPane = 'previousPane',
+  MoveTabLeft = 'moveTabLeft',
+  MoveTabRight = 'moveTabRight',
 }
 
 const LEADER_KEYS: Record<string, Command> = {
@@ -29,6 +31,13 @@ const LEADER_KEYS: Record<string, Command> = {
   ArrowDown: Command.NextPane,
   ArrowLeft: Command.PreviousPane,
   ArrowUp: Command.PreviousPane,
+  PageUp: Command.MoveTabLeft,
+  PageDown: Command.MoveTabRight,
+}
+
+const DIRECT_PAGE_KEYS: Record<string, Command> = {
+  PageUp: Command.MoveTabLeft,
+  PageDown: Command.MoveTabRight,
 }
 
 const DIRECT_LETTER_KEYS: Record<string, Command> = {
@@ -66,7 +75,7 @@ const directCommand = (event: KeyboardEvent): Command | undefined => {
     return Command.Palette
   }
   if (event.ctrlKey && event.shiftKey && !event.altKey) {
-    return DIRECT_LETTER_KEYS[letterOf(event)]
+    return DIRECT_PAGE_KEYS[event.key] ?? DIRECT_LETTER_KEYS[letterOf(event)]
   }
   if (event.altKey && !event.ctrlKey && !event.shiftKey) {
     return DIRECT_ARROW_KEYS[event.key]
@@ -133,6 +142,12 @@ export const runCommand = (command: Command): void => {
       break
     case Command.PreviousPane:
       cyclePane(-1)
+      break
+    case Command.MoveTabLeft:
+      sessionStore.moveActiveTab(-1)
+      break
+    case Command.MoveTabRight:
+      sessionStore.moveActiveTab(1)
       break
   }
 }
