@@ -7,11 +7,11 @@ Application React 19 + TypeScript construite par Vite, stylée avec Tailwind 4, 
 | Dossier | Rôle |
 | --- | --- |
 | `src/model/` | Modèle de session pur (types, fabriques, helpers d'arbre `panesOf`, `replaceNode`, `pruneNode`, sélecteurs `activeWorkspace`, `activeTab`, `activePane`). Aucune dépendance React ni DOM. |
-| `src/store/` | Stores Zustand : `sessionStore` (session et toutes ses mutations), `hostStore` (connexion, shells, message de statut, état Leader). |
+| `src/store/` | Stores Zustand : `sessionStore` (session et toutes ses mutations), `hostStore` (connexion, shells, message de statut, état Leader), `uiStore` (état d'édition transitoire, comme le workspace en cours de renommage, jamais persisté). |
 | `src/bridge/` | `messages.ts` (types des messages, miroir du contrat C#), `bridge.ts` (envoi et abonnement via `window.chrome.webview`). |
 | `src/terminal/` | `terminalRegistry` (une instance xterm.js par pane, conservée hors React pour survivre aux changements d'onglet ; renderer WebGL, repli canvas puis DOM ; acquittements de flux), `TerminalPane` (composant qui attache l'instance à son élément). |
 | `src/keyboard/` | `shortcuts.ts` : enum `Command` et une seule fonction `runCommand`, déclenchée soit par le Leader Ctrl + Espace (5 s) puis lettre, soit par un raccourci direct Ctrl + Maj + lettre ou Alt + flèche (tableau en section 9 de la spec). Ctrl + P palette, Ctrl + Maj + C/V copier/coller, Alt + F4. Tout est intercepté dans xterm.js via `attachCustomKeyEventHandler`, jamais par l'hôte. |
-| `src/components/` | Un composant par fichier : `AppShell`, `Header`, `WorkspaceTree`, `TabBar`, `SplitView` (récursif), `PaneView`. |
+| `src/components/` | Un composant par fichier : `AppShell`, `Header`, `WorkspaceTree`, `TabBar`, `SplitView` (récursif), `PaneView`, `InlineNameEditor` (renommage inline : Entrée ou perte de focus valide, Échap annule ; le store ignore un nom vide). |
 | `src/index.css` | Import Tailwind, police de symboles Nerd Font embarquée, tokens de la direction Dock (`--color-dock-*`, `--font-mono`). |
 
 ## Flux

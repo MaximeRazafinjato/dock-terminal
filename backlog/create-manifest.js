@@ -14,7 +14,7 @@ const tasks=[
 'Permettre des onglets dans des dossiers sans rapport entre eux.',
 'Renommer depuis le titre ou la palette ; Entrée/perte de focus valide, Échap annule, nom vide conserve le précédent.',
 'Synchroniser le nom et la sélection entre en-tête et panneau.'
-],['F01'],'Nom automatique selon le dossier ; le nom manuel reste prioritaire. Fermer le dernier onglet supprime le workspace ; confirmer la suppression explicite si des onglets ou processus sont actifs, puis arrêter les processus.'],
+],['F01'],'Nom automatique selon le dossier ; le nom manuel reste prioritaire. Fermer le dernier onglet supprime le workspace ; confirmer la suppression explicite si des onglets ou processus sont actifs, puis arrêter les processus.',true],
 ['F03','Naviguer dans les workspaces et onglets en arborescence','5','R07','Voir les onglets de chaque workspace et rejoindre une activité directement.',[
 'Déplier et replier chaque workspace indépendamment avec un chevron accessible.',
 'Cliquer sur un onglet enfant active son workspace, son onglet et son pane mémorisé.',

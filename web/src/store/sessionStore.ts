@@ -5,6 +5,7 @@ import {
   activeWorkspace,
   createTab,
   createWorkspace,
+  findWorkspace,
   panesOf,
   pruneNode,
   replaceNode,
@@ -24,7 +25,8 @@ interface SessionState {
   selectPane: (paneId: string) => void
   toggleWorkspace: (workspaceId: string) => void
   toggleSidebar: () => void
-  newWorkspace: (name: string, path: string, shell: string) => void
+  newWorkspace: (name: string, path: string, shell: string) => string
+  renameWorkspace: (workspaceId: string, name: string) => void
   newTab: (shell: string) => void
   closeTab: (tabId: string) => void
   splitPane: (axis: SplitAxis) => void
@@ -86,12 +88,25 @@ export const useSessionStore = create<SessionState>()((set) => ({
   toggleSidebar: () =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.sidebarCollapsed = !draft.sidebarCollapsed }) })),
 
-  newWorkspace: (name, path, shell) =>
+  newWorkspace: (name, path, shell) => {
+    const workspace = createWorkspace(name, path, shell)
     set((state) => ({
       session: mutateSession(state.session, (draft) => {
-        const workspace = createWorkspace(name, path, shell)
         draft.workspaces.push(workspace)
         draft.active = workspace.id
+      }),
+    }))
+    return workspace.id
+  },
+
+  renameWorkspace: (workspaceId, name) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        const workspace = findWorkspace(draft, workspaceId)
+        const trimmed = name.trim()
+        if (workspace && trimmed.length > 0) {
+          workspace.name = trimmed
+        }
       }),
     })),
 

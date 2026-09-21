@@ -1,15 +1,21 @@
 import type React from 'react'
 import type { Session } from '../model/session'
+import { EditableName } from './EditableName'
+import { InlineNameEditor } from './InlineNameEditor'
 
 interface WorkspaceTreeProps {
   session: Session
+  renamingWorkspaceId: string | null
   onSelectWorkspace: (workspaceId: string) => void
+  onStartRename: (workspaceId: string) => void
+  onCommitRename: (name: string) => void
+  onCancelRename: () => void
   onSelectTab: (workspaceId: string, tabId: string) => void
   onToggle: (workspaceId: string) => void
   onNewWorkspace: () => void
 }
 
-export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggle, onNewWorkspace }: WorkspaceTreeProps) {
+export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace }: WorkspaceTreeProps) {
   return (
     <aside className="flex h-full min-h-0 flex-col border-r border-dock-line bg-dock-paper" style={{ width: session.sidebar }}>
       <div className="flex items-center justify-between px-3 py-2 text-[11px] font-semibold tracking-wide text-dock-muted uppercase">
@@ -23,9 +29,15 @@ export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggl
           const selected = workspace.id === session.active
           const expanded = workspace.expanded ?? selected
           const handleToggle = () => onToggle(workspace.id)
+          const renaming = workspace.id === renamingWorkspaceId
+          const stopClick = (event: React.MouseEvent) => event.stopPropagation()
           const handleSelect = (event: React.MouseEvent) => {
             event.stopPropagation()
-            onSelectWorkspace(workspace.id)
+            if (selected) {
+              onStartRename(workspace.id)
+            } else {
+              onSelectWorkspace(workspace.id)
+            }
           }
           return (
             <div key={workspace.id} className="mb-1">
@@ -36,9 +48,17 @@ export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggl
                 onClick={handleToggle}
               >
                 <span className="w-6 shrink-0 self-center text-center text-sm text-dock-green">{expanded ? '▾' : '▸'}</span>
-                <button type="button" className="min-w-0 truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
-                  {workspace.name}
-                </button>
+                {renaming ? (
+                  <span className="flex min-w-0 flex-1" onClick={stopClick}>
+                    <InlineNameEditor value={workspace.name} label="Nom du workspace" className="min-w-0 flex-1 font-semibold" onCommit={onCommitRename} onCancel={onCancelRename} />
+                  </span>
+                ) : selected ? (
+                  <EditableName name={workspace.name} className="py-0.5 leading-none font-semibold" onClick={handleSelect} />
+                ) : (
+                  <button type="button" className="min-w-0 cursor-pointer truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
+                    {workspace.name}
+                  </button>
+                )}
                 <span className="text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
               </div>
               {expanded && (
