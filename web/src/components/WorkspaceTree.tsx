@@ -1,7 +1,8 @@
-import type React from 'react'
+import { useState, type DragEvent, type MouseEvent } from 'react'
 import { activePane, DEFAULT_SHELL, panesOf, type Session } from '../model/session'
 import { EditableName } from './EditableName'
 import { InlineNameEditor } from './InlineNameEditor'
+import { acceptTabDrag, droppedTabId, startTabDrag } from './tabDrag'
 
 const SHELL_TAGS: Record<string, string> = { pwsh: 'PS 7', cmd: 'CMD', gitbash: 'Git Bash' }
 
@@ -17,9 +18,12 @@ interface WorkspaceTreeProps {
   onSelectTab: (workspaceId: string, tabId: string) => void
   onToggle: (workspaceId: string) => void
   onNewWorkspace: () => void
+  onMoveTab: (tabId: string, workspaceId: string, beforeTabId?: string) => void
 }
 
-export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace }: WorkspaceTreeProps) {
+export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace, onMoveTab }: WorkspaceTreeProps) {
+  const [dropId, setDropId] = useState<string | null>(null)
+  const dropHighlight = (id: string) => (dropId === id ? 'shadow-[inset_0_0_0_1px_var(--color-dock-focus)]' : '')
   return (
     <aside className="flex h-full min-h-0 flex-col bg-dock-paper" style={{ width: session.sidebar }}>
       <div className="flex items-center justify-between px-3 py-2 text-[11px] font-semibold tracking-wide text-dock-muted uppercase">
@@ -34,13 +38,13 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
           const expanded = workspace.expanded ?? selected
           const tabsId = `workspace-tabs-${workspace.id}`
           const handleToggle = () => onToggle(workspace.id)
-          const handleChevron = (event: React.MouseEvent) => {
+          const handleChevron = (event: MouseEvent) => {
             event.stopPropagation()
             onToggle(workspace.id)
           }
           const renaming = workspace.id === renamingWorkspaceId
-          const stopClick = (event: React.MouseEvent) => event.stopPropagation()
-          const handleSelect = (event: React.MouseEvent) => {
+          const stopClick = (event: MouseEvent) => event.stopPropagation()
+          const handleSelect = (event: MouseEvent) => {
             event.stopPropagation()
             if (selected) {
               onStartRename(workspace.id)
@@ -48,11 +52,24 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
               onSelectWorkspace(workspace.id)
             }
           }
+          const handleDragOver = (event: DragEvent) => {
+            if (acceptTabDrag(event)) {
+              setDropId(workspace.id)
+            }
+          }
+          const handleDragLeave = () => setDropId((current) => (current === workspace.id ? null : current))
+          const handleDrop = (event: DragEvent) => {
+            setDropId(null)
+            onMoveTab(droppedTabId(event), workspace.id)
+          }
           return (
             <div key={workspace.id} className="mb-1">
               <div
-                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
+                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${dropHighlight(workspace.id)}`}
                 onClick={handleToggle}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
                 <button
                   type="button"
@@ -84,14 +101,32 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     const handleTab = () => onSelectTab(workspace.id, tab.id)
                     const shellTag = shellTagOf(activePane(tab).shell)
                     const paneCount = panesOf(tab.tree).length
+                    const handleTabDragStart = (event: DragEvent) => startTabDrag(event, tab.id)
+                    const handleTabDragOver = (event: DragEvent) => {
+                      if (acceptTabDrag(event)) {
+                        event.stopPropagation()
+                        setDropId(tab.id)
+                      }
+                    }
+                    const handleTabDragLeave = () => setDropId((current) => (current === tab.id ? null : current))
+                    const handleTabDrop = (event: DragEvent) => {
+                      event.stopPropagation()
+                      setDropId(null)
+                      onMoveTab(droppedTabId(event), workspace.id, tab.id)
+                    }
                     return (
                       <li key={tab.id}>
                         <button
                           type="button"
                           aria-current={activeTab || undefined}
                           title={tab.name}
-                          className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
+                          draggable
+                          className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${dropHighlight(tab.id)}`}
                           onClick={handleTab}
+                          onDragStart={handleTabDragStart}
+                          onDragOver={handleTabDragOver}
+                          onDragLeave={handleTabDragLeave}
+                          onDrop={handleTabDrop}
                         >
                           <span className="min-w-0 flex-1 truncate">{tab.name}</span>
                           {shellTag && <span className="shrink-0 rounded border border-dock-line px-1.5 py-px text-[10px] leading-tight font-medium text-dock-muted">{shellTag}</span>}

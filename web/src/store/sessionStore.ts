@@ -33,6 +33,8 @@ interface SessionState {
   renameWorkspace: (workspaceId: string, name: string) => void
   newTab: (shell: string) => void
   renameTab: (tabId: string, name: string) => void
+  moveTab: (tabId: string, targetWorkspaceId: string, beforeTabId?: string) => void
+  moveActiveTab: (offset: number) => void
   closeTab: (tabId: string) => void
   splitPane: (axis: SplitAxis) => void
   closePane: (paneId: string) => void
@@ -138,6 +140,40 @@ export const useSessionStore = create<SessionState>()((set) => ({
           tab.name = trimmed
           tab.manual = true
         }
+      }),
+    })),
+
+  moveTab: (tabId, targetWorkspaceId, beforeTabId) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        const source = draft.workspaces.find((candidate) => candidate.tabs.some((tab) => tab.id === tabId))
+        const target = findWorkspace(draft, targetWorkspaceId)
+        if (!source || !target || tabId === beforeTabId) {
+          return
+        }
+        const [tab] = source.tabs.splice(source.tabs.findIndex((candidate) => candidate.id === tabId), 1)
+        if (source.tabs.length === 0 && source !== target) {
+          draft.workspaces = draft.workspaces.filter((candidate) => candidate !== source)
+        } else if (source.active === tabId && source !== target) {
+          source.active = source.tabs[0].id
+        }
+        const index = beforeTabId ? target.tabs.findIndex((candidate) => candidate.id === beforeTabId) : -1
+        target.tabs.splice(index < 0 ? target.tabs.length : index, 0, tab)
+        target.active = tab.id
+        draft.active = target.id
+      }),
+    })),
+
+  moveActiveTab: (offset) =>
+    set((state) => ({
+      session: mutateWorkspace(state.session, (workspace) => {
+        const index = workspace.tabs.findIndex((tab) => tab.id === workspace.active)
+        const destination = index + offset
+        if (destination < 0 || destination >= workspace.tabs.length) {
+          return
+        }
+        const [tab] = workspace.tabs.splice(index, 1)
+        workspace.tabs.splice(destination, 0, tab)
       }),
     })),
 
