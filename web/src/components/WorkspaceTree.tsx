@@ -53,7 +53,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     <InlineNameEditor value={workspace.name} label="Nom du workspace" className="min-w-0 flex-1 font-semibold" onCommit={onCommitRename} onCancel={onCancelRename} />
                   </span>
                 ) : selected ? (
-                  <EditableName name={workspace.name} className="leading-none font-semibold" onClick={handleSelect} />
+                  <EditableName name={workspace.name} className="py-0.5 leading-none font-semibold" onClick={handleSelect} />
                 ) : (
                   <button type="button" className="min-w-0 cursor-pointer truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
                     {workspace.name}
