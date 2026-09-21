@@ -7,7 +7,7 @@ const tasks=[
 'Identifier les éléments sélectionnés par un fond discret, sans bordure colorée sur onglets, workspaces et résultats.',
 'Éviter les aides permanentes et popups pour les actions courantes ; fournir noms accessibles et focus perceptible.',
 'Respecter la mise à l’échelle Windows et les noms/chemins longs.'
-],[],'Police, zoom et dimensions minimales restent à préciser.'],
+],[],'Police, zoom et dimensions minimales restent à préciser.',true],
 ['F02','Créer, sélectionner et renommer les workspaces inline','3, 5','R01, R02','Organiser des terminaux dans des groupes libres, sans couche projet.',[
 'Disposer d’un workspace par défaut et interdire les terminaux sans workspace.',
 'Créer un workspace directement depuis le panneau et éditer son nom inline.',
