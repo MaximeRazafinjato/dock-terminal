@@ -35,7 +35,7 @@ const tasks=[
 'Le menu accepte flèches, Entrée, Échap, clic extérieur et Maj + F10.',
 'Le nouvel onglet reprend le dossier réel du pane actif.',
 'Aucun bouton séparé de choix du shell ; garder une action équivalente dans la palette.'
-],['F02','F11'],'Les chemins de shells sont configurés, pas codés avec des valeurs de démonstration.'],
+],['F02','F11'],'Les chemins de shells sont configurés, pas codés avec des valeurs de démonstration.',true],
 ['F06','Renommer les onglets inline et préserver les noms manuels','6','R05','Nommer une activité directement dans la barre d’onglets.',[
 'Double-clic sur le nom ou commande de palette active un éditeur inline.',
 'Entrée/perte de focus valide, Échap annule et un nom vide est refusé sans perdre le nom précédent.',
