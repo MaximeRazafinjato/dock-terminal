@@ -50,7 +50,7 @@ Exemple : « Perso » peut contenir un terminal dans Documents, un autre dans un
 
 ## 4. Direction visuelle et disposition
 
-**Retenu.** Dock vert : interface claire, terminaux sombres à dominante verte, en-tête vert compact, panneau droit en arborescence. Maximiser l’espace disponible pour les terminaux.
+**Retenu.** Dock vert en thème sombre (décision du 21 septembre 2026, remplaçant l’interface claire du POC) : fonds gris anthracite, accent vert sauge désaturé, terminaux sombres, en-tête compact, panneau droit en arborescence. Maximiser l’espace disponible pour les terminaux.
 
 | Zone | Contenu attendu |
 | --- | --- |
@@ -72,7 +72,7 @@ Exemple : « Perso » peut contenir un terminal dans Documents, un autre dans un
 
 ### Repères visuels issus du POC
 
-Ces valeurs sont des références de réalisation, pas des contraintes de taille absolues : en-tête d’environ 42 px, fond de terminal #14251e, en-tête #226b4b, fond de sélection vert clair, interface en Segoe UI et terminal en police monospace. Préserver la lisibilité avec la mise à l’échelle Windows.
+Ces valeurs sont des références de réalisation, pas des contraintes de taille absolues : en-tête d’environ 42 px, fond de l’application #17191b, panneaux #1e2123, fond de terminal #121416, accent #7a9f8b, fond de sélection à peine plus clair que le panneau, interface en Segoe UI et terminal en police monospace. Le POC clair (#14251e, #226b4b) reste la référence de disposition, pas de couleurs. Préserver la lisibilité avec la mise à l’échelle Windows.
 
 **À décider.** Personnalisation de la police terminal, taille du texte, zoom et comportement aux très petites dimensions. La cible principale reste une fenêtre d’application de bureau.
 
