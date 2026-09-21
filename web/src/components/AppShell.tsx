@@ -1,4 +1,4 @@
-import { activeTab, activeWorkspace, type Session } from '../model/session'
+import { activeTab, activeWorkspace, findWorkspace, type Session } from '../model/session'
 import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
@@ -25,16 +25,21 @@ export function AppShell({ session }: AppShellProps) {
   const workspace = activeWorkspace(session)
   const tab = activeTab(workspace)
 
+  const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.focus()
   const handleSelectTab = (workspaceId: string, tabId: string) => {
     selectWorkspace(workspaceId)
     selectTab(tabId)
+    const target = findWorkspace(session, workspaceId)?.tabs.find((candidate) => candidate.id === tabId)
+    if (target) {
+      focusPane(target.active)
+    }
   }
   const handleNewWorkspace = () => startRenamingWorkspace(newWorkspace(`Workspace ${session.workspaces.length + 1}`, home, 'powershell'), RenameOrigin.Panel)
   const handleStartRename = () => startRenamingWorkspace(workspace.id, RenameOrigin.Header)
   const handleStartRenameFromPanel = (workspaceId: string) => startRenamingWorkspace(workspaceId, RenameOrigin.Panel)
   const finishRename = () => {
     stopRenamingWorkspace()
-    terminalRegistry.get(tab.active)?.terminal.focus()
+    focusPane(tab.active)
   }
   const handleCommitRename = (name: string) => {
     renameWorkspace(workspace.id, name)
