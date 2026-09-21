@@ -49,7 +49,7 @@ const tasks=[
 'Conserver processus actifs, dossiers, historique, noms et splits.',
 'Synchroniser les deux représentations et sauvegarder le nouvel ordre.',
 'Fournir un équivalent clavier pour les déplacements essentiels.'
-],['F03','F05'],'Insertion avant la cible et cas du dernier onglet source à trancher ; ne pas imposer silencieusement le remplacement du POC.'],
+],['F03','F05'],'Insertion avant la cible et cas du dernier onglet source à trancher ; ne pas imposer silencieusement le remplacement du POC.',true],
 ['F08','Fermer et rouvrir un onglet fermé accidentellement','6, 13','R23','Récupérer un contexte fermé par erreur.',[
 'Fermer l’onglet et gérer ses processus selon la politique de fermeture retenue.',
 'Proposer la réouverture via les commandes.',
