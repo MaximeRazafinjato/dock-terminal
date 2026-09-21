@@ -21,7 +21,7 @@ const tasks=[
 'Synchroniser noms, ordre et sélection avec la barre supérieure.',
 'Conserver les états de dépliage ; replier ne change pas la sélection.',
 'Afficher les nombres d’onglets et les attentes sans ajouter de bordures de sélection.'
-],['F02'],'Le panneau reste centré sur les workspaces et non sur une liste indépendante d’agents.'],
+],['F02'],'Le panneau reste centré sur les workspaces et non sur une liste indépendante d’agents.',true],
 ['F04','Replier et redimensionner le panneau des workspaces','5, 16','R08','Libérer la largeur des terminaux sans perdre le contexte.',[
 'Replier/réafficher le panneau depuis un bouton toujours accessible ou la palette.',
 'Redimensionner par séparateur et fournir un accès clavier.',
