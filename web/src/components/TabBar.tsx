@@ -48,10 +48,10 @@ export function TabBar({ workspace, shells, onSelect, onClose, onNew }: TabBarPr
             key={tab.id}
             className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'}`}
           >
-            <button type="button" role="tab" aria-selected={active} className="truncate px-3 py-2 text-xs" onClick={handleSelect}>
+            <button type="button" role="tab" aria-selected={active} className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs" onClick={handleSelect}>
               {tab.name}
             </button>
-            <button type="button" className="px-2 text-xs hover:text-dock-error" title="Fermer l’onglet" onClick={handleClose}>
+            <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" title="Fermer l’onglet" onClick={handleClose}>
               ×
             </button>
           </div>
