@@ -42,7 +42,7 @@ const tasks=[
 'Synchroniser immédiatement le nom dans l’arborescence.',
 'Ne jamais écraser un nom manuel par une mise à jour automatique.',
 'Gérer les noms longs et la composition de texte sans validation prématurée.'
-],['F05'],'Règles de nommage automatique et retour au nom automatique à décider.'],
+],['F05'],'Règles de nommage automatique et retour au nom automatique à décider.',true],
 ['F07','Réordonner et transférer les onglets entre workspaces','6','R06','Réorganiser une activité sans relancer ses terminaux.',[
 'Glisser les onglets depuis la barre supérieure ou l’arborescence.',
 'Réordonner dans un workspace ou transférer vers un autre.',

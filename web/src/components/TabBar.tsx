@@ -1,19 +1,26 @@
 import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import type { ShellProfile } from '../bridge/messages'
 import { DEFAULT_SHELL, type Workspace } from '../model/session'
+import { InlineNameEditor } from './InlineNameEditor'
 import { ShellMenu } from './ShellMenu'
 
 interface TabBarProps {
   workspace: Workspace
   shells: ShellProfile[]
+  renamingTabId: string | null
   onSelect: (tabId: string) => void
+  onStartRename: (tabId: string) => void
+  onCommitRename: (name: string) => void
+  onCancelRename: () => void
   onClose: (tabId: string) => void
   onNew: (shellId: string) => void
 }
 
+const MIDDLE_BUTTON = 1
+
 const isMenuKey = (event: KeyboardEvent): boolean => (event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu'
 
-export function TabBar({ workspace, shells, onSelect, onClose, onNew }: TabBarProps) {
+export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew }: TabBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const addButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -42,15 +49,35 @@ export function TabBar({ workspace, shells, onSelect, onClose, onNew }: TabBarPr
       {workspace.tabs.map((tab) => {
         const active = tab.id === workspace.active
         const handleSelect = () => onSelect(tab.id)
+        const handleStartRename = () => onStartRename(tab.id)
         const handleClose = () => onClose(tab.id)
+        const handleAuxClick = (event: MouseEvent) => {
+          if (event.button === MIDDLE_BUTTON) {
+            event.preventDefault()
+            onClose(tab.id)
+          }
+        }
         return (
           <div
             key={tab.id}
             className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'}`}
+            onAuxClick={handleAuxClick}
           >
-            <button type="button" role="tab" aria-selected={active} className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs" onClick={handleSelect}>
-              {tab.name}
-            </button>
+            {tab.id === renamingTabId ? (
+              <InlineNameEditor value={tab.name} label="Nom de l’onglet" className="mx-1 my-1 min-w-0 flex-1 text-xs" onCommit={onCommitRename} onCancel={onCancelRename} />
+            ) : (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={active}
+                title="Double-clic pour renommer"
+                className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs"
+                onClick={handleSelect}
+                onDoubleClick={handleStartRename}
+              >
+                {tab.name}
+              </button>
+            )}
             <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" title="Fermer l’onglet" onClick={handleClose}>
               ×
             </button>
