@@ -4,7 +4,13 @@ Projet de terminal Windows organisé en **workspaces → onglets → panes**, av
 
 ## État du projet
 
-Les spécifications et le prototype HTML sont disponibles. **Le POC simule les terminaux : il n’exécute pas PowerShell, CMD, Git Bash ou des agents réels.** La pile technique de l’application finale (hôte C# .NET 10 + WinUI 3, WebView2 unique avec xterm.js, ConPTY et Job Objects) a été validée par le spike T01 dans `spike/` ; les vérifications manuelles restantes sont listées dans son README.
+Les spécifications et le prototype HTML sont disponibles. **Le POC simule les terminaux.** La pile technique a été validée par le spike T01 (`spike/`). Le socle de l’application est en place : hôte C# .NET 10 (WinUI 3 + WebView2 unique) dans `src/`, interface React + TypeScript dans `web/`, tests dans `tests/`. Il ouvre de vrais terminaux PowerShell 5.1 avec le profil, persiste la session et gère les splits ; les fonctionnalités du backlog restent à implémenter.
+
+```
+dotnet build Dock.slnx
+dotnet test Dock.slnx
+dotnet run --project src/Dock.Host
+```
 
 ## Documents
 
@@ -16,6 +22,7 @@ Les spécifications et le prototype HTML sont disponibles. **Le POC simule les t
 - [Maquettes exploratoires](maquettes/index.html)
 - [Backlog fonctionnel](BACKLOG.md)
 - [Spike T01 : pile Windows et pipeline de terminal](spike/README.md)
+- [Architecture backend](docs/BACKEND_ARCHITECTURE.md), [architecture frontend](docs/FRONTEND_ARCHITECTURE.md), [tests](docs/TESTING.md)
 
 ## Direction retenue
 

@@ -4,15 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Nature du dépôt
 
-Dock Terminal est un **projet de spécification et de prototypage**, pas encore une application. Le dépôt contient des documents Markdown/HTML, un POC HTML statique et des scripts Node de gestion du backlog. Il n'y a ni `package.json`, ni build, ni tests : tout se lit, s'ouvre dans un navigateur ou s'exécute avec `node`.
+Dock Terminal est un terminal Windows organisé en **workspaces → onglets → panes** (splits imbriqués). Le dépôt contient les spécifications (Markdown/HTML), le POC HTML statique de référence visuelle, le spike technique T01, les scripts Node du backlog et, depuis le 21 septembre 2026, le **socle de l'application** : hôte C# .NET 10 (WinUI 3 + WebView2 unique) dans `src/`, interface React + TypeScript + Vite + Tailwind + Zustand dans `web/`, tests xUnit dans `tests/`.
 
-La cible produit est un terminal Windows organisé en **workspaces → onglets → panes** (splits imbriqués). La pile recommandée pour l'application finale (WinUI 3 + ConPTY + WebView2/xterm.js, C# .NET 10) doit d'abord être validée par le spike T01 ; ne pas commencer l'implémentation native sans ce préalable.
+La pile a été validée par le spike T01 (`spike/README.md`). Toute évolution du socle suit `docs/BACKEND_ARCHITECTURE.md`, `docs/FRONTEND_ARCHITECTURE.md` et `docs/TESTING.md`.
 
 Tout le contenu est rédigé en **français**.
 
 ## Commandes
 
-Les scripts s'exécutent depuis la **racine du dépôt** (chemins relatifs `backlog/...` codés en dur).
+Application (racine du dépôt) :
+
+```bash
+dotnet build Dock.slnx                 # construit Core, Host (avec pnpm build du web si dist absent) et les tests
+dotnet test Dock.slnx                  # tests xUnit, dont deux lancent un vrai PowerShell 5.1
+dotnet run --project src/Dock.Host     # lance Dock ; DOCK_WEB_DEV_URL=http://localhost:5173 pour le serveur Vite
+cd web && pnpm dev | pnpm build | pnpm lint
+```
+
+Toujours lancer `pnpm lint`, `pnpm build` (qui exécute `tsc -b`) et `dotnet test` avant de committer.
+
+Scripts de documentation, depuis la **racine du dépôt** (chemins relatifs `backlog/...` codés en dur) :
 
 ```bash
 node backlog/create-manifest.js        # régénère backlog/issues.json, backlog/Fxx.md et BACKLOG.md (sans GitHub)
@@ -60,6 +71,13 @@ Fichier unique `poc/app.js` en vanilla JS, style très dense (une fonction par l
 ## Spike T01 (`spike/`)
 
 Prototype technique C# .NET 10 qui valide la pile : `DockTerminal.Spike.Core` (ConPTY, Job Object, intégration shell OSC 7), `DockTerminal.Spike.Host` (WinUI 3 non empaqueté, une seule WebView2, interface web dans `wwwroot/`), `DockTerminal.Spike.Harness` (scénarios automatisés) et un installeur Inno Setup. Les résultats, mesures et limites sont dans `spike/README.md`. Commandes depuis `spike/` : `dotnet build DockTerminal.Spike.slnx`, `dotnet run --project tests\DockTerminal.Spike.Harness`, `dotnet run --project src\DockTerminal.Spike.Host`, `scripts\build-installer.cmd`. Le spike n'est pas le socle de l'application produit : ne pas y ajouter de fonctionnalités métier.
+
+## Socle de l'application (`src/`, `web/`, `tests/`)
+
+- `src/Dock.Core` : ConPTY, Job Objects, intégration shell (OSC 7), modèle et persistance de session (`%LOCALAPPDATA%\Dock\session.json`). L'hôte valide toute session avant de l'écrire.
+- `src/Dock.Host` : fenêtre WinUI 3 non empaquetée, une seule WebView2, aucun `KeyboardAccelerator`, pont JSON `HostBridge` (contrat dans `docs/BACKEND_ARCHITECTURE.md`, types miroir dans `web/src/bridge/messages.ts`).
+- `web/` : modèle pur dans `src/model`, stores Zustand, une instance xterm.js par pane conservée hors React (`terminalRegistry`), raccourcis interceptés dans xterm.js (Leader Ctrl + Espace, Ctrl + P), composants un par fichier, tokens Tailwind `dock-*`. Enums TypeScript autorisés (`erasableSyntaxOnly` désactivé).
+- Le POC `poc/` reste la référence visuelle ; le spike `spike/` reste figé.
 
 ## Environnement local documenté
 

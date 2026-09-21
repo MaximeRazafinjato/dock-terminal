@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+@import '@xterm/xterm/css/xterm.css';
+
+@font-face {
+  font-family: 'Symbols Nerd Font Mono';
+  src: url('/fonts/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+  font-display: block;
+}
+
+@theme {
+  --color-dock-paper: #17191b;
+  --color-dock-panel: #1e2123;
+  --color-dock-line: #2c3033;
+  --color-dock-ink: #d8dbd7;
+  --color-dock-muted: #848b87;
+  --color-dock-green: #7a9f8b;
+  --color-dock-green-deep: #a9c4b4;
+  --color-dock-green-soft: #262d2a;
+  --color-dock-green-hover: #24282a;
+  --color-dock-focus: #8fb39f;
+  --color-dock-terminal: #121416;
+  --color-dock-terminal-ink: #cdd1cd;
+  --color-dock-warning: #c9a65f;
+  --color-dock-error: #c98078;
+  --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'CaskaydiaCove Nerd Font Mono', 'Cascadia Mono', 'Cascadia Code', Consolas, 'Symbols Nerd Font Mono', monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-dock-paper);
+  color: var(--color-dock-ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.xterm {
+  height: 100%;
+}
