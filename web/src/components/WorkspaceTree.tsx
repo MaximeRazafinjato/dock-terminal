@@ -28,7 +28,12 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
         {session.workspaces.map((workspace) => {
           const selected = workspace.id === session.active
           const expanded = workspace.expanded ?? selected
+          const tabsId = `workspace-tabs-${workspace.id}`
           const handleToggle = () => onToggle(workspace.id)
+          const handleChevron = (event: React.MouseEvent) => {
+            event.stopPropagation()
+            onToggle(workspace.id)
+          }
           const renaming = workspace.id === renamingWorkspaceId
           const stopClick = (event: React.MouseEvent) => event.stopPropagation()
           const handleSelect = (event: React.MouseEvent) => {
@@ -42,12 +47,19 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
           return (
             <div key={workspace.id} className="mb-1">
               <div
-                role="button"
-                aria-expanded={expanded}
                 className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
                 onClick={handleToggle}
               >
-                <span className="w-6 shrink-0 self-center text-center text-sm text-dock-green">{expanded ? '▾' : '▸'}</span>
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={tabsId}
+                  aria-label={`${expanded ? 'Replier' : 'Afficher'} les onglets de ${workspace.name}`}
+                  className="w-6 shrink-0 cursor-pointer self-center text-center text-sm text-dock-green"
+                  onClick={handleChevron}
+                >
+                  {expanded ? '▾' : '▸'}
+                </button>
                 {renaming ? (
                   <span className="flex min-w-0 flex-1" onClick={stopClick}>
                     <InlineNameEditor value={workspace.name} label="Nom du workspace" className="min-w-0 flex-1 font-semibold" onCommit={onCommitRename} onCancel={onCancelRename} />
@@ -62,7 +74,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                 <span className="text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
               </div>
               {expanded && (
-                <ul className="mt-1 mb-2 ml-5 border-l-2 border-dock-line pl-2">
+                <ul id={tabsId} className="mt-1 mb-2 ml-5 border-l-2 border-dock-line pl-2">
                   {workspace.tabs.map((tab) => {
                     const activeTab = selected && tab.id === workspace.active
                     const handleTab = () => onSelectTab(workspace.id, tab.id)
@@ -70,7 +82,9 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                       <li key={tab.id}>
                         <button
                           type="button"
-                          className={`w-full truncate rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
+                          aria-current={activeTab || undefined}
+                          title={tab.name}
+                          className={`w-full cursor-pointer truncate rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
                           onClick={handleTab}
                         >
                           {tab.name}
