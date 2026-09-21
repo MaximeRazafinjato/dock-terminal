@@ -1,5 +1,5 @@
 import type React from 'react'
-import { activePane, DEFAULT_SHELL, type Session } from '../model/session'
+import { activePane, DEFAULT_SHELL, panesOf, type Session } from '../model/session'
 import { EditableName } from './EditableName'
 import { InlineNameEditor } from './InlineNameEditor'
 
@@ -83,6 +83,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     const activeTab = selected && tab.id === workspace.active
                     const handleTab = () => onSelectTab(workspace.id, tab.id)
                     const shellTag = shellTagOf(activePane(tab).shell)
+                    const paneCount = panesOf(tab.tree).length
                     return (
                       <li key={tab.id}>
                         <button
@@ -94,6 +95,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                         >
                           <span className="min-w-0 flex-1 truncate">{tab.name}</span>
                           {shellTag && <span className="shrink-0 rounded border border-dock-line px-1.5 py-px text-[10px] leading-tight font-medium text-dock-muted">{shellTag}</span>}
+                          {paneCount > 1 && <span className="shrink-0 text-[11px] leading-none font-normal text-dock-muted" title={`${paneCount} panes`}>{`${paneCount} panes`}</span>}
                         </button>
                       </li>
                     )
