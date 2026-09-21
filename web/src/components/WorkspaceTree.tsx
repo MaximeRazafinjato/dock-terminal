@@ -1,3 +1,4 @@
+import type React from 'react'
 import type { Session } from '../model/session'
 
 interface WorkspaceTreeProps {
@@ -22,17 +23,23 @@ export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggl
           const selected = workspace.id === session.active
           const expanded = workspace.expanded ?? selected
           const handleToggle = () => onToggle(workspace.id)
-          const handleSelect = () => onSelectWorkspace(workspace.id)
+          const handleSelect = (event: React.MouseEvent) => {
+            event.stopPropagation()
+            onSelectWorkspace(workspace.id)
+          }
           return (
             <div key={workspace.id} className="mb-1">
-              <div className={`flex items-center rounded-md ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'hover:bg-dock-green-hover'}`}>
-                <button type="button" className="w-6 shrink-0 py-2 text-xs text-dock-muted" aria-expanded={expanded} onClick={handleToggle}>
-                  {expanded ? '▾' : '▸'}
-                </button>
-                <button type="button" className="min-w-0 flex-1 truncate py-2 pr-2 text-left font-semibold" onClick={handleSelect}>
+              <div
+                role="button"
+                aria-expanded={expanded}
+                className={`flex cursor-pointer items-center gap-1 rounded-md py-2 pr-2 select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'hover:bg-dock-green-hover'}`}
+                onClick={handleToggle}
+              >
+                <span className="w-6 shrink-0 text-center text-xs text-dock-muted">{expanded ? '▾' : '▸'}</span>
+                <button type="button" className="min-w-0 truncate rounded px-1 text-left font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
                   {workspace.name}
-                  <span className="ml-2 text-[10px] font-normal text-dock-muted">{workspace.tabs.length} ong.</span>
                 </button>
+                <span className="text-[10px] text-dock-muted">{workspace.tabs.length} ong.</span>
               </div>
               {expanded && (
                 <ul className="mt-1 mb-2 ml-4 border-l border-dock-line pl-2">
