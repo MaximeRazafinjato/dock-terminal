@@ -1,0 +1,61 @@
+using System.Text.Json.Serialization;
+
+namespace Dock.Core.Session;
+
+public sealed class SessionModel
+{
+    public int Version { get; set; } = SessionLimits.CurrentVersion;
+    public List<WorkspaceModel> Workspaces { get; set; } = new();
+    public string Active { get; set; } = string.Empty;
+    public int Sidebar { get; set; } = SessionLimits.DefaultSidebarWidth;
+    public bool SidebarCollapsed { get; set; }
+}
+
+public sealed class WorkspaceModel
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public List<TabModel> Tabs { get; set; } = new();
+    public string Active { get; set; } = string.Empty;
+    public bool? Expanded { get; set; }
+}
+
+public sealed class TabModel
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public bool Manual { get; set; }
+    public string Active { get; set; } = string.Empty;
+    public SplitNodeModel Tree { get; set; } = new();
+}
+
+public sealed class SplitNodeModel
+{
+    public PaneModel? Pane { get; set; }
+    public string? Axis { get; set; }
+    public double? Ratio { get; set; }
+    public SplitNodeModel? A { get; set; }
+    public SplitNodeModel? B { get; set; }
+
+    [JsonIgnore]
+    public bool IsLeaf => Pane is not null;
+}
+
+public sealed class PaneModel
+{
+    public string Id { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public string Shell { get; set; } = string.Empty;
+}
+
+public static class SessionLimits
+{
+    public const int CurrentVersion = 2;
+    public const int MaxDepth = 30;
+    public const int MaxNodes = 1000;
+    public const double MinRatio = 0.1;
+    public const double MaxRatio = 0.9;
+    public const int MinSidebarWidth = 220;
+    public const int MaxSidebarWidth = 450;
+    public const int DefaultSidebarWidth = 292;
+}

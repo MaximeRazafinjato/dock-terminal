@@ -27,3 +27,12 @@ spike/installer/output/
 spike/installer/MicrosoftEdgeWebview2Setup.exe
 spike/vendor/conpty/*.dll
 spike/vendor/conpty/*.exe
+
+# Application Dock (socle)
+src/**/bin/
+src/**/obj/
+tests/**/bin/
+tests/**/obj/
+web/node_modules/
+web/dist/
+publish/
