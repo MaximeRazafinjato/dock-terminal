@@ -56,7 +56,7 @@ const tasks=[
 'Restaurer noms, shells, chemins, splits et texte avec de nouveaux processus.',
 'Marquer l’ancienne session et ne pas rejouer de commandes.',
 'Tester la fermeture du dernier onglet selon la décision documentée.'
-],['F05','F17'],'Conserver les cinq derniers onglets fermés, y compris après redémarrage. La fermeture du dernier onglet supprime le workspace et affiche l’état vide si nécessaire.'],
+],['F05','F17'],'Conserver les cinq derniers onglets fermés, y compris après redémarrage. La fermeture du dernier onglet supprime le workspace et affiche l’état vide si nécessaire.',true],
 ['F09','Créer, fermer et redimensionner des splits imbriqués','7','R09','Organiser plusieurs terminaux dans un même onglet.',[
 'Créer des splits côte à côte et haut/bas depuis le pane actif.',
 'Hériter du dossier réel du pane actif.',
