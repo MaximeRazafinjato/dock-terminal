@@ -24,7 +24,7 @@ interface WorkspaceTreeProps {
 
 export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace, onMoveTab }: WorkspaceTreeProps) {
   const { draggingTabId, tabDropTarget } = useUiStore()
-  const dropHighlight = (workspaceId: string, tabId?: string) => (isDropTarget(tabDropTarget, workspaceId, tabId) ? 'shadow-[inset_0_0_0_1px_var(--color-dock-focus)]' : '')
+  const dropLine = (workspaceId: string, tabId?: string) => (isDropTarget(tabDropTarget, workspaceId, tabId) ? 'border-dock-focus' : 'border-transparent')
   return (
     <aside className="flex h-full min-h-0 flex-col bg-dock-paper" style={{ width: session.sidebar }}>
       <div className="flex items-center justify-between px-3 py-2 text-[11px] font-semibold tracking-wide text-dock-muted uppercase">
@@ -44,6 +44,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
             onToggle(workspace.id)
           }
           const renaming = workspace.id === renamingWorkspaceId
+          const workspaceTargeted = isDropTarget(tabDropTarget, workspace.id)
           const stopClick = (event: MouseEvent) => event.stopPropagation()
           const handleSelect = (event: MouseEvent) => {
             event.stopPropagation()
@@ -56,7 +57,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
           return (
             <div key={workspace.id} className="mb-1">
               <div
-                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${dropHighlight(workspace.id)}`}
+                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${workspaceTargeted && !expanded ? 'shadow-[inset_0_-2px_0_var(--color-dock-focus)]' : ''}`}
                 data-drop-workspace={workspace.id}
                 onClick={handleToggle}
               >
@@ -92,14 +93,14 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     const paneCount = panesOf(tab.tree).length
                     const handleTabPointerDown = (event: PointerEvent<HTMLElement>) => beginTabDrag(event, tab.id, onMoveTab)
                     return (
-                      <li key={tab.id}>
+                      <li key={tab.id} className={`border-t-2 ${dropLine(workspace.id, tab.id)}`}>
                         <button
                           type="button"
                           aria-current={activeTab || undefined}
                           title={tab.name}
                           data-drop-workspace={workspace.id}
                           data-drop-tab={tab.id}
-                          className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${dropHighlight(workspace.id, tab.id)} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
+                          className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
                           onClick={handleTab}
                           onPointerDown={handleTabPointerDown}
                         >
@@ -110,6 +111,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                       </li>
                     )
                   })}
+                  <li aria-hidden="true" className={`border-t-2 ${dropLine(workspace.id)}`} />
                 </ul>
               )}
             </div>
