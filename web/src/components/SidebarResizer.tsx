@@ -14,6 +14,7 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = { startX: event.clientX, startWidth: width }
+    document.body.style.cursor = 'col-resize'
   }
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (dragRef.current) {
@@ -22,6 +23,7 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
   }
   const handlePointerUp = () => {
     dragRef.current = null
+    document.body.style.cursor = ''
   }
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -39,12 +41,14 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
       aria-valuemax={SIDEBAR_MAX}
       aria-valuenow={width}
       tabIndex={0}
-      className="w-1 shrink-0 cursor-col-resize bg-dock-line hover:bg-dock-green focus-visible:bg-dock-focus focus-visible:outline-none"
+      className="group flex w-2 shrink-0 cursor-col-resize justify-center focus-visible:outline-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onKeyDown={handleKeyDown}
-    />
+    >
+      <div className="h-full w-px bg-dock-line group-hover:w-0.5 group-hover:bg-dock-green group-focus-visible:w-0.5 group-focus-visible:bg-dock-focus" />
+    </div>
   )
 }
