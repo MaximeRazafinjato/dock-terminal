@@ -1,9 +1,10 @@
-import { useCallback, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
 import type { ShellProfile } from '../bridge/messages'
 import { DEFAULT_SHELL, type Workspace } from '../model/session'
+import { useUiStore } from '../store/uiStore'
 import { InlineNameEditor } from './InlineNameEditor'
 import { ShellMenu } from './ShellMenu'
-import { acceptTabDrag, droppedTabId, startTabDrag } from './tabDrag'
+import { beginTabDrag, isDropTarget, type MoveTabHandler } from './tabDrag'
 
 interface TabBarProps {
   workspace: Workspace
@@ -15,7 +16,7 @@ interface TabBarProps {
   onCancelRename: () => void
   onClose: (tabId: string) => void
   onNew: (shellId: string) => void
-  onMove: (tabId: string, workspaceId: string, beforeTabId?: string) => void
+  onMove: MoveTabHandler
 }
 
 const MIDDLE_BUTTON = 1
@@ -24,8 +25,8 @@ const isMenuKey = (event: KeyboardEvent): boolean => (event.shiftKey && event.ke
 
 export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew, onMove }: TabBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [dropTabId, setDropTabId] = useState<string | null>(null)
   const addButtonRef = useRef<HTMLButtonElement>(null)
+  const { draggingTabId, tabDropTarget } = useUiStore()
 
   const handleNewDefault = () => onNew(DEFAULT_SHELL)
   const handleContextMenu = (event: MouseEvent) => {
@@ -46,18 +47,17 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
     setMenuOpen(false)
     onNew(shellId)
   }
-  const handleBarDragOver = (event: DragEvent) => {
-    acceptTabDrag(event)
-  }
-  const handleBarDrop = (event: DragEvent) => {
-    setDropTabId(null)
-    onMove(droppedTabId(event), workspace.id)
-  }
+  const barTargeted = isDropTarget(tabDropTarget, workspace.id)
 
   return (
-    <div role="tablist" className="flex shrink-0 items-center gap-1 px-2 pt-1" onDragOver={handleBarDragOver} onDrop={handleBarDrop}>
+    <div
+      role="tablist"
+      data-drop-workspace={workspace.id}
+      className={`flex shrink-0 items-center gap-1 px-2 pt-1 select-none ${barTargeted ? 'shadow-[inset_0_-2px_0_var(--color-dock-focus)]' : ''}`}
+    >
       {workspace.tabs.map((tab) => {
         const active = tab.id === workspace.active
+        const targeted = isDropTarget(tabDropTarget, workspace.id, tab.id)
         const handleSelect = () => onSelect(tab.id)
         const handleStartRename = () => onStartRename(tab.id)
         const handleClose = () => onClose(tab.id)
@@ -67,29 +67,14 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
             onClose(tab.id)
           }
         }
-        const handleDragStart = (event: DragEvent) => startTabDrag(event, tab.id)
-        const handleDragOver = (event: DragEvent) => {
-          if (acceptTabDrag(event)) {
-            event.stopPropagation()
-            setDropTabId(tab.id)
-          }
-        }
-        const handleDragLeave = () => setDropTabId((current) => (current === tab.id ? null : current))
-        const handleDrop = (event: DragEvent) => {
-          event.stopPropagation()
-          setDropTabId(null)
-          onMove(droppedTabId(event), workspace.id, tab.id)
-        }
+        const handlePointerDown = (event: PointerEvent<HTMLElement>) => beginTabDrag(event, tab.id, onMove)
         return (
           <div
             key={tab.id}
-            draggable
-            className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'} ${dropTabId === tab.id ? 'shadow-[inset_3px_0_0_var(--color-dock-focus)]' : ''}`}
+            data-drop-workspace={workspace.id}
+            data-drop-tab={tab.id}
+            className={`flex min-w-[100px] items-center rounded-t-md border border-b-0 ${active ? 'border-dock-line bg-dock-panel text-dock-green-deep' : 'border-transparent text-dock-muted hover:bg-dock-green-hover'} ${targeted ? 'shadow-[inset_3px_0_0_var(--color-dock-focus)]' : ''} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
             onAuxClick={handleAuxClick}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
           >
             {tab.id === renamingTabId ? (
               <InlineNameEditor value={tab.name} label="Nom de l’onglet" className="mx-1 my-1 min-w-0 flex-1 text-xs" onCommit={onCommitRename} onCancel={onCancelRename} />
@@ -98,10 +83,11 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
                 type="button"
                 role="tab"
                 aria-selected={active}
-                title="Double-clic pour renommer"
+                title="Double-clic pour renommer, glisser pour déplacer"
                 className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs"
                 onClick={handleSelect}
                 onDoubleClick={handleStartRename}
+                onPointerDown={handlePointerDown}
               >
                 {tab.name}
               </button>
