@@ -1,24 +1,78 @@
 import { bridge } from '../bridge/bridge'
 import { useHostStore } from '../store/hostStore'
-import { SplitAxis } from '../model/session'
+import { activePane, activeTab, activeWorkspace, panesOf, SplitAxis } from '../model/session'
 import { useSessionStore } from '../store/sessionStore'
-import { activePane, activeTab, activeWorkspace, panesOf } from '../model/session'
 
 const LEADER_TIMEOUT_MS = 5000
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'AltGraph', 'Meta'])
+const DEFAULT_SHELL = 'powershell'
+
+export enum Command {
+  Palette = 'palette',
+  NewTab = 'newTab',
+  SplitSideBySide = 'splitSideBySide',
+  SplitTopBottom = 'splitTopBottom',
+  NewWorkspace = 'newWorkspace',
+  ClosePane = 'closePane',
+  NextPane = 'nextPane',
+  PreviousPane = 'previousPane',
+}
+
+const LEADER_KEYS: Record<string, Command> = {
+  p: Command.Palette,
+  t: Command.NewTab,
+  v: Command.SplitSideBySide,
+  h: Command.SplitTopBottom,
+  w: Command.NewWorkspace,
+  x: Command.ClosePane,
+  ArrowRight: Command.NextPane,
+  ArrowDown: Command.NextPane,
+  ArrowLeft: Command.PreviousPane,
+  ArrowUp: Command.PreviousPane,
+}
+
+const DIRECT_LETTER_KEYS: Record<string, Command> = {
+  p: Command.Palette,
+  t: Command.NewTab,
+  d: Command.SplitSideBySide,
+  h: Command.SplitTopBottom,
+  w: Command.NewWorkspace,
+  x: Command.ClosePane,
+}
+
+const DIRECT_ARROW_KEYS: Record<string, Command> = {
+  ArrowRight: Command.NextPane,
+  ArrowDown: Command.NextPane,
+  ArrowLeft: Command.PreviousPane,
+  ArrowUp: Command.PreviousPane,
+}
 
 let leaderTimer: ReturnType<typeof setTimeout> | undefined
 
-const keyIs = (event: KeyboardEvent, letter: string): boolean =>
-  event.key.toLowerCase() === letter || event.code === `Key${letter.toUpperCase()}`
+const letterOf = (event: KeyboardEvent): string => {
+  const fromCode = /^Key([A-Z])$/.exec(event.code)
+  return fromCode ? fromCode[1].toLowerCase() : event.key.toLowerCase()
+}
 
 const isLeaderChord = (event: KeyboardEvent): boolean =>
   event.ctrlKey && !event.altKey && !event.shiftKey && (event.key === ' ' || event.code === 'Space')
 
-const isPalette = (event: KeyboardEvent): boolean => event.ctrlKey && !event.altKey && !event.shiftKey && keyIs(event, 'p')
 const isCloseWindow = (event: KeyboardEvent): boolean => event.altKey && event.key === 'F4'
-const isCopy = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && keyIs(event, 'c')
-const isPaste = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && keyIs(event, 'v')
+const isCopy = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && !event.altKey && letterOf(event) === 'c'
+const isPaste = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && !event.altKey && letterOf(event) === 'v'
+
+const directCommand = (event: KeyboardEvent): Command | undefined => {
+  if (event.ctrlKey && !event.altKey && letterOf(event) === 'p') {
+    return Command.Palette
+  }
+  if (event.ctrlKey && event.shiftKey && !event.altKey) {
+    return DIRECT_LETTER_KEYS[letterOf(event)]
+  }
+  if (event.altKey && !event.ctrlKey && !event.shiftKey) {
+    return DIRECT_ARROW_KEYS[event.key]
+  }
+  return undefined
+}
 
 const exitLeader = (): void => {
   clearTimeout(leaderTimer)
@@ -42,24 +96,9 @@ const cyclePane = (offset: number): void => {
   selectPane(panes[(index + offset + panes.length) % panes.length].id)
 }
 
-const leaderCommands: Record<string, () => void> = {
-  o: () => cyclePane(1),
-  ArrowRight: () => cyclePane(1),
-  ArrowDown: () => cyclePane(1),
-  ArrowLeft: () => cyclePane(-1),
-  ArrowUp: () => cyclePane(-1),
-  '%': () => useSessionStore.getState().splitPane(SplitAxis.Horizontal),
-  d: () => useSessionStore.getState().splitPane(SplitAxis.Horizontal),
-  s: () => useSessionStore.getState().splitPane(SplitAxis.Vertical),
-  '"': () => useSessionStore.getState().splitPane(SplitAxis.Vertical),
-  c: () => useSessionStore.getState().newTab(currentShell()),
-  x: () => useSessionStore.getState().closePane(currentPaneId()),
-  b: () => useSessionStore.getState().toggleSidebar(),
-}
-
 const currentShell = (): string => {
   const { session } = useSessionStore.getState()
-  return session ? activePane(activeTab(activeWorkspace(session))).shell : 'powershell'
+  return session ? activePane(activeTab(activeWorkspace(session))).shell : DEFAULT_SHELL
 }
 
 const currentPaneId = (): string => {
@@ -67,13 +106,39 @@ const currentPaneId = (): string => {
   return session ? activeTab(activeWorkspace(session)).active : ''
 }
 
-const runLeaderCommand = (event: KeyboardEvent): void => {
-  exitLeader()
-  leaderCommands[event.key]?.()
+export const runCommand = (command: Command): void => {
+  const sessionStore = useSessionStore.getState()
+  const hostStore = useHostStore.getState()
+  switch (command) {
+    case Command.Palette:
+      hostStore.setStatus('Palette Ctrl + P : à venir (F12).')
+      break
+    case Command.NewTab:
+      sessionStore.newTab(currentShell())
+      break
+    case Command.SplitSideBySide:
+      sessionStore.splitPane(SplitAxis.Horizontal)
+      break
+    case Command.SplitTopBottom:
+      sessionStore.splitPane(SplitAxis.Vertical)
+      break
+    case Command.NewWorkspace:
+      sessionStore.newWorkspace(`Workspace ${(sessionStore.session?.workspaces.length ?? 0) + 1}`, hostStore.home, DEFAULT_SHELL)
+      break
+    case Command.ClosePane:
+      sessionStore.closePane(currentPaneId())
+      break
+    case Command.NextPane:
+      cyclePane(1)
+      break
+    case Command.PreviousPane:
+      cyclePane(-1)
+      break
+  }
 }
 
 export const isReservedShortcut = (event: KeyboardEvent): boolean =>
-  isLeaderChord(event) || isPalette(event) || isCloseWindow(event) || isCopy(event) || isPaste(event)
+  isLeaderChord(event) || isCloseWindow(event) || isCopy(event) || isPaste(event) || directCommand(event) !== undefined
 
 export interface ShortcutActions {
   copySelection: () => void
@@ -99,16 +164,16 @@ const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
   }
   if (useHostStore.getState().leaderActive) {
     if (!MODIFIER_KEYS.has(event.key)) {
-      runLeaderCommand(event)
+      exitLeader()
+      const command = LEADER_KEYS[event.key.length === 1 ? event.key.toLowerCase() : event.key]
+      if (command) {
+        runCommand(command)
+      }
     }
     return false
   }
   if (isLeaderChord(event)) {
     enterLeader()
-    return false
-  }
-  if (isPalette(event)) {
-    useHostStore.getState().setStatus('Palette Ctrl + P : à venir (F12).')
     return false
   }
   if (isCopy(event)) {
@@ -117,6 +182,11 @@ const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
   }
   if (isPaste(event)) {
     actions.pasteClipboard()
+    return false
+  }
+  const command = directCommand(event)
+  if (command) {
+    runCommand(command)
     return false
   }
   return true
