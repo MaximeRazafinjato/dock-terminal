@@ -300,16 +300,16 @@ Cette section décrit une séparation des responsabilités puis fixe une recomma
 
 Les déplacements et changements de présentation agissent sur le modèle et la visibilité, pas sur le cycle de vie des processus. Les identifiants servent à retrouver les éléments ; les noms servent à les présenter.
 
-### Recommandation retenue pour le prototype technique
+### Pile technique retenue (validée par le spike T01)
 
-- **Hôte Windows :** application C# sur .NET 10 LTS avec une seule fenêtre WinUI 3 (Windows App SDK). L’hôte ne porte aucune interface métier : il gère la fenêtre, le gestionnaire de processus, les services locaux, les adaptateurs d’agents et la persistance. WPF est le repli accepté si WinUI 3 non empaqueté pose problème au spike ; l’interface n’en dépend pas.
+- **Hôte Windows :** application C# sur .NET 10 LTS avec une seule fenêtre WinUI 3 (Windows App SDK). L’hôte ne porte aucune interface métier : il gère la fenêtre, le gestionnaire de processus, les services locaux, les adaptateurs d’agents et la persistance. WinUI 3 non empaqueté est confirmé par le spike T01 (Windows App SDK 2.5.1, publication autonome depuis la ligne de commande) ; le repli WPF n’est plus nécessaire.
 - **Interface :** une WebView2 unique héberge toute l’interface (arborescence, onglets, splits, palette, Leader) et un terminal xterm.js par pane, avec le renderer WebGL et un repli canvas. Le modèle de session du POC est repris côté web. Les raccourcis sont interceptés dans xterm.js, jamais par des accélérateurs XAML, afin qu’un seul moteur traite le clavier et le focus.
 - **Pseudo-terminal :** ConPTY, isolé derrière le gestionnaire de processus en C# avec P/Invoke. Chaque pane est rattaché à un Job Object Windows pour garantir l’arrêt de l’arbre de processus. Le spike compare la ConPTY intégrée à Windows et une `conpty.dll` embarquée issue d’OpenConsole.
 - **Dossier courant :** ConPTY ne le fournit pas. Dock l’obtient par intégration shell propre (variable d’environnement dédiée et wrapper de prompt non intrusif émettant une séquence OSC), compatible avec Windows PowerShell 5.1 et oh-my-posh, sans imiter WezTerm.
 - **Pont hôte / interface :** messages JSON pour les commandes et un canal dédié pour les octets PTY. Mesurer d’abord `PostWebMessage` ; basculer sur un WebSocket local ou un flux binaire si le débit soutenu décroche.
 - **Distribution :** build Windows autonome distribuée manuellement dans une release GitHub. Recommandation initiale : installeur Inno Setup pour l’application dépaquetée, sans mise à jour automatique ; l’installeur remplace la version précédente, détecte ou installe le runtime WebView2 Evergreen et embarque le runtime Windows App SDK (build autonome). Une distribution MSIX signée pourra être ajoutée si les contraintes de signature et de sideloading deviennent acceptables.
 
-Cette recommandation doit être validée par un spike avant de construire l’application complète : ouvrir PowerShell réel, gérer ConPTY, redimensionner un pane, restituer Unicode/IME/sélection, obtenir le dossier courant, arrêter un arbre de processus, mesurer le pont hôte / interface et installer une version autonome. Les alternatives écartées sont l’interface hybride XAML + WebView2 par pane (clavier et focus partagés entre deux moteurs), le contrôle de Windows Terminal (aucun paquet officiel WinUI 3), Electron (empreinte) et Tauri 2 (introduit Rust dans une équipe .NET).
+**Retenu.** Cette pile a été validée le 21 septembre 2026 par le spike T01 (`spike/`) : PowerShell 5.1 réel avec le profil et oh-my-posh, ConPTY Windows et OpenConsole comparées, redimensionnement et applications plein écran, Unicode, IME, sélection et clavier français, dossier courant par `DOCK_PANE_ID` et séquence OSC 7, Job Object sans processus survivant, pont hôte / interface mesuré et installeur autonome testé. Les résultats détaillés sont dans `spike/README.md`. Les alternatives écartées sont l’interface hybride XAML + WebView2 par pane (clavier et focus partagés entre deux moteurs), le contrôle de Windows Terminal (aucun paquet officiel WinUI 3), Electron (empreinte) et Tauri 2 (introduit Rust dans une équipe .NET).
 
 ### Structure conceptuelle des données
 
@@ -322,7 +322,7 @@ Cette recommandation doit être validée par un spike avant de construire l’ap
 | Pane | Identifiant, profil de shell, dossier courant, référence à l’historique, état de session. |
 | Activité | Identifiant, pane concerné, état, source, date de changement ; données de session vivante. |
 
-Le choix technique ci-dessus reste conditionné à la réussite du spike ; les critères de rejet sont un rendu terminal incomplet, des pertes de saisie ou une fermeture de processus non maîtrisée.
+Mesures de référence du spike : ConPTY livre 7 à 12 Mo/s en flux soutenu ; `PostWebMessage` transmet 20 Mo sur deux panes simultanés sans perte, avec un rendu xterm.js cumulé de 18 Mc/s, et reste le canal retenu. Le dossier courant est reçu environ 100 ms après le prompt. Versions minimales : Windows 10 1809 (build 17763) pour ConPTY, Windows App SDK et WebView2 Evergreen ; seule la configuration Windows 11 build 26200 a été testée. Critères de performance à respecter par l’application : aucune perte ni doublon de frappe, débit de rendu au moins égal au débit ConPTY, dossier courant reçu en moins d’une seconde, aucun processus survivant après fermeture d’un pane.
 
 ## 16. Qualité et accessibilité
 
@@ -393,13 +393,13 @@ Le POC est une référence de conception, pas une implémentation technique prê
 
 1. Inspecter le profil PowerShell, wtr/rmwt et la configuration WezTerm Leader + F. **Fait :** voir `docs/inspection-environnement.md`.
 2. Identifier les shells installés, l’éditeur, le dossier Projets et les agents utilisés. **Fait :** Windows PowerShell 5.1 par défaut, PowerShell 7/CMD/Git Bash disponibles, VS Code, `C:\\Files\\Projects`, Claude Code et Codex CLI.
-3. **À faire :** valider la pile hôte C# + WebView2 unique (xterm.js) + ConPTY avec le spike technique et l’installeur manuel. **Décidé :** l’interface entière est web dans une seule WebView2 ; l’hôte natif ne porte pas d’interface métier.
+3. **Fait :** pile hôte C# + WebView2 unique (xterm.js) + ConPTY validée par le spike T01 avec l’installeur manuel ; voir `spike/README.md`. **Décidé :** l’interface entière est web dans une seule WebView2 ; l’hôte natif ne porte pas d’interface métier.
 4. **Fait :** fermer le dernier onglet/pane supprime le workspace ; confirmer avant suppression d’un workspace actif ; état vide si nécessaire.
 5. **Fait :** arrêt forcé avec confirmation si serveur, agent ou programme actif ; limites 10 000 lignes/256 Mio, sauvegarde texte toutes les 30 s, cinq onglets fermés.
 6. **Fait :** Leader Ctrl + Espace, délai de 5 s, mapping personnalisable ; navigation spatiale.
 7. **Fait :** JSON, préférences/session/historique séparés, import par remplacement.
 8. **Fait :** noms automatiques dossier, branche absente/HEAD détachée et actions Git indisponibles hors dépôt ; contrat wtr/rmwt documenté.
 9. **Reporté :** implémenter les adaptateurs Claude Code/Codex CLI et définir leurs événements fiables dans une évolution dédiée.
-10. **À faire :** fixer les critères mesurables de performance et les versions minimales de Windows après le spike.
+10. **Fait :** critères mesurables de performance et versions minimales de Windows consignés en section 15 à l’issue du spike.
 
 Ces décisions ne bloquent pas la compréhension du produit ; elles évitent de traiter un comportement accidentel du prototype comme une exigence validée.

@@ -57,6 +57,10 @@ Fichier unique `poc/app.js` en vanilla JS, style très dense (une fonction par l
 
 `maquettes/` contient les cinq directions visuelles initiales ; la direction « Dock » (n° 5) a été retenue et développée dans `poc/`.
 
+## Spike T01 (`spike/`)
+
+Prototype technique C# .NET 10 qui valide la pile : `DockTerminal.Spike.Core` (ConPTY, Job Object, intégration shell OSC 7), `DockTerminal.Spike.Host` (WinUI 3 non empaqueté, une seule WebView2, interface web dans `wwwroot/`), `DockTerminal.Spike.Harness` (scénarios automatisés) et un installeur Inno Setup. Les résultats, mesures et limites sont dans `spike/README.md`. Commandes depuis `spike/` : `dotnet build DockTerminal.Spike.slnx`, `dotnet run --project tests\DockTerminal.Spike.Harness`, `dotnet run --project src\DockTerminal.Spike.Host`, `scripts\build-installer.cmd`. Le spike n'est pas le socle de l'application produit : ne pas y ajouter de fonctionnalités métier.
+
 ## Environnement local documenté
 
 `docs/inspection-environnement.md` décrit le profil PowerShell de l'utilisateur, les fonctions worktree `wtr`/`rmwt`, le sélecteur WezTerm et les états d'agents existants. Ces fonctions ne doivent **pas** être réimplémentées dans Dock ; l'application doit les charger via le profil et suivre leurs effets. Ne pas simuler WezTerm avec de fausses variables d'environnement.
