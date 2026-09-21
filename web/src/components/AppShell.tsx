@@ -1,4 +1,4 @@
-import { activeTab, activeWorkspace, findWorkspace, type Session } from '../model/session'
+import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session } from '../model/session'
 import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
@@ -21,9 +21,10 @@ interface AppShellProps {
 
 export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, closeTab, closePane } = useSessionStore()
-  const { status, leaderActive, home } = useHostStore()
+  const { status, leaderActive, home, shells } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace } = useUiStore()
   const workspace = activeWorkspace(session)
+  const availableShells = shells.filter((shell) => shell.available)
   const tab = activeTab(workspace)
 
   const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.focus()
@@ -41,7 +42,7 @@ export function AppShell({ session }: AppShellProps) {
     }
     toggleSidebar()
   }
-  const handleNewWorkspace = () => startRenamingWorkspace(newWorkspace(`Workspace ${session.workspaces.length + 1}`, home, 'powershell'), RenameOrigin.Panel)
+  const handleNewWorkspace = () => startRenamingWorkspace(newWorkspace(`Workspace ${session.workspaces.length + 1}`, home, DEFAULT_SHELL), RenameOrigin.Panel)
   const handleStartRename = () => startRenamingWorkspace(workspace.id, RenameOrigin.Header)
   const handleStartRenameFromPanel = (workspaceId: string) => startRenamingWorkspace(workspaceId, RenameOrigin.Panel)
   const finishRename = () => {
@@ -52,7 +53,6 @@ export function AppShell({ session }: AppShellProps) {
     renameWorkspace(workspace.id, name)
     finishRename()
   }
-  const handleNewTab = () => newTab('powershell')
 
   return (
     <div className="flex h-full flex-col">
@@ -84,7 +84,7 @@ export function AppShell({ session }: AppShellProps) {
           </>
         )}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <TabBar workspace={workspace} onSelect={selectTab} onClose={closeTab} onNew={handleNewTab} />
+          <TabBar workspace={workspace} shells={availableShells} onSelect={selectTab} onClose={closeTab} onNew={newTab} />
           <div className="min-h-0 flex-1 border-t border-dock-line bg-dock-panel p-1">
             <SplitView key={tab.id} node={tab.tree} activePaneId={tab.active} onFocus={selectPane} onClose={closePane} />
           </div>

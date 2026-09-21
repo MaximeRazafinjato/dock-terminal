@@ -1,12 +1,11 @@
 import { bridge } from '../bridge/bridge'
 import { useHostStore } from '../store/hostStore'
-import { activePane, activeTab, activeWorkspace, panesOf, SplitAxis } from '../model/session'
+import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, panesOf, SplitAxis } from '../model/session'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'AltGraph', 'Meta'])
-const DEFAULT_SHELL = 'powershell'
 
 export enum Command {
   Palette = 'palette',
