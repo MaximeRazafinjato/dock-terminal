@@ -10,10 +10,10 @@ public sealed partial class MainWindow : Window
 {
     private const string VirtualHost = "dock.app";
     private const string DevServerVariable = "DOCK_WEB_DEV_URL";
-    private static readonly Color Paper = Color.FromArgb(255, 0x11, 0x17, 0x14);
-    private static readonly Color Ink = Color.FromArgb(255, 0xE4, 0xEC, 0xE6);
-    private static readonly Color Muted = Color.FromArgb(255, 0x8E, 0xA3, 0x93);
-    private static readonly Color Hover = Color.FromArgb(255, 0x21, 0x2D, 0x25);
+    private static readonly Color Paper = Color.FromArgb(255, 0x17, 0x19, 0x1B);
+    private static readonly Color Ink = Color.FromArgb(255, 0xD8, 0xDB, 0xD7);
+    private static readonly Color Muted = Color.FromArgb(255, 0x84, 0x8B, 0x87);
+    private static readonly Color Hover = Color.FromArgb(255, 0x24, 0x28, 0x2A);
     private readonly HostBridge _bridge;
 
     public MainWindow()

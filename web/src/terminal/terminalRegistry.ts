@@ -58,7 +58,7 @@ const createHandle = (pane: Pane): TerminalHandle => {
     fontFamily: FONT_FAMILY,
     fontSize: 14,
     scrollback: 10000,
-    theme: { background: '#0b0f0d', foreground: '#d7dfda', cursor: '#4fb37a', selectionBackground: '#4fb37a55' },
+    theme: { background: '#121416', foreground: '#cdd1cd', cursor: '#8fb39f', selectionBackground: '#7a9f8b40' },
   })
   const fit = new FitAddon()
   terminal.loadAddon(fit)

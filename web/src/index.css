@@ -8,20 +8,20 @@
 }
 
 @theme {
-  --color-dock-paper: #111714;
-  --color-dock-panel: #182019;
-  --color-dock-line: #283329;
-  --color-dock-ink: #e4ece6;
-  --color-dock-muted: #8ea393;
-  --color-dock-green: #4fb37a;
-  --color-dock-green-deep: #7fd6a3;
-  --color-dock-green-soft: #1f3a2b;
-  --color-dock-green-hover: #212d25;
-  --color-dock-focus: #4fb37a;
-  --color-dock-terminal: #0b0f0d;
-  --color-dock-terminal-ink: #d7dfda;
-  --color-dock-warning: #e2b25a;
-  --color-dock-error: #f0776f;
+  --color-dock-paper: #17191b;
+  --color-dock-panel: #1e2123;
+  --color-dock-line: #2c3033;
+  --color-dock-ink: #d8dbd7;
+  --color-dock-muted: #848b87;
+  --color-dock-green: #7a9f8b;
+  --color-dock-green-deep: #a9c4b4;
+  --color-dock-green-soft: #262d2a;
+  --color-dock-green-hover: #24282a;
+  --color-dock-focus: #8fb39f;
+  --color-dock-terminal: #121416;
+  --color-dock-terminal-ink: #cdd1cd;
+  --color-dock-warning: #c9a65f;
+  --color-dock-error: #c98078;
   --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'CaskaydiaCove Nerd Font Mono', 'Cascadia Mono', 'Cascadia Code', Consolas, 'Symbols Nerd Font Mono', monospace;
 }
