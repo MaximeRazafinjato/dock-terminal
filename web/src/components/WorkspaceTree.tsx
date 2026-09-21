@@ -1,7 +1,11 @@
 import type React from 'react'
-import type { Session } from '../model/session'
+import { activePane, DEFAULT_SHELL, type Session } from '../model/session'
 import { EditableName } from './EditableName'
 import { InlineNameEditor } from './InlineNameEditor'
+
+const SHELL_TAGS: Record<string, string> = { pwsh: 'PS 7', cmd: 'CMD', gitbash: 'Git Bash' }
+
+const shellTagOf = (shell: string): string | null => (shell === DEFAULT_SHELL ? null : (SHELL_TAGS[shell] ?? shell))
 
 interface WorkspaceTreeProps {
   session: Session
@@ -78,16 +82,18 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                   {workspace.tabs.map((tab) => {
                     const activeTab = selected && tab.id === workspace.active
                     const handleTab = () => onSelectTab(workspace.id, tab.id)
+                    const shellTag = shellTagOf(activePane(tab).shell)
                     return (
                       <li key={tab.id}>
                         <button
                           type="button"
                           aria-current={activeTab || undefined}
                           title={tab.name}
-                          className={`w-full cursor-pointer truncate rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
+                          className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
                           onClick={handleTab}
                         >
-                          {tab.name}
+                          <span className="min-w-0 flex-1 truncate">{tab.name}</span>
+                          {shellTag && <span className="shrink-0 rounded border border-dock-line px-1.5 py-px text-[10px] leading-tight font-medium text-dock-muted">{shellTag}</span>}
                         </button>
                       </li>
                     )
