@@ -10,6 +10,7 @@ import type { Pane } from '../model/session'
 
 const ACK_THRESHOLD = 256 * 1024
 const SNAPSHOT_SCROLLBACK_LINES = 2000
+const NEWLINE = String.fromCharCode(13, 10)
 const RESTORE_SEPARATOR = '\r\n\x1b[2m── Onglet rouvert : ancien texte ci-dessus, nouveau terminal ci-dessous ──\x1b[0m\r\n'
 const FONT_FAMILY = '"CaskaydiaCove Nerd Font Mono", "Cascadia Mono", "Cascadia Code", Consolas, "Symbols Nerd Font Mono", monospace'
 
@@ -106,7 +107,7 @@ export const terminalRegistry = {
       const restored = primedText.get(pane.id)
       if (restored !== undefined) {
         primedText.delete(pane.id)
-        handle.terminal.write(restored + RESTORE_SEPARATOR)
+        handle.terminal.write(restored + RESTORE_SEPARATOR + NEWLINE.repeat(handle.terminal.rows))
       }
       bridge.send({ type: 'terminal.create', pane: pane.id, shell: pane.shell, cwd: pane.path, cols: handle.terminal.cols, rows: handle.terminal.rows })
     }
