@@ -4,7 +4,7 @@ Projet de terminal Windows organisé en **workspaces → onglets → panes**, av
 
 ## État du projet
 
-Les spécifications et le prototype HTML sont disponibles. **Le POC simule les terminaux : il n’exécute pas PowerShell, CMD, Git Bash ou des agents réels.** La pile technique de l’application finale reste à choisir.
+Les spécifications et le prototype HTML sont disponibles. **Le POC simule les terminaux : il n’exécute pas PowerShell, CMD, Git Bash ou des agents réels.** La pile technique de l’application finale (hôte C# .NET 10 + WinUI 3, WebView2 unique avec xterm.js, ConPTY et Job Objects) a été validée par le spike T01 dans `spike/` ; les vérifications manuelles restantes sont listées dans son README.
 
 ## Documents
 
@@ -15,6 +15,7 @@ Les spécifications et le prototype HTML sont disponibles. **Le POC simule les t
 - [Guide du POC](poc/README.md)
 - [Maquettes exploratoires](maquettes/index.html)
 - [Backlog fonctionnel](BACKLOG.md)
+- [Spike T01 : pile Windows et pipeline de terminal](spike/README.md)
 
 ## Direction retenue
 
