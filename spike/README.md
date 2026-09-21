@@ -96,6 +96,7 @@ ConPTY embarquée (`conpty.dll` OpenConsole 1.25) :
 - xterm.js 6 supprime l'addon canvas (repli DOM uniquement) ; le spike reste en 5.5 pour respecter le critère.
 - Windows App SDK 2.5.1 se construit et se publie en autonome avec `WindowsAppSDKSelfContained` depuis la ligne de commande ; aucun repli WPF n'est nécessaire.
 - Le dossier de données WebView2 est forcé dans `%LOCALAPPDATA%\DockTerminalSpike\WebView2` (variable `WEBVIEW2_USER_DATA_FOLDER`) : sans cela il est créé à côté de l'exécutable et survit à la désinstallation.
+- Les glyphes Nerd Font du prompt oh-my-posh (dossier, branche) n'existent pas dans Cascadia Mono ; WezTerm les obtient par sa police intégrée « Symbols Nerd Font Mono ». Le spike embarque cette police dans `wwwroot/vendor/fonts` en dernier repli de la famille xterm.js, après « CaskaydiaCove Nerd Font Mono » si elle est installée, et attend son chargement avant d'ouvrir les terminaux.
 - `dotnet publish` d'une application WinUI 3 non empaquetée omet le fichier `.pri` du projet (XAML compilé) tant que `EnableMsixTooling` n'est pas à `true` ; sans lui l'exécutable publié plante au démarrage dans `Microsoft.UI.Xaml.dll` (code 0xc000027b). Publier avec `-p:Platform=x64`.
 
 ## Versions minimales

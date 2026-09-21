@@ -1,4 +1,5 @@
 (function () {
+  DockSpike.TERMINAL_FONT_FAMILY = '"CaskaydiaCove Nerd Font Mono", "Cascadia Mono", "Cascadia Code", Consolas, "Symbols Nerd Font Mono", monospace';
   const bridge = DockSpike.bridge;
   const container = document.getElementById('panes');
   const statusLabel = document.getElementById('status');
@@ -111,8 +112,10 @@
   bridge.on('hello', (message) => {
     embeddedAvailable = message.embeddedAvailable;
     helloLabel.textContent = `Windows ${message.os} · .NET ${message.runtime} · WebView2 ${message.webview}${embeddedAvailable ? ' · conpty.dll disponible' : ''}`;
-    PANE_IDS.forEach((id) => createPane(id, 'windows'));
-    DockSpike.status('Deux panes PowerShell 5.1 lancés. Ctrl + P ouvre la palette.');
+    document.fonts.load('14px "Symbols Nerd Font Mono"').then(() => {
+      PANE_IDS.forEach((id) => createPane(id, 'windows'));
+      DockSpike.status('Deux panes PowerShell 5.1 lancés. Ctrl + P ouvre la palette.');
+    });
   });
   bridge.on('created', (message) => DockSpike.status(`${message.pane} démarré (PID ${message.pid}, ConPTY ${message.provider}).`));
   bridge.on('output', (message) => pane(message.pane) && pane(message.pane).write(message.data));

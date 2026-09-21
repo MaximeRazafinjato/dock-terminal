@@ -27,7 +27,7 @@ DockSpike.createPane = function createPane(options) {
   const term = new Terminal({
     allowProposedApi: true,
     cursorBlink: true,
-    fontFamily: '"Cascadia Mono", "Cascadia Code", Consolas, monospace',
+    fontFamily: DockSpike.TERMINAL_FONT_FAMILY,
     fontSize: 14,
     scrollback: 10000,
     theme: { background: '#0c0e12', foreground: '#d7dce3', cursor: '#4fb37a' }
