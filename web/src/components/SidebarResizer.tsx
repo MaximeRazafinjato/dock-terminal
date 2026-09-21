@@ -12,9 +12,10 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = { startX: event.clientX, startWidth: width }
-    document.body.style.cursor = 'col-resize'
+    document.body.style.cursor = 'ew-resize'
   }
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (dragRef.current) {
@@ -41,7 +42,7 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
       aria-valuemax={SIDEBAR_MAX}
       aria-valuenow={width}
       tabIndex={0}
-      className="group flex w-2 shrink-0 cursor-col-resize justify-center focus-visible:outline-none"
+      className="group flex w-2 shrink-0 cursor-ew-resize justify-center focus-visible:outline-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
