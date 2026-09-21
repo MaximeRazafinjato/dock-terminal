@@ -32,17 +32,17 @@ export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggl
               <div
                 role="button"
                 aria-expanded={expanded}
-                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2 pr-2 leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'hover:bg-dock-green-hover'}`}
+                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
                 onClick={handleToggle}
               >
-                <span className="w-6 shrink-0 self-center text-center text-xs text-dock-muted">{expanded ? '▾' : '▸'}</span>
+                <span className="w-6 shrink-0 self-center text-center text-sm text-dock-green">{expanded ? '▾' : '▸'}</span>
                 <button type="button" className="min-w-0 truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
                   {workspace.name}
                 </button>
-                <span className="text-[10px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
+                <span className="text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
               </div>
               {expanded && (
-                <ul className="mt-1 mb-2 ml-4 border-l border-dock-line pl-2">
+                <ul className="mt-1 mb-2 ml-5 border-l-2 border-dock-line pl-2">
                   {workspace.tabs.map((tab) => {
                     const activeTab = selected && tab.id === workspace.active
                     const handleTab = () => onSelectTab(workspace.id, tab.id)
@@ -50,7 +50,7 @@ export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggl
                       <li key={tab.id}>
                         <button
                           type="button"
-                          className={`w-full truncate rounded px-2 py-1.5 text-left text-[11px] ${activeTab ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-muted hover:bg-dock-green-hover'}`}
+                          className={`w-full truncate rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'}`}
                           onClick={handleTab}
                         >
                           {tab.name}
