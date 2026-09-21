@@ -1,3 +1,4 @@
+import { EditableName } from './EditableName'
 import { InlineNameEditor } from './InlineNameEditor'
 
 interface HeaderProps {
@@ -27,9 +28,7 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
         {renaming ? (
           <InlineNameEditor value={workspaceName} label="Nom du workspace" className="w-64 text-[16px]" onCommit={onCommitRename} onCancel={onCancelRename} />
         ) : (
-          <button type="button" className="truncate rounded px-1 text-[16px] hover:bg-dock-green-hover" title="Renommer le workspace" onClick={onStartRename}>
-            {workspaceName}
-          </button>
+          <EditableName name={workspaceName} className="text-[16px]" onClick={onStartRename} />
         )}
       </div>
       {leaderActive && <span className="rounded bg-dock-focus px-2 py-0.5 text-xs font-semibold text-dock-terminal">Leader…</span>}
