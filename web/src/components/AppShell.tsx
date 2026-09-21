@@ -4,6 +4,7 @@ import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { terminalRegistry } from '../terminal/terminalRegistry'
 import { Header } from './Header'
+import { SidebarResizer } from './SidebarResizer'
 import { SplitView } from './SplitView'
 import { TabBar } from './TabBar'
 import { WorkspaceTree } from './WorkspaceTree'
@@ -19,7 +20,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ session }: AppShellProps) {
-  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, newWorkspace, renameWorkspace, newTab, closeTab, closePane } = useSessionStore()
+  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, closeTab, closePane } = useSessionStore()
   const { status, leaderActive, home } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace } = useUiStore()
   const workspace = activeWorkspace(session)
@@ -33,6 +34,12 @@ export function AppShell({ session }: AppShellProps) {
     if (target) {
       focusPane(target.active)
     }
+  }
+  const handleToggleSidebar = () => {
+    if (!session.sidebarCollapsed && document.activeElement?.closest('aside')) {
+      focusPane(tab.active)
+    }
+    toggleSidebar()
   }
   const handleNewWorkspace = () => startRenamingWorkspace(newWorkspace(`Workspace ${session.workspaces.length + 1}`, home, 'powershell'), RenameOrigin.Panel)
   const handleStartRename = () => startRenamingWorkspace(workspace.id, RenameOrigin.Header)
@@ -54,24 +61,27 @@ export function AppShell({ session }: AppShellProps) {
         renaming={renamingWorkspaceId === workspace.id && renameOrigin === RenameOrigin.Header}
         sidebarCollapsed={session.sidebarCollapsed}
         leaderActive={leaderActive}
-        onToggleSidebar={toggleSidebar}
+        onToggleSidebar={handleToggleSidebar}
         onStartRename={handleStartRename}
         onCommitRename={handleCommitRename}
         onCancelRename={finishRename}
       />
       <div className="flex min-h-0 flex-1">
         {!session.sidebarCollapsed && (
-          <WorkspaceTree
-            session={session}
-            renamingWorkspaceId={renameOrigin === RenameOrigin.Panel ? renamingWorkspaceId : null}
-            onSelectWorkspace={selectWorkspace}
-            onStartRename={handleStartRenameFromPanel}
-            onCommitRename={handleCommitRename}
-            onCancelRename={finishRename}
-            onSelectTab={handleSelectTab}
-            onToggle={toggleWorkspace}
-            onNewWorkspace={handleNewWorkspace}
-          />
+          <>
+            <WorkspaceTree
+              session={session}
+              renamingWorkspaceId={renameOrigin === RenameOrigin.Panel ? renamingWorkspaceId : null}
+              onSelectWorkspace={selectWorkspace}
+              onStartRename={handleStartRenameFromPanel}
+              onCommitRename={handleCommitRename}
+              onCancelRename={finishRename}
+              onSelectTab={handleSelectTab}
+              onToggle={toggleWorkspace}
+              onNewWorkspace={handleNewWorkspace}
+            />
+            <SidebarResizer width={session.sidebar} onResize={setSidebarWidth} />
+          </>
         )}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           <TabBar workspace={workspace} onSelect={selectTab} onClose={closeTab} onNew={handleNewTab} />

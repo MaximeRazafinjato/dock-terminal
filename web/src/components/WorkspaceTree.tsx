@@ -17,7 +17,7 @@ interface WorkspaceTreeProps {
 
 export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace }: WorkspaceTreeProps) {
   return (
-    <aside className="flex h-full min-h-0 flex-col border-r border-dock-line bg-dock-paper" style={{ width: session.sidebar }}>
+    <aside className="flex h-full min-h-0 flex-col bg-dock-paper" style={{ width: session.sidebar }}>
       <div className="flex items-center justify-between px-3 py-2 text-[11px] font-semibold tracking-wide text-dock-muted uppercase">
         <span>Workspaces</span>
         <button type="button" className="rounded px-2 text-base hover:bg-dock-green-hover" title="Nouveau workspace" onClick={onNewWorkspace}>
