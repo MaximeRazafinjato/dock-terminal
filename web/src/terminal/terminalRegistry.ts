@@ -4,10 +4,13 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import { CanvasAddon } from '@xterm/addon-canvas'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { ClipboardAddon } from '@xterm/addon-clipboard'
+import { SerializeAddon } from '@xterm/addon-serialize'
 import { bridge } from '../bridge/bridge'
 import type { Pane } from '../model/session'
 
 const ACK_THRESHOLD = 256 * 1024
+const SNAPSHOT_SCROLLBACK_LINES = 2000
+const RESTORE_SEPARATOR = '\r\n\x1b[2m── Onglet rouvert : ancien texte ci-dessus, nouveau terminal ci-dessous ──\x1b[0m\r\n'
 const FONT_FAMILY = '"CaskaydiaCove Nerd Font Mono", "Cascadia Mono", "Cascadia Code", Consolas, "Symbols Nerd Font Mono", monospace'
 
 export enum Renderer {
@@ -20,6 +23,7 @@ export interface TerminalHandle {
   paneId: string
   terminal: Terminal
   fit: FitAddon
+  serializer: SerializeAddon
   renderer: Renderer
   started: boolean
   unackedChars: number
@@ -27,6 +31,7 @@ export interface TerminalHandle {
 }
 
 const handles = new Map<string, TerminalHandle>()
+const primedText = new Map<string, string>()
 
 const loadCanvas = (terminal: Terminal): Renderer => {
   try {
@@ -61,11 +66,13 @@ const createHandle = (pane: Pane): TerminalHandle => {
     theme: { background: '#121416', foreground: '#cdd1cd', cursor: '#8fb39f', selectionBackground: '#7a9f8b40' },
   })
   const fit = new FitAddon()
+  const serializer = new SerializeAddon()
   terminal.loadAddon(fit)
+  terminal.loadAddon(serializer)
   terminal.loadAddon(new Unicode11Addon())
   terminal.loadAddon(new ClipboardAddon())
   terminal.unicode.activeVersion = '11'
-  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, renderer: Renderer.Dom, started: false, unackedChars: 0 }
+  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, started: false, unackedChars: 0 }
   terminal.onData((data) => bridge.send({ type: 'terminal.input', pane: pane.id, data }))
   terminal.onResize(({ cols, rows }) => {
     if (handle.started) {
@@ -96,6 +103,11 @@ export const terminalRegistry = {
     handle.fit.fit()
     if (!handle.started) {
       handle.started = true
+      const restored = primedText.get(pane.id)
+      if (restored !== undefined) {
+        primedText.delete(pane.id)
+        handle.terminal.write(restored + RESTORE_SEPARATOR)
+      }
       bridge.send({ type: 'terminal.create', pane: pane.id, shell: pane.shell, cwd: pane.path, cols: handle.terminal.cols, rows: handle.terminal.rows })
     }
     return handle
@@ -113,6 +125,21 @@ export const terminalRegistry = {
         handle.unackedChars = 0
       }
     })
+  },
+
+  snapshot(paneIds: string[]): Record<string, string> {
+    const text: Record<string, string> = {}
+    for (const paneId of paneIds) {
+      const handle = handles.get(paneId)
+      if (handle) {
+        text[paneId] = handle.serializer.serialize({ scrollback: SNAPSHOT_SCROLLBACK_LINES })
+      }
+    }
+    return text
+  },
+
+  prime(paneId: string, text: string): void {
+    primedText.set(paneId, text)
   },
 
   markExited(paneId: string, code: number): void {

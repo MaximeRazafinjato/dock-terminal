@@ -2,7 +2,7 @@ import { EditableName } from './EditableName'
 import { InlineNameEditor } from './InlineNameEditor'
 
 interface HeaderProps {
-  workspaceName: string
+  workspaceName: string | null
   renaming: boolean
   sidebarCollapsed: boolean
   leaderActive: boolean
@@ -25,7 +25,9 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
       </button>
       <div className="flex min-w-0 items-baseline gap-4">
         <span className="text-[17px] font-semibold text-dock-green">Dock</span>
-        {renaming ? (
+        {workspaceName === null ? (
+          <span className="text-[16px] text-dock-muted">Aucun workspace</span>
+        ) : renaming ? (
           <InlineNameEditor value={workspaceName} label="Nom du workspace" className="w-64 text-[16px]" onCommit={onCommitRename} onCancel={onCancelRename} />
         ) : (
           <EditableName name={workspaceName} className="text-[16px]" onClick={onStartRename} />

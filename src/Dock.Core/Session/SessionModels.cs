@@ -9,6 +9,16 @@ public sealed class SessionModel
     public string Active { get; set; } = string.Empty;
     public int Sidebar { get; set; } = SessionLimits.DefaultSidebarWidth;
     public bool SidebarCollapsed { get; set; }
+    public List<ClosedTabModel> Closed { get; set; } = new();
+}
+
+public sealed class ClosedTabModel
+{
+    public string WorkspaceId { get; set; } = string.Empty;
+    public string WorkspaceName { get; set; } = string.Empty;
+    public int Index { get; set; }
+    public TabModel Tab { get; set; } = new();
+    public Dictionary<string, string> Text { get; set; } = new();
 }
 
 public sealed class WorkspaceModel
@@ -58,4 +68,6 @@ public static class SessionLimits
     public const int MinSidebarWidth = 220;
     public const int MaxSidebarWidth = 450;
     public const int DefaultSidebarWidth = 292;
+    public const int MaxClosedTabs = 5;
+    public const int MaxClosedTextChars = 2_000_000;
 }

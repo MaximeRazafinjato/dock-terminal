@@ -10,7 +10,7 @@ public static class SessionValidator
 {
     public static ValidationResultModel Validate(SessionModel? session)
     {
-        if (session is null || session.Version != SessionLimits.CurrentVersion || session.Workspaces.Count == 0)
+        if (session is null || session.Version != SessionLimits.CurrentVersion)
         {
             return ValidationResultModel.Fail("Format de session incorrect.");
         }
@@ -25,12 +25,43 @@ public static class SessionValidator
             }
         }
 
-        if (!session.Workspaces.Any(workspace => workspace.Id == session.Active))
+        var activeIsValid = session.Workspaces.Count == 0 ? string.IsNullOrEmpty(session.Active) : session.Workspaces.Any(workspace => workspace.Id == session.Active);
+        if (!activeIsValid)
         {
             return ValidationResultModel.Fail("Workspace actif invalide.");
         }
 
+        var closedResult = ValidateClosed(session, ref nodeCount);
+        if (!closedResult.IsValid)
+        {
+            return closedResult;
+        }
+
         session.Sidebar = Math.Clamp(session.Sidebar, SessionLimits.MinSidebarWidth, SessionLimits.MaxSidebarWidth);
+        return ValidationResultModel.Ok();
+    }
+
+    private static ValidationResultModel ValidateClosed(SessionModel session, ref int nodeCount)
+    {
+        if (session.Closed.Count > SessionLimits.MaxClosedTabs)
+        {
+            session.Closed = session.Closed.Skip(session.Closed.Count - SessionLimits.MaxClosedTabs).ToList();
+        }
+
+        foreach (var closed in session.Closed)
+        {
+            if (string.IsNullOrEmpty(closed.WorkspaceId) || closed.WorkspaceName is null || closed.Index < 0 || closed.Text.Values.Any(text => text is null || text.Length > SessionLimits.MaxClosedTextChars))
+            {
+                return ValidationResultModel.Fail("Onglet fermé invalide.");
+            }
+
+            var tabResult = ValidateTab(closed.Tab, ref nodeCount);
+            if (!tabResult.IsValid)
+            {
+                return tabResult;
+            }
+        }
+
         return ValidationResultModel.Ok();
     }
 
@@ -43,26 +74,34 @@ public static class SessionValidator
 
         foreach (var tab in workspace.Tabs)
         {
-            if (string.IsNullOrEmpty(tab.Id) || tab.Name is null)
+            var tabResult = ValidateTab(tab, ref nodeCount);
+            if (!tabResult.IsValid)
             {
-                return ValidationResultModel.Fail("Onglet invalide.");
-            }
-
-            var treeResult = ValidateTree(tab.Tree, 0, ref nodeCount);
-            if (!treeResult.IsValid)
-            {
-                return treeResult;
-            }
-
-            if (!SplitTree.Panes(tab.Tree).Any(pane => pane.Id == tab.Active))
-            {
-                return ValidationResultModel.Fail("Pane actif invalide.");
+                return tabResult;
             }
         }
 
         return workspace.Tabs.Any(tab => tab.Id == workspace.Active)
             ? ValidationResultModel.Ok()
             : ValidationResultModel.Fail("Onglet actif invalide.");
+    }
+
+    private static ValidationResultModel ValidateTab(TabModel tab, ref int nodeCount)
+    {
+        if (string.IsNullOrEmpty(tab.Id) || tab.Name is null)
+        {
+            return ValidationResultModel.Fail("Onglet invalide.");
+        }
+
+        var treeResult = ValidateTree(tab.Tree, 0, ref nodeCount);
+        if (!treeResult.IsValid)
+        {
+            return treeResult;
+        }
+
+        return SplitTree.Panes(tab.Tree).Any(pane => pane.Id == tab.Active)
+            ? ValidationResultModel.Ok()
+            : ValidationResultModel.Fail("Pane actif invalide.");
     }
 
     private static ValidationResultModel ValidateTree(SplitNodeModel? node, int depth, ref int nodeCount)

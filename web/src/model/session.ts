@@ -38,12 +38,21 @@ export interface Workspace {
   expanded?: boolean
 }
 
+export interface ClosedTab {
+  workspaceId: string
+  workspaceName: string
+  index: number
+  tab: Tab
+  text: Record<string, string>
+}
+
 export interface Session {
   version: number
   workspaces: Workspace[]
   active: string
   sidebar: number
   sidebarCollapsed: boolean
+  closed: ClosedTab[]
 }
 
 export const SESSION_VERSION = 2
@@ -51,6 +60,7 @@ export const SIDEBAR_MIN = 220
 export const SIDEBAR_MAX = 450
 export const SIDEBAR_DEFAULT = 292
 export const DEFAULT_SHELL = 'powershell'
+export const CLOSED_TABS_MAX = 5
 
 export const isLeaf = (node: SplitNode): node is SplitLeaf => 'pane' in node
 
@@ -98,10 +108,25 @@ export const pruneNode = (node: SplitNode, paneId: string): SplitNode | null => 
 export const updatePane = (node: SplitNode, paneId: string, patch: Partial<Pane>): SplitNode =>
   replaceNode(node, paneId, (leaf) => ({ pane: { ...leaf.pane, ...patch } }))
 
+const renewPaneIds = (node: SplitNode, paneIds: Record<string, string>): SplitNode => {
+  if (isLeaf(node)) {
+    const id = newId()
+    paneIds[node.pane.id] = id
+    return { pane: { ...node.pane, id } }
+  }
+  return { ...node, a: renewPaneIds(node.a, paneIds), b: renewPaneIds(node.b, paneIds) }
+}
+
+export const cloneTabWithNewIds = (tab: Tab): { tab: Tab; paneIds: Record<string, string> } => {
+  const paneIds: Record<string, string> = {}
+  const tree = renewPaneIds(tab.tree, paneIds)
+  return { tab: { ...tab, id: newId(), tree, active: paneIds[tab.active] ?? panesOf(tree)[0].id }, paneIds }
+}
+
 export const findWorkspace = (session: Session, workspaceId: string): Workspace | undefined =>
   session.workspaces.find((workspace) => workspace.id === workspaceId)
 
-export const activeWorkspace = (session: Session): Workspace =>
+export const activeWorkspace = (session: Session): Workspace | undefined =>
   findWorkspace(session, session.active) ?? session.workspaces[0]
 
 export const activeTab = (workspace: Workspace): Tab =>
