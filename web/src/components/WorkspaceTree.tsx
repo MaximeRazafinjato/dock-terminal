@@ -32,14 +32,14 @@ export function WorkspaceTree({ session, onSelectWorkspace, onSelectTab, onToggl
               <div
                 role="button"
                 aria-expanded={expanded}
-                className={`flex cursor-pointer items-center gap-1 rounded-md py-2 pr-2 select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'hover:bg-dock-green-hover'}`}
+                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2 pr-2 leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'hover:bg-dock-green-hover'}`}
                 onClick={handleToggle}
               >
-                <span className="w-6 shrink-0 text-center text-xs text-dock-muted">{expanded ? '▾' : '▸'}</span>
-                <button type="button" className="min-w-0 truncate rounded px-1 text-left font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
+                <span className="w-6 shrink-0 self-center text-center text-xs text-dock-muted">{expanded ? '▾' : '▸'}</span>
+                <button type="button" className="min-w-0 truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
                   {workspace.name}
                 </button>
-                <span className="text-[10px] text-dock-muted">{workspace.tabs.length} ong.</span>
+                <span className="text-[10px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
               </div>
               {expanded && (
                 <ul className="mt-1 mb-2 ml-4 border-l border-dock-line pl-2">
