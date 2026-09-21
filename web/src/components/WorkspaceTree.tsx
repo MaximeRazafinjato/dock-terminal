@@ -55,7 +55,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                   aria-expanded={expanded}
                   aria-controls={tabsId}
                   aria-label={`${expanded ? 'Replier' : 'Afficher'} les onglets de ${workspace.name}`}
-                  className="w-6 shrink-0 cursor-pointer self-center rounded text-center text-sm text-dock-green hover:bg-dock-line"
+                  className="w-6 shrink-0 cursor-pointer self-center text-center text-sm text-dock-green"
                   onClick={handleChevron}
                 >
                   {expanded ? '▾' : '▸'}
