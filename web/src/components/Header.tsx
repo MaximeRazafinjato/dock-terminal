@@ -21,7 +21,6 @@ export function Header({ workspaceName, sidebarCollapsed, leaderActive, onToggle
         <span className="truncate text-[16px]">{workspaceName}</span>
       </div>
       {leaderActive && <span className="rounded bg-dock-focus px-2 py-0.5 text-xs font-semibold text-dock-terminal">Leader…</span>}
-      <span className="ml-auto text-[11px] text-dock-muted">Ctrl + Espace puis T / V / H / W / X / flèche · Ctrl + Maj + lettre · Alt + flèche · Ctrl + P</span>
     </header>
   )
 }
