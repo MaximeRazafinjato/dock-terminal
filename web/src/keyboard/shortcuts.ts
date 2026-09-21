@@ -1,7 +1,8 @@
 import { bridge } from '../bridge/bridge'
 import { useHostStore } from '../store/hostStore'
-import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, panesOf, SplitAxis } from '../model/session'
+import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, panesOf, SplitAxis, type Workspace } from '../model/session'
 import { useSessionStore } from '../store/sessionStore'
+import { closePaneKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
@@ -18,6 +19,7 @@ export enum Command {
   PreviousPane = 'previousPane',
   MoveTabLeft = 'moveTabLeft',
   MoveTabRight = 'moveTabRight',
+  RestoreTab = 'restoreTab',
 }
 
 const LEADER_KEYS: Record<string, Command> = {
@@ -27,6 +29,7 @@ const LEADER_KEYS: Record<string, Command> = {
   h: Command.SplitTopBottom,
   w: Command.NewWorkspace,
   x: Command.ClosePane,
+  z: Command.RestoreTab,
   ArrowRight: Command.NextPane,
   ArrowDown: Command.NextPane,
   ArrowLeft: Command.PreviousPane,
@@ -47,6 +50,7 @@ const DIRECT_LETTER_KEYS: Record<string, Command> = {
   h: Command.SplitTopBottom,
   w: Command.NewWorkspace,
   x: Command.ClosePane,
+  z: Command.RestoreTab,
 }
 
 const DIRECT_ARROW_KEYS: Record<string, Command> = {
@@ -59,6 +63,9 @@ const DIRECT_ARROW_KEYS: Record<string, Command> = {
 let leaderTimer: ReturnType<typeof setTimeout> | undefined
 
 const letterOf = (event: KeyboardEvent): string => {
+  if (/^[a-zA-Z]$/.test(event.key)) {
+    return event.key.toLowerCase()
+  }
   const fromCode = /^Key([A-Z])$/.exec(event.code)
   return fromCode ? fromCode[1].toLowerCase() : event.key.toLowerCase()
 }
@@ -96,24 +103,27 @@ const enterLeader = (): void => {
 
 const cyclePane = (offset: number): void => {
   const { session, selectPane } = useSessionStore.getState()
-  if (!session) {
+  const workspace = session ? activeWorkspace(session) : undefined
+  if (!workspace) {
     return
   }
-  const tab = activeTab(activeWorkspace(session))
+  const tab = activeTab(workspace)
   const panes = panesOf(tab.tree)
   const index = panes.findIndex((pane) => pane.id === tab.active)
   selectPane(panes[(index + offset + panes.length) % panes.length].id)
 }
 
-const currentShell = (): string => {
+const currentWorkspace = (): Workspace | undefined => {
   const { session } = useSessionStore.getState()
-  return session ? activePane(activeTab(activeWorkspace(session))).shell : DEFAULT_SHELL
+  return session ? activeWorkspace(session) : undefined
 }
 
-const currentPaneId = (): string => {
-  const { session } = useSessionStore.getState()
-  return session ? activeTab(activeWorkspace(session)).active : ''
+const currentShell = (): string => {
+  const workspace = currentWorkspace()
+  return workspace ? activePane(activeTab(workspace)).shell : DEFAULT_SHELL
 }
+
+const currentPaneId = (): string => currentWorkspace()?.active ?? ''
 
 export const runCommand = (command: Command): void => {
   const sessionStore = useSessionStore.getState()
@@ -135,7 +145,7 @@ export const runCommand = (command: Command): void => {
       useUiStore.getState().startRenamingWorkspace(sessionStore.newWorkspace(`Workspace ${(sessionStore.session?.workspaces.length ?? 0) + 1}`, hostStore.home, DEFAULT_SHELL), RenameOrigin.Header)
       break
     case Command.ClosePane:
-      sessionStore.closePane(currentPaneId())
+      closePaneKeepingText(currentPaneId())
       break
     case Command.NextPane:
       cyclePane(1)
@@ -148,6 +158,9 @@ export const runCommand = (command: Command): void => {
       break
     case Command.MoveTabRight:
       sessionStore.moveActiveTab(1)
+      break
+    case Command.RestoreTab:
+      restoreClosedTab()
       break
   }
 }
