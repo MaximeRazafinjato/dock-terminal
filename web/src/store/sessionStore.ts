@@ -6,6 +6,7 @@ import {
   createTab,
   createWorkspace,
   findWorkspace,
+  folderName,
   panesOf,
   pruneNode,
   replaceNode,
@@ -31,6 +32,7 @@ interface SessionState {
   newWorkspace: (name: string, path: string, shell: string) => string
   renameWorkspace: (workspaceId: string, name: string) => void
   newTab: (shell: string) => void
+  renameTab: (tabId: string, name: string) => void
   closeTab: (tabId: string) => void
   splitPane: (axis: SplitAxis) => void
   closePane: (paneId: string) => void
@@ -127,6 +129,18 @@ export const useSessionStore = create<SessionState>()((set) => ({
       }),
     })),
 
+  renameTab: (tabId, name) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        const tab = draft.workspaces.flatMap((workspace) => workspace.tabs).find((candidate) => candidate.id === tabId)
+        const trimmed = name.trim()
+        if (tab && trimmed.length > 0) {
+          tab.name = trimmed
+          tab.manual = true
+        }
+      }),
+    })),
+
   closeTab: (tabId) =>
     set((state) => ({
       session: mutateSession(state.session, (draft) => {
@@ -195,6 +209,9 @@ export const useSessionStore = create<SessionState>()((set) => ({
         for (const workspace of draft.workspaces) {
           for (const tab of workspace.tabs) {
             tab.tree = updatePane(tab.tree, paneId, { path })
+            if (!tab.manual && tab.active === paneId) {
+              tab.name = folderName(path) || tab.name
+            }
           }
         }
       }),
