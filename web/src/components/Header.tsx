@@ -19,7 +19,7 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
     <header className="flex h-[42px] shrink-0 items-center gap-4 border-b border-dock-line bg-dock-panel px-3 text-dock-ink">
       <button
         type="button"
-        className="rounded border border-dock-line px-2 text-lg leading-tight text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink"
+        className="cursor-pointer rounded border border-dock-line px-2 text-lg leading-tight text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink"
         data-tip={sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces'}
         onClick={onToggleSidebar}
       >
@@ -38,7 +38,7 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
       {leaderActive && <LeaderHints />}
       <button
         type="button"
-        className="ml-auto rounded border border-dock-line px-2 text-lg leading-tight text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink"
+        className="ml-auto cursor-pointer rounded border border-dock-line px-2 text-lg leading-tight text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink"
         aria-label="Paramètres"
         data-tip="Paramètres (Leader puis ,)"
         onClick={onOpenSettings}
