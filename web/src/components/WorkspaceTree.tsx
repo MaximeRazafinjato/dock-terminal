@@ -91,7 +91,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     {workspace.name}
                   </button>
                 )}
-                <span className="text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
+                <span className="ml-auto shrink-0 text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
                 <button type="button" className={CLOSE_BUTTON} title="Fermer le workspace" aria-label={`Fermer le workspace ${workspace.name}`} onClick={handleCloseWorkspace}>
                   ×
                 </button>
