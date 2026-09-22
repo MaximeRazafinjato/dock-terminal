@@ -19,18 +19,24 @@ public sealed class HostBridge : IDisposable
     private readonly DispatcherQueue _dispatcher;
     private readonly Action _closeWindow;
     private readonly SessionRepository _sessions;
+    private readonly PersistenceSettingsModel _persistence;
+    private readonly PaneTextRepository _texts;
     private readonly ShellPathsModel _shellPaths;
     private readonly EditorSettingsModel _editor;
     private readonly TerminalManager _terminals;
     private readonly ConcurrentDictionary<string, PaneOutputBuffer> _buffers = new();
     private CoreWebView2? _core;
     private int _flushScheduled;
+    private bool _closing;
+    private DispatcherQueueTimer? _closeTimer;
 
     public HostBridge(DispatcherQueue dispatcher, string dataDirectory, Action closeWindow)
     {
         _dispatcher = dispatcher;
         _closeWindow = closeWindow;
         _sessions = new SessionRepository(dataDirectory);
+        _persistence = new PersistenceSettingsRepository(dataDirectory).Load();
+        _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextChars);
         _shellPaths = new ShellPathsRepository(dataDirectory).Load();
         _editor = new EditorSettingsRepository(dataDirectory).Load();
         _terminals = new TerminalManager(_shellPaths);
@@ -73,15 +79,35 @@ public sealed class HostBridge : IDisposable
         }
     }
 
+    public bool RequestClose()
+    {
+        if (_core is null || _closing)
+        {
+            return false;
+        }
+
+        _closing = true;
+        PostNow(new { type = "app.closing" });
+        _closeTimer = _dispatcher.CreateTimer();
+        _closeTimer.Interval = TimeSpan.FromSeconds(3);
+        _closeTimer.IsRepeating = false;
+        _closeTimer.Tick += (_, _) => _closeWindow();
+        _closeTimer.Start();
+        return true;
+    }
+
     private void Dispatch(BridgeCommandModel command)
     {
         switch (command.Type)
         {
             case "app.ready":
-                Post(new { type = "app.hello", session = _sessions.Load() ?? SessionFactory.Initial(), shells = ShellCatalog.Profiles(_shellPaths), home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) });
+                SendHello();
                 break;
             case "session.save":
                 SaveSession(command);
+                break;
+            case "text.save":
+                SaveText(command);
                 break;
             case "terminal.create":
                 CreateTerminal(command);
@@ -122,13 +148,62 @@ public sealed class HostBridge : IDisposable
         }
     }
 
+    private void SendHello()
+    {
+        var loaded = _sessions.Load();
+        var text = _texts.Load();
+        var recovery = string.Join(" ", new[] { loaded.Error, text.Error }.Where(error => error is not null));
+        Post(new
+        {
+            type = "app.hello",
+            session = loaded.Session ?? SessionFactory.Initial(),
+            shells = ShellCatalog.Profiles(_shellPaths),
+            home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            text = text.Text,
+            persistence = new { textIntervalSeconds = _persistence.TextIntervalSeconds, linesPerPane = _persistence.LinesPerPane },
+            recovery = recovery.Length > 0 ? recovery : null
+        });
+    }
+
     private void SaveSession(BridgeCommandModel command)
     {
-        var session = command.Session?.Deserialize<SessionModel>(JsonOptions);
-        var result = _sessions.Save(session ?? throw new InvalidOperationException("Session manquante."));
-        if (!result.IsValid)
+        var session = command.Session?.Deserialize<SessionModel>(JsonOptions) ?? throw new InvalidOperationException("Session manquante.");
+        Persist(_sessions.FilePath, () =>
         {
-            throw new InvalidOperationException($"Session refusée : {result.Error}");
+            var result = _sessions.Save(session);
+            return result.IsValid ? null : $"Session refusée : {result.Error}";
+        });
+    }
+
+    private void SaveText(BridgeCommandModel command)
+    {
+        var text = command.Text?.Deserialize<Dictionary<string, string>>(JsonOptions) ?? throw new InvalidOperationException("Texte des terminaux manquant.");
+        Persist(_texts.FilePath, () =>
+        {
+            _texts.Save(text);
+            return null;
+        });
+    }
+
+    private void Persist(string filePath, Func<string?> write)
+    {
+        string? failure;
+        try
+        {
+            failure = write();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            failure = $"Impossible d’écrire {filePath} : {exception.Message}";
+        }
+
+        if (failure is null)
+        {
+            Post(new { type = "session.saved" });
+        }
+        else
+        {
+            Post(new { type = "session.saveFailed", message = failure });
         }
     }
 
