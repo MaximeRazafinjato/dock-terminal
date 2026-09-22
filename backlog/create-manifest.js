@@ -88,7 +88,7 @@ const tasks=[
 'Revenir au premier résultat après filtrage et ne rien exécuter sur liste vide.',
 'Afficher la sélection par le fond uniquement et déclencher les éditeurs inline appropriés.',
 'Restaurer le focus correctement sans perdre la saisie terminal.'
-],['F03','F05'],'La navigation directe vers un pane dépasse la liste actuelle du POC et fait partie de la cible.'],
+],['F03','F05'],'La navigation directe vers un pane dépasse la liste actuelle du POC et fait partie de la cible.',true],
 ['F14','Ouvrir un workspace depuis le sélecteur de projets','10','R16','Trouver rapidement un dossier dans Projets.',[
  'Lire le vrai dossier C:\\Files\\Projects, pas une liste fictive.',
 'Rechercher des dossiers et naviguer avec flèches, Entrée et Échap.',
