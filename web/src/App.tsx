@@ -3,6 +3,7 @@ import { bridge } from './bridge/bridge'
 import { AppShell } from './components/AppShell'
 import { allPanes } from './model/session'
 import { StatusLevel, useHostStore } from './store/hostStore'
+import { usePaneStore } from './store/paneStore'
 import { useSessionStore } from './store/sessionStore'
 import { terminalRegistry } from './terminal/terminalRegistry'
 
@@ -16,6 +17,7 @@ export default function App() {
   useEffect(() => {
     const { load, setPanePath } = useSessionStore.getState()
     const { setHello, setStatus } = useHostStore.getState()
+    const { markFailed, markExited } = usePaneStore.getState()
     const subscriptions = [
       bridge.on('app.hello', (message) => {
         setHello(message.shells, message.home)
@@ -26,8 +28,16 @@ export default function App() {
       }),
       bridge.on('terminal.output', (message) => terminalRegistry.write(message.pane, message.data)),
       bridge.on('terminal.cwd', (message) => setPanePath(message.pane, message.path)),
-      bridge.on('terminal.exit', (message) => terminalRegistry.markExited(message.pane, message.code)),
-      bridge.on('error', (message) => setStatus(message.message, StatusLevel.Error)),
+      bridge.on('terminal.exit', (message) => {
+        terminalRegistry.markExited(message.pane, message.code)
+        markExited(message.pane, message.code)
+      }),
+      bridge.on('error', (message) => {
+        setStatus(message.message, StatusLevel.Error)
+        if (message.pane) {
+          markFailed(message.pane, message.message)
+        }
+      }),
     ]
     if (bridge.available) {
       bridge.send({ type: 'app.ready' })
