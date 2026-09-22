@@ -139,7 +139,7 @@ const tasks=[
 'Mettre en évidence les attentes et rejoindre le pane correspondant.',
 'Ne pas déduire un état fiable de la simple présence d’un processus.',
 'Ne pas restaurer des activités anciennes comme vivantes.'
-],['F03','F11'],'Préparer des adaptateurs extensibles pour Claude Code (`claude`) et Codex CLI (`codex`) ; leur détection fiable est reportée à une évolution dédiée.'],
+],['F03','F11'],'Préparer des adaptateurs extensibles pour Claude Code (`claude`) et Codex CLI (`codex`) ; leur détection fiable est reportée à une évolution dédiée.',true],
 ['F21','Notifier les demandes d’attention sans interrompre le travail','12','R18','Être prévenu lorsqu’une intervention devient nécessaire.',[
 'Émettre une notification discrète et ciblée pour une nouvelle attente.',
 'Éviter les doublons et changements automatiques de workspace ou de focus.',
