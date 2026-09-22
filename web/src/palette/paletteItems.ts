@@ -1,0 +1,96 @@
+import type { ShellProfile } from '../bridge/messages'
+import { Command, runCommand } from '../keyboard/shortcuts'
+import { activeTab, activeWorkspace, panesOf, type Session } from '../model/session'
+import { useSessionStore } from '../store/sessionStore'
+import { RenameOrigin, useUiStore } from '../store/uiStore'
+import { restoreClosedTab } from '../terminal/tabLifecycle'
+
+export enum PaletteKind {
+  Command = 'command',
+  Workspace = 'workspace',
+  Tab = 'tab',
+  Pane = 'pane',
+}
+
+export interface PaletteItem {
+  id: string
+  kind: PaletteKind
+  label: string
+  hint?: string
+  run: () => void
+}
+
+const SEPARATOR = ' · '
+
+const command = (id: string, label: string, run: () => void, hint?: string): PaletteItem => ({ id, kind: PaletteKind.Command, label, hint, run })
+
+const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] => {
+  const store = useSessionStore.getState()
+  const ui = useUiStore.getState()
+  const workspace = activeWorkspace(session)
+  const tab = workspace ? activeTab(workspace) : undefined
+  const items: PaletteItem[] = [
+    command('new-tab', 'Nouvel onglet', () => runCommand(Command.NewTab), 'Ctrl + Maj + T'),
+    ...shells.map((shell) => command(`new-tab-${shell.id}`, `Nouvel onglet${SEPARATOR}${shell.name}`, () => store.newTab(shell.id))),
+    command('split-x', 'Split côte à côte', () => runCommand(Command.SplitSideBySide), 'Ctrl + Maj + D'),
+    command('split-y', 'Split haut / bas', () => runCommand(Command.SplitTopBottom), 'Ctrl + Maj + H'),
+    command('close-pane', 'Fermer le pane actif', () => runCommand(Command.ClosePane), 'Ctrl + Maj + X'),
+    command('new-workspace', 'Nouveau workspace', () => runCommand(Command.NewWorkspace), 'Ctrl + Maj + W'),
+    command('restore-tab', 'Rouvrir le dernier onglet fermé', restoreClosedTab, 'Ctrl + Maj + Z'),
+    command('toggle-sidebar', session.sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces', store.toggleSidebar),
+  ]
+  if (workspace) {
+    items.push(command('rename-workspace', 'Renommer le workspace', () => ui.startRenamingWorkspace(workspace.id, RenameOrigin.Header)))
+  }
+  if (tab) {
+    items.push(command('rename-tab', 'Renommer l’onglet', () => ui.startRenamingTab(tab.id)))
+    for (const target of session.workspaces.filter((candidate) => candidate.id !== workspace?.id)) {
+      items.push(command(`move-tab-${target.id}`, `Déplacer l’onglet vers${SEPARATOR}${target.name}`, () => store.moveTab(tab.id, target.id)))
+    }
+  }
+  return items
+}
+
+const navigationItems = (session: Session): PaletteItem[] => {
+  const { selectWorkspace, selectTab, selectPane } = useSessionStore.getState()
+  return session.workspaces.flatMap((workspace) => [
+    { id: `ws-${workspace.id}`, kind: PaletteKind.Workspace, label: `Workspace${SEPARATOR}${workspace.name}`, run: () => selectWorkspace(workspace.id) },
+    ...workspace.tabs.flatMap((tab) => [
+      {
+        id: `tab-${tab.id}`,
+        kind: PaletteKind.Tab,
+        label: `Onglet${SEPARATOR}${workspace.name} / ${tab.name}`,
+        run: () => {
+          selectWorkspace(workspace.id)
+          selectTab(tab.id)
+        },
+      },
+      ...panesOf(tab.tree).map((pane) => ({
+        id: `pane-${pane.id}`,
+        kind: PaletteKind.Pane,
+        label: `Pane${SEPARATOR}${workspace.name} / ${tab.name} / ${pane.shell}`,
+        hint: pane.path,
+        run: () => selectPane(pane.id),
+      })),
+    ]),
+  ])
+}
+
+export const buildPaletteItems = (session: Session, shells: ShellProfile[]): PaletteItem[] => [...commandItems(session, shells), ...navigationItems(session)]
+
+const normalize = (text: string): string =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+
+export const filterPaletteItems = (items: PaletteItem[], query: string): PaletteItem[] => {
+  const tokens = normalize(query).split(/\s+/).filter((token) => token.length > 0)
+  if (tokens.length === 0) {
+    return items
+  }
+  return items.filter((item) => {
+    const haystack = normalize(`${item.label} ${item.hint ?? ''}`)
+    return tokens.every((token) => haystack.includes(token))
+  })
+}
