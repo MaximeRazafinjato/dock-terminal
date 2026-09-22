@@ -102,7 +102,7 @@ const tasks=[
 'Ouvrir un terminal supplémentaire dans ce dossier.',
 'Indiquer le chemin ciblé ; ne pas supposer un dossier unique de workspace.',
 'Gérer hors dépôt, HEAD détachée et chemins avec espaces sans valeur fictive.'
-],['F11'],'Éditeur et paramètres d’ouverture à configurer ; aucune commande locale ne doit être composée naïvement avec les chemins.'],
+],['F11'],'Éditeur et paramètres d’ouverture à configurer ; aucune commande locale ne doit être composée naïvement avec les chemins.',true],
 ['F16','Préserver wtr/rmwt et synchroniser leur contexte','11','R15','Continuer à utiliser les fonctions worktree existantes depuis le terminal.',[
  'Prendre en compte la lecture du profil et la documentation de wtr/rmwt dans docs/inspection-environnement.md.',
 'Pouvoir exécuter wtr et rmwt dans PowerShell.',
