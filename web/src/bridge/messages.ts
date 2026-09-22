@@ -9,6 +9,16 @@ export interface ShellProfile {
   reportsCurrentDirectory: boolean
 }
 
+export enum PickTarget {
+  File = 'file',
+  Folder = 'folder',
+}
+
+export interface PickedPath {
+  field: string
+  path: string
+}
+
 export enum OpenTarget {
   Editor = 'editor',
   Explorer = 'explorer',
@@ -58,6 +68,7 @@ export type HostToWebMessage =
   | { type: 'app.closing' }
   | { type: 'session.saved' }
   | { type: 'session.saveFailed'; message: string }
+  | ({ type: 'dialog.picked' } & PickedPath)
   | ({ type: 'settings.result'; shells: ShellProfile[]; persistence: PersistenceSettings; saved: boolean } & SettingsSnapshot)
   | { type: 'terminal.created'; pane: string; pid: number }
   | { type: 'terminal.output'; pane: string; data: string }
@@ -74,6 +85,7 @@ export type WebToHostMessage =
   | { type: 'text.save'; text: Record<string, string> }
   | { type: 'settings.get' }
   | { type: 'settings.save'; settings: Settings }
+  | { type: 'dialog.pick'; field: string; target: PickTarget }
   | { type: 'terminal.create'; pane: string; shell: string; cwd: string; cols: number; rows: number }
   | { type: 'terminal.input'; pane: string; data: string }
   | { type: 'terminal.resize'; pane: string; cols: number; rows: number }

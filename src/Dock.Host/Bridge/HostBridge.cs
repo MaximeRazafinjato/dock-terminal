@@ -19,6 +19,7 @@ public sealed class HostBridge : IDisposable
 
     private readonly DispatcherQueue _dispatcher;
     private readonly Action _closeWindow;
+    private readonly nint _windowHandle;
     private readonly string _dataDirectory;
     private readonly SessionRepository _sessions;
     private readonly SettingsService _settingsService;
@@ -33,9 +34,10 @@ public sealed class HostBridge : IDisposable
     private bool _closing;
     private DispatcherQueueTimer? _closeTimer;
 
-    public HostBridge(DispatcherQueue dispatcher, string dataDirectory, Action closeWindow)
+    public HostBridge(DispatcherQueue dispatcher, string dataDirectory, nint windowHandle, Action closeWindow)
     {
         _dispatcher = dispatcher;
+        _windowHandle = windowHandle;
         _closeWindow = closeWindow;
         _dataDirectory = dataDirectory;
         _sessions = new SessionRepository(dataDirectory);
@@ -118,6 +120,9 @@ public sealed class HostBridge : IDisposable
                 break;
             case "settings.save":
                 SaveSettings(command);
+                break;
+            case "dialog.pick":
+                _ = PickPathAsync(command.Field ?? throw new InvalidOperationException("Champ manquant."), command.Target == "folder");
                 break;
             case "terminal.create":
                 CreateTerminal(command);
@@ -318,6 +323,22 @@ public sealed class HostBridge : IDisposable
                 var length = Math.Min(MaxCharsPerMessage, text.Length - offset);
                 PostNow(new { type = "terminal.output", pane = buffer.PaneId, data = text.Substring(offset, length) });
             }
+        }
+    }
+
+    private async Task PickPathAsync(string field, bool folder)
+    {
+        try
+        {
+            var path = await PathPicker.PickAsync(_windowHandle, folder);
+            if (path is not null)
+            {
+                PostNow(new { type = "dialog.picked", field, path });
+            }
+        }
+        catch (Exception exception)
+        {
+            PostNow(new { type = "error", message = $"Impossible d’ouvrir le sélecteur : {exception.Message}" });
         }
     }
 

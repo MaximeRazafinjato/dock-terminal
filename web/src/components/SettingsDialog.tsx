@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
-import type { PersistenceSettings, Settings, SettingsSnapshot } from '../bridge/messages'
+import { PickTarget, type PersistenceSettings, type PickedPath, type Settings, type SettingsSnapshot } from '../bridge/messages'
 
 interface SettingsDialogProps {
   snapshot: SettingsSnapshot | null
+  pickedPath: PickedPath | null
   onClose: () => void
   onSave: (settings: Settings) => void
+  onPick: (field: string, target: PickTarget) => void
 }
+
+const SHELL_FIELD_PREFIX = 'shell:'
+const EDITOR_FIELD = 'editor'
+const PROJECTS_ROOT_FIELD = 'projectsRoot'
 
 interface NumberField {
   key: keyof PersistenceSettings
@@ -28,10 +34,12 @@ const INPUT = 'w-full rounded border border-dock-line bg-dock-paper px-2 py-1.5 
 const BUTTON = 'cursor-pointer rounded border px-3 py-1.5 text-[12px]'
 const PRIMARY = `${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-green-soft`
 const SECONDARY = `${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`
+const BROWSE = 'shrink-0 rounded border border-dock-line px-2 text-[12px] text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink'
 
-export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProps) {
+export function SettingsDialog({ snapshot, pickedPath, onClose, onSave, onPick }: SettingsDialogProps) {
   const [draft, setDraft] = useState<Settings | null>(null)
   const [seenSnapshot, setSeenSnapshot] = useState<SettingsSnapshot | null>(null)
+  const [seenPick, setSeenPick] = useState<PickedPath | null>(pickedPath)
   const dialogRef = useRef<HTMLDivElement>(null)
   if (snapshot !== seenSnapshot) {
     setSeenSnapshot(snapshot)
@@ -73,6 +81,25 @@ export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProp
     }
   }
   const updateDraft = (patch: Partial<Settings>) => setDraft((current) => (current ? { ...current, ...patch } : current))
+  if (pickedPath !== seenPick) {
+    setSeenPick(pickedPath)
+    if (pickedPath && draft) {
+      if (pickedPath.field === EDITOR_FIELD) {
+        updateDraft({ editor: pickedPath.path })
+      } else if (pickedPath.field === PROJECTS_ROOT_FIELD) {
+        updateDraft({ projectsRoot: pickedPath.path })
+      } else if (pickedPath.field.startsWith(SHELL_FIELD_PREFIX)) {
+        updateDraft({ shells: { ...draft.shells, [pickedPath.field.slice(SHELL_FIELD_PREFIX.length)]: pickedPath.path } })
+      }
+    }
+  }
+  const handlePickEditor = () => onPick(EDITOR_FIELD, PickTarget.File)
+  const handlePickProjectsRoot = () => onPick(PROJECTS_ROOT_FIELD, PickTarget.Folder)
+  const renderBrowse = (onClick: () => void, tip: string) => (
+    <button type="button" className={BROWSE} aria-label={tip} data-tip={tip} onClick={onClick}>
+      …
+    </button>
+  )
   const handleEditorChange = (event: ChangeEvent<HTMLInputElement>) => updateDraft({ editor: event.target.value })
   const handleProjectsRootChange = (event: ChangeEvent<HTMLInputElement>) => updateDraft({ projectsRoot: event.target.value })
 
@@ -90,13 +117,17 @@ export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProp
         <p className={HINT}>Vide = chemin par défaut. Un chemin introuvable est enregistré mais le shell reste indisponible.</p>
         {current.shellSettings.map((shell) => {
           const handleChange = (event: ChangeEvent<HTMLInputElement>) => updateDraft({ shells: { ...settings.shells, [shell.id]: event.target.value } })
+          const handlePick = () => onPick(`${SHELL_FIELD_PREFIX}${shell.id}`, PickTarget.File)
           return (
             <label key={shell.id} className="flex flex-col gap-1">
               <span className="flex items-baseline justify-between">
                 <span className={LABEL}>{shell.name}</span>
                 <span className={`text-[11px] ${shell.available ? 'text-dock-green' : 'text-dock-warning'}`}>{shell.available ? 'Disponible' : 'Introuvable'}</span>
               </span>
-              <input type="text" className={INPUT} value={settings.shells[shell.id] ?? ''} placeholder={shell.defaultExecutable} spellCheck={false} onChange={handleChange} />
+              <span className="flex gap-1">
+                <input type="text" className={INPUT} value={settings.shells[shell.id] ?? ''} placeholder={shell.defaultExecutable} spellCheck={false} onChange={handleChange} />
+                {renderBrowse(handlePick, `Choisir l’exécutable de ${shell.name}`)}
+              </span>
             </label>
           )
         })}
@@ -106,7 +137,10 @@ export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProp
         <h3 className={SECTION}>Éditeur</h3>
         <label className="flex flex-col gap-1">
           <span className={LABEL}>Commande d’ouverture d’un dossier</span>
-          <input type="text" className={INPUT} value={settings.editor} placeholder="code.cmd" spellCheck={false} onChange={handleEditorChange} />
+          <span className="flex gap-1">
+            <input type="text" className={INPUT} value={settings.editor} placeholder="code.cmd" spellCheck={false} onChange={handleEditorChange} />
+            {renderBrowse(handlePickEditor, 'Choisir l’exécutable de l’éditeur')}
+          </span>
         </label>
         <p className={`${HINT} font-mono`}>{current.files.editor}</p>
       </section>
@@ -131,7 +165,10 @@ export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProp
         <h3 className={SECTION}>Projets</h3>
         <label className="flex flex-col gap-1">
           <span className={LABEL}>Dossier racine des projets</span>
-          <input type="text" className={INPUT} value={settings.projectsRoot} spellCheck={false} onChange={handleProjectsRootChange} />
+          <span className="flex gap-1">
+            <input type="text" className={INPUT} value={settings.projectsRoot} spellCheck={false} onChange={handleProjectsRootChange} />
+            {renderBrowse(handlePickProjectsRoot, 'Choisir le dossier des projets')}
+          </span>
           <span className={HINT}>Dossiers de premier niveau listés par le sélecteur de projets, hors « worktrees » et dossiers cachés.</span>
         </label>
         <p className={`${HINT} font-mono`}>{current.files.projects}</p>

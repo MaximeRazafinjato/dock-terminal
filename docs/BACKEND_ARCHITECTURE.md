@@ -45,12 +45,13 @@ Règles :
 | `Bridge/HostBridge.cs` | Reçoit les messages JSON du web (`WebMessageReceived`), route par `type`, renvoie par `PostWebMessageAsJson`. Regroupe la sortie des terminaux par pane et la vide sur le thread UI en une seule passe. |
 | `Bridge/PaneOutputBuffer.cs` | Tampon par pane avec décodage UTF-8 incrémental et contre-pression (le thread de lecture s'arrête au-delà de 4 Mc non acquittés). |
 | `Bridge/BridgeCommandModel.cs` | Forme des messages entrants. |
+| `Bridge/PathPicker.cs` | Sélecteur natif de fichier (`.exe`, `.cmd`, `.bat`, tout) ou de dossier (`FileOpenPicker` / `FolderPicker` initialisés avec le handle de la fenêtre). Utilisé par l'écran Paramètres ; annulation = aucun message. |
 
 ## Contrat du pont
 
-Web → hôte : `app.ready`, `session.save {session}`, `text.save {text: {paneId: texte}}`, `settings.get`, `settings.save {settings}`, `terminal.create {pane, shell, cwd, cols, rows}`, `terminal.input {pane, data}`, `terminal.resize {pane, cols, rows}`, `terminal.ack {pane, chars}`, `terminal.close {pane}`, `projects.list`, `context.query {pane, path}`, `context.open {pane, path, target: editor|explorer}`, `window.close`.
+Web → hôte : `app.ready`, `session.save {session}`, `text.save {text: {paneId: texte}}`, `settings.get`, `settings.save {settings}`, `dialog.pick {field, target: file|folder}`, `terminal.create {pane, shell, cwd, cols, rows}`, `terminal.input {pane, data}`, `terminal.resize {pane, cols, rows}`, `terminal.ack {pane, chars}`, `terminal.close {pane}`, `projects.list`, `context.query {pane, path}`, `context.open {pane, path, target: editor|explorer}`, `window.close`.
 
-Hôte → web : `app.hello {session, shells, home, text, persistence{textIntervalSeconds, linesPerPane}, recovery?}`, `app.closing`, `session.saved`, `session.saveFailed {message}`, `settings.result {settings, shellSettings[{id, name, defaultExecutable, configured, available}], files, warnings[], shells, persistence, saved}`, `terminal.created {pane, pid}`, `terminal.output {pane, data}`, `terminal.cwd {pane, path}`, `terminal.exit {pane, code}`, `terminal.pathMissing {pane, path, fallback}`, `projects.listed {root, projects[{name, path}], error?}`, `context.result {pane, path, git{isRepository, branch, detachedHead}}`, `error {pane?, message}`.
+Hôte → web : `app.hello {session, shells, home, text, persistence{textIntervalSeconds, linesPerPane}, recovery?}`, `app.closing`, `session.saved`, `session.saveFailed {message}`, `dialog.picked {field, path}`, `settings.result {settings, shellSettings[{id, name, defaultExecutable, configured, available}], files, warnings[], shells, persistence, saved}`, `terminal.created {pane, pid}`, `terminal.output {pane, data}`, `terminal.cwd {pane, path}`, `terminal.exit {pane, code}`, `terminal.pathMissing {pane, path, fallback}`, `projects.listed {root, projects[{name, path}], error?}`, `context.result {pane, path, git{isRepository, branch, detachedHead}}`, `error {pane?, message}`.
 
 Les types TypeScript correspondants sont dans `web/src/bridge/messages.ts` ; toute évolution se fait des deux côtés dans le même commit.
 

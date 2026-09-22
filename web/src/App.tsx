@@ -19,7 +19,7 @@ export default function App() {
 
   useEffect(() => {
     const { load, setPanePath } = useSessionStore.getState()
-    const { setHello, setStatus, setProjects, setUnsaved, applySettings } = useHostStore.getState()
+    const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath } = useHostStore.getState()
     let stopAutosave: (() => void) | undefined
     const { markFailed, markExited, markPathMissing, clear } = usePaneStore.getState()
     const subscriptions = [
@@ -50,6 +50,7 @@ export default function App() {
         const warnings = message.warnings.join(' ')
         setStatus(warnings.length > 0 ? `Réglages enregistrés. ${warnings}` : 'Réglages enregistrés et appliqués.', warnings.length > 0 ? StatusLevel.Warning : StatusLevel.Info)
       }),
+      bridge.on('dialog.picked', (message) => setPickedPath({ field: message.field, path: message.path })),
       bridge.on('app.closing', closeApplication),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
