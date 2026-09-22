@@ -63,7 +63,7 @@ const tasks=[
 'Supporter des divisions imbriquées avec séparateurs redimensionnables.',
 'La fermeture retire un pane et agrandit la zone restante.',
 'Sauvegarder orientations et proportions sans relancer les processus.'
-],['F05'],'Le split hérite du shell et du dossier du pane actif ; fermer le dernier pane applique la politique de fermeture du dernier onglet.'],
+],['F05'],'Le split hérite du shell et du dossier du pane actif ; fermer le dernier pane applique la politique de fermeture du dernier onglet.',true],
 ['F10','Naviguer au clavier et gérer le Leader sans perte de saisie','7, 9, 16','R09, R25','Piloter le terminal et ses vues au clavier.',[
 'Activer un pane à la souris et naviguer entre panes au clavier.',
 'Proposer les actions via une touche Leader et documenter les séquences retenues.',
