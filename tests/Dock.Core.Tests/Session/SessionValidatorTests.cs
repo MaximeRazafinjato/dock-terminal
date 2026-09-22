@@ -49,6 +49,30 @@ public sealed class SessionValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenFavoriteEmpty_ThenFails()
+    {
+        var session = SessionFactory.Initial();
+        session.Favorites.Add(" ");
+
+        var result = SessionValidator.Validate(session);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("Favoris invalides.", result.Error);
+    }
+
+    [Fact]
+    public void Validate_WhenFavoritesDuplicated_ThenKeepsOne()
+    {
+        var session = SessionFactory.Initial();
+        session.Favorites.AddRange(["split-x", "split-x", "new-tab"]);
+
+        var result = SessionValidator.Validate(session);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(["split-x", "new-tab"], session.Favorites);
+    }
+
+    [Fact]
     public void Validate_WhenMoreClosedTabsThanLimit_ThenKeepsMostRecent()
     {
         var session = SessionFactory.Initial();
