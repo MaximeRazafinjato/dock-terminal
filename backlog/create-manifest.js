@@ -109,7 +109,7 @@ const tasks=[
 'Suivre leurs effets observables sur dossier courant et contexte Git.',
 'Documenter puis vérifier le contrat de synchronisation avec l’interface.',
 'Ne pas créer de cycle de vie automatique de workspaces non demandé.'
-],['F11','F15'],'wtr crée un worktree sous C:\\Files\\Projects\\worktrees, installe les dépendances et peut répliquer une base ; rmwt supprime le worktree, une base répliquée et la branche sauf -KeepBranch. Ne pas reproduire ces opérations dans l’interface sans contrat explicite.'],
+],['F11','F15'],'wtr crée un worktree sous C:\\Files\\Projects\\worktrees, installe les dépendances et peut répliquer une base ; rmwt supprime le worktree, une base répliquée et la branche sauf -KeepBranch. Ne pas reproduire ces opérations dans l’interface sans contrat explicite.',true],
 ['F17','Sauvegarder et restaurer automatiquement les sessions visuelles','13','R19, R21, R22','Retrouver l’environnement de travail à la réouverture.',[
 'Sauvegarder automatiquement workspaces, onglets, ordre, noms, shells, chemins et splits.',
 'Conserver sélections, largeur/visibilité du panneau et dépliage des groupes.',
