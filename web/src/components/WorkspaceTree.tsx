@@ -1,5 +1,8 @@
 import type { MouseEvent, PointerEvent } from 'react'
+import { STATE_PRIORITY, stateCountLabel, tabAgents, workspaceStateCounts } from '../agents/agentSummary'
 import { activePane, DEFAULT_SHELL, panesOf, type Session } from '../model/session'
+import { useAgentStore } from '../store/agentStore'
+import { AgentStateIcon } from './AgentStateIcon'
 import { EditableName } from './EditableName'
 import { useUiStore } from '../store/uiStore'
 import { InlineNameEditor } from './InlineNameEditor'
@@ -29,6 +32,7 @@ const CLOSE_BUTTON = 'shrink-0 cursor-pointer rounded px-1.5 text-[13px] leading
 
 export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace, onMoveTab, onCloseTab, onCloseWorkspace }: WorkspaceTreeProps) {
   const { draggingTabId, tabDropTarget } = useUiStore()
+  const agents = useAgentStore((state) => state.agents)
   const dropLine = (workspaceId: string, tabId?: string) => (isDropTarget(tabDropTarget, workspaceId, tabId) ? 'border-dock-focus' : 'border-transparent')
   return (
     <aside className="flex h-full min-h-0 flex-col bg-dock-paper" style={{ width: session.sidebar }}>
@@ -49,6 +53,8 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
             onToggle(workspace.id)
           }
           const renaming = workspace.id === renamingWorkspaceId
+          const stateCounts = workspaceStateCounts(workspace, agents)
+          const presentStates = STATE_PRIORITY.filter((state) => (stateCounts[state] ?? 0) > 0)
           const workspaceTargeted = isDropTarget(tabDropTarget, workspace.id)
           const stopClick = (event: MouseEvent) => event.stopPropagation()
           const handleCloseWorkspace = (event: MouseEvent) => {
@@ -92,7 +98,17 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     {workspace.name}
                   </button>
                 )}
-                <span className="ml-auto shrink-0 text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
+                {presentStates.length > 0 && (
+                  <span className="ml-auto flex shrink-0 items-center gap-1.5 self-center">
+                    {presentStates.map((state) => (
+                      <span key={state} className="inline-flex items-center gap-0.5 text-[11px] leading-none">
+                        <AgentStateIcon state={state} tip={stateCountLabel(state, stateCounts[state] ?? 0)} />
+                        {(stateCounts[state] ?? 0) > 1 && <span className="text-dock-muted">{stateCounts[state]}</span>}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                <span className={`${presentStates.length > 0 ? 'ml-2' : 'ml-auto'} shrink-0 text-[11px] leading-none text-dock-muted`}>{workspace.tabs.length} ong.</span>
                 <button type="button" className={CLOSE_BUTTON} data-tip="Fermer le workspace" aria-label={`Fermer le workspace ${workspace.name}`} onClick={handleCloseWorkspace}>
                   ×
                 </button>
@@ -104,6 +120,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     const handleTab = () => onSelectTab(workspace.id, tab.id)
                     const shellTag = shellTagOf(activePane(tab).shell)
                     const paneCount = panesOf(tab.tree).length
+                    const tabSummary = tabAgents(tab, agents)
                     const handleTabPointerDown = (event: PointerEvent<HTMLElement>) => beginTabDrag(event, tab.id, onMoveTab)
                     const handleCloseTab = () => onCloseTab(tab.id)
                     const handleTabAuxClick = (event: MouseEvent) => {
@@ -125,6 +142,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                           onAuxClick={handleTabAuxClick}
                           onPointerDown={handleTabPointerDown}
                         >
+                          {tabSummary && <AgentStateIcon state={tabSummary.state} tip={tabSummary.tip} />}
                           <span className="min-w-0 flex-1 truncate">{tab.name}</span>
                           {shellTag && <span className="shrink-0 rounded border border-dock-line px-1.5 py-px text-[10px] leading-tight font-medium text-dock-muted">{shellTag}</span>}
                           {paneCount > 1 && <span className="shrink-0 text-[11px] leading-none font-normal text-dock-muted" data-tip={`${paneCount} panes`}>{`${paneCount} panes`}</span>}

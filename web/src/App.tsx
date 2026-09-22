@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { bridge } from './bridge/bridge'
 import { AppShell } from './components/AppShell'
 import { allPanes } from './model/session'
+import { useAgentStore } from './store/agentStore'
 import { StatusLevel, useHostStore } from './store/hostStore'
 import { usePaneStore } from './store/paneStore'
 import { useSessionStore } from './store/sessionStore'
@@ -40,7 +41,7 @@ export default function App() {
         })
       }),
       bridge.on('settings.result', (message) => {
-        applySettings({ settings: message.settings, shellSettings: message.shellSettings, files: message.files, warnings: message.warnings }, message.shells, message.persistence)
+        applySettings({ settings: message.settings, shellSettings: message.shellSettings, files: message.files, warnings: message.warnings, agents: message.agents }, message.shells, message.persistence)
         if (!message.saved) {
           return
         }
@@ -59,6 +60,7 @@ export default function App() {
       }),
       bridge.on('app.closing', (message) => receiveApplicationClosing(message.activity)),
       bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
+      bridge.on('agent.states', (message) => useAgentStore.getState().setAgents(message.panes)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
         setUnsaved(true)

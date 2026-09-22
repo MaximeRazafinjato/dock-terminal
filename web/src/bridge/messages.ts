@@ -56,11 +56,19 @@ export interface ImportedPreferences {
   path: string
 }
 
+export interface AgentHooksInfo {
+  script: string
+  stateDirectory: string
+  settingsFile: string
+  hooksInstalled: boolean
+}
+
 export interface SettingsSnapshot {
   settings: Settings
   shellSettings: ShellSetting[]
   files: Record<string, string>
   warnings: string[]
+  agents: AgentHooksInfo
 }
 
 export interface Project {
@@ -71,6 +79,21 @@ export interface Project {
 export interface PaneActivity {
   paneId: string
   processes: string[]
+}
+
+export enum AgentState {
+  Working = 'working',
+  Waiting = 'waiting',
+  Done = 'done',
+  Error = 'error',
+  Unknown = 'unknown',
+}
+
+export interface PaneAgent {
+  paneId: string
+  agent: string
+  state: AgentState
+  message?: string
 }
 
 export type HostToWebMessage =
@@ -88,6 +111,7 @@ export type HostToWebMessage =
   | { type: 'terminal.exit'; pane: string; code: number }
   | { type: 'terminal.pathMissing'; pane: string; path: string; fallback: string }
   | { type: 'terminal.activityResult'; panes: PaneActivity[] }
+  | { type: 'agent.states'; panes: PaneAgent[] }
   | { type: 'projects.listed'; root: string; projects: Project[]; error?: string }
   | { type: 'context.result'; pane: string; path: string; git: GitContext }
   | { type: 'error'; pane?: string; message: string }
@@ -100,6 +124,8 @@ export type WebToHostMessage =
   | { type: 'settings.save'; settings: Settings }
   | { type: 'settings.export' }
   | { type: 'settings.import' }
+  | { type: 'agents.installHooks' }
+  | { type: 'agents.removeHooks' }
   | { type: 'dialog.pick'; field: string; target: PickTarget }
   | { type: 'terminal.create'; pane: string; shell: string; cwd: string; cols: number; rows: number }
   | { type: 'terminal.input'; pane: string; data: string }

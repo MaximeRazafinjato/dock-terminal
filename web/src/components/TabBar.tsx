@@ -1,7 +1,10 @@
 import { Fragment, useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
 import type { ShellProfile } from '../bridge/messages'
+import { tabAgents } from '../agents/agentSummary'
 import { DEFAULT_SHELL, type Workspace } from '../model/session'
+import { useAgentStore } from '../store/agentStore'
 import { useUiStore } from '../store/uiStore'
+import { AgentStateIcon } from './AgentStateIcon'
 import { InlineNameEditor } from './InlineNameEditor'
 import { ShellMenu } from './ShellMenu'
 import { beginTabDrag, isDropTarget, type MoveTabHandler } from './tabDrag'
@@ -27,6 +30,7 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
   const [menuOpen, setMenuOpen] = useState(false)
   const addButtonRef = useRef<HTMLButtonElement>(null)
   const { draggingTabId, tabDropTarget } = useUiStore()
+  const agents = useAgentStore((state) => state.agents)
 
   const handleNewDefault = () => onNew(DEFAULT_SHELL)
   const handleContextMenu = (event: MouseEvent) => {
@@ -58,6 +62,7 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
       {workspace.tabs.map((tab) => {
         const active = tab.id === workspace.active
         const targeted = isDropTarget(tabDropTarget, workspace.id, tab.id)
+        const agentSummary = tabAgents(tab, agents)
         const handleSelect = () => onSelect(tab.id)
         const handleStartRename = () => onStartRename(tab.id)
         const handleClose = () => onClose(tab.id)
@@ -85,12 +90,13 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
                   role="tab"
                   aria-selected={active}
                   data-tip="Double-clic pour renommer, glisser pour déplacer"
-                  className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 px-3 py-2 text-left text-xs"
                   onClick={handleSelect}
                   onDoubleClick={handleStartRename}
                   onPointerDown={handlePointerDown}
                 >
-                  {tab.name}
+                  {agentSummary && <AgentStateIcon state={agentSummary.state} tip={agentSummary.tip} />}
+                  <span className="min-w-0 truncate">{tab.name}</span>
                 </button>
               )}
               <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" data-tip="Fermer l’onglet" onClick={handleClose}>

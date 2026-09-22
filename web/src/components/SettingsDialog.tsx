@@ -10,6 +10,8 @@ interface SettingsDialogProps {
   onPick: (field: string, target: PickTarget) => void
   onExport: () => void
   onImport: () => void
+  onInstallHooks: () => void
+  onRemoveHooks: () => void
 }
 
 const SHELL_FIELD_PREFIX = 'shell:'
@@ -39,7 +41,7 @@ const PRIMARY = `${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-
 const SECONDARY = `${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`
 const BROWSE = 'shrink-0 rounded border border-dock-line px-2 text-[12px] text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink'
 
-export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave, onPick, onExport, onImport }: SettingsDialogProps) {
+export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave, onPick, onExport, onImport, onInstallHooks, onRemoveHooks }: SettingsDialogProps) {
   const [draft, setDraft] = useState<Settings | null>(null)
   const [seenSnapshot, setSeenSnapshot] = useState<SettingsSnapshot | null>(null)
   const [seenPick, setSeenPick] = useState<PickedPath | null>(pickedPath)
@@ -186,6 +188,24 @@ export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave
           <span className={HINT}>Dossiers de premier niveau listés par le sélecteur de projets, hors « worktrees » et dossiers cachés.</span>
         </label>
         <p className={`${HINT} font-mono`}>{current.files.projects}</p>
+      </section>
+      <section className="flex flex-col gap-2">
+        <h3 className={SECTION}>Agents</h3>
+        <p className={HINT}>Claude Code signale ses états (en cours, en attente, terminé, en erreur) par des hooks qui exécutent le script ci-dessous. Sans hooks, un processus claude ou codex est affiché « État inconnu ».</p>
+        <p className={`${HINT} font-mono`}>{current.agents.script}</p>
+        <p className={HINT}>{`Les états sont écrits dans ${current.agents.stateDirectory} et purgés à chaque nouveau terminal. Les hooks ne sont ajoutés ou retirés de ${current.agents.settingsFile} que sur votre clic ; les autres réglages et hooks de ce fichier sont conservés.`}</p>
+        <span className="flex items-center gap-3">
+          <span className={`text-[11px] ${current.agents.hooksInstalled ? 'text-dock-green' : 'text-dock-warning'}`}>{current.agents.hooksInstalled ? 'Hooks installés' : 'Hooks non installés'}</span>
+          {current.agents.hooksInstalled ? (
+            <button type="button" className={SECONDARY} data-tip="Retire les hooks Dock de settings.json de Claude Code, sans toucher au reste" onClick={onRemoveHooks}>
+              Retirer les hooks
+            </button>
+          ) : (
+            <button type="button" className={PRIMARY} data-tip="Ajoute les hooks Dock dans settings.json de Claude Code (fusion, effet aux prochaines sessions claude)" onClick={onInstallHooks}>
+              Installer les hooks
+            </button>
+          )}
+        </span>
       </section>
     </>
   )

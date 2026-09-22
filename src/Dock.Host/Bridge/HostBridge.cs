@@ -24,6 +24,7 @@ public sealed class HostBridge : IDisposable
     private readonly SessionRepository _sessions;
     private readonly SettingsService _settingsService;
     private readonly TerminalManager _terminals;
+    private readonly AgentStateFeed _agents;
     private SettingsModel _settings;
     private ShellPathsModel _shellPaths = ShellPathsModel.Empty;
     private PersistenceSettingsModel _persistence = PersistenceSettingsModel.Default;
@@ -45,6 +46,7 @@ public sealed class HostBridge : IDisposable
         _settings = _settingsService.Load();
         _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextChars);
         _terminals = new TerminalManager();
+        _agents = new AgentStateFeed(dispatcher, dataDirectory, _terminals, PostNow);
         ApplySettings(_settings);
         _terminals.OutputReceived += HandleOutput;
         _terminals.CurrentDirectoryChanged += HandleCurrentDirectoryChanged;
@@ -55,6 +57,7 @@ public sealed class HostBridge : IDisposable
     {
         _core = core;
         core.WebMessageReceived += (_, args) => Handle(args.WebMessageAsJson);
+        _agents.Start();
     }
 
     private void Handle(string json)
@@ -133,6 +136,14 @@ public sealed class HostBridge : IDisposable
             case "settings.save":
                 SaveSettings(command);
                 break;
+            case "agents.installHooks":
+                _agents.Hooks.Install();
+                PostSettings(false);
+                break;
+            case "agents.removeHooks":
+                _agents.Hooks.Remove();
+                PostSettings(false);
+                break;
             case "settings.export":
                 _ = ExportPreferencesAsync();
                 break;
@@ -208,6 +219,7 @@ public sealed class HostBridge : IDisposable
             warnings = snapshot.Warnings,
             shells = ShellCatalog.Profiles(_shellPaths),
             persistence = _persistence,
+            agents = _agents.Describe(),
             saved
         });
     }
@@ -315,6 +327,7 @@ public sealed class HostBridge : IDisposable
         }
 
         _terminals.Stop(paneId);
+        _agents.Forget(paneId);
     }
 
     private void HandleOutput(string paneId, ReadOnlyMemory<byte> data)
@@ -437,6 +450,7 @@ public sealed class HostBridge : IDisposable
 
     public void Dispose()
     {
+        _agents.Dispose();
         foreach (var buffer in _buffers.Values)
         {
             buffer.Release();

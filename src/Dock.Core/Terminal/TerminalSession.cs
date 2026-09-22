@@ -20,6 +20,7 @@ public sealed class TerminalSession : IDisposable
     private int _closed;
 
     public string PaneId { get; }
+    public DateTime StartedAtUtc { get; } = DateTime.UtcNow;
     public PseudoConsoleProvider Provider => _console.Provider;
     public int ProcessId => _process.ProcessId;
     public long BytesRead => Interlocked.Read(ref _bytesRead);

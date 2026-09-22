@@ -3,6 +3,8 @@ import { bridge } from '../bridge/bridge'
 import { PickTarget, type Project, type Settings } from '../bridge/messages'
 import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
+import { waitingPanes } from '../agents/agentSummary'
+import { agentKey, useAgentStore } from '../store/agentStore'
 import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
@@ -10,6 +12,7 @@ import { cancelClose, confirmClose } from '../terminal/closeGuard'
 import { changePaneShell, dismissPaneState, restartPane, restartPaneIn } from '../terminal/paneLifecycle'
 import { closePaneKeepingText, closeTabKeepingText, closeWorkspaceKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { terminalRegistry } from '../terminal/terminalRegistry'
+import { AttentionToasts } from './AttentionToasts'
 import { CloseConfirmDialog } from './CloseConfirmDialog'
 import { CommandPalette } from './CommandPalette'
 import { EmptyState } from './EmptyState'
@@ -38,6 +41,9 @@ export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
   const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved, settingsSnapshot, pickedPath, importedPreferences } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker, settingsOpen, openSettings, closeSettings, closeConfirmation } = useUiStore()
+  const agents = useAgentStore((state) => state.agents)
+  const acknowledged = useAgentStore((state) => state.acknowledged)
+  const waiting = waitingPanes(session, agents).filter((pane) => acknowledged[pane.paneId] !== agentKey(agents[pane.paneId]))
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
   const availableShells = shells.filter((shell) => shell.available)
@@ -84,6 +90,8 @@ export function AppShell({ session }: AppShellProps) {
   const handlePickPath = (field: string, target: PickTarget) => bridge.send({ type: 'dialog.pick', field, target })
   const handleExportPreferences = () => bridge.send({ type: 'settings.export' })
   const handleImportPreferences = () => bridge.send({ type: 'settings.import' })
+  const handleInstallHooks = () => bridge.send({ type: 'agents.installHooks' })
+  const handleRemoveHooks = () => bridge.send({ type: 'agents.removeHooks' })
   const handleCloseProjectPicker = () => {
     closeProjectPicker()
     focusActivePane()
@@ -92,6 +100,12 @@ export function AppShell({ session }: AppShellProps) {
     closeProjectPicker()
     newWorkspace(project.name, project.path, DEFAULT_SHELL)
   }
+  const handleJoinPane = (paneId: string) => {
+    useAgentStore.getState().acknowledge(paneId)
+    selectPane(paneId)
+    focusPane(paneId)
+  }
+  const handleDismissAttention = (paneId: string) => useAgentStore.getState().acknowledge(paneId)
   const handleSelectTab = (workspaceId: string, tabId: string) => {
     selectWorkspace(workspaceId)
     selectTab(tabId)
@@ -199,8 +213,9 @@ export function AppShell({ session }: AppShellProps) {
           {workspace ? renderMain(workspace) : <EmptyState canRestore={session.closed.length > 0} onNewWorkspace={handleNewWorkspace} onRestoreTab={restoreClosedTab} />}
         </main>
       </div>
+      <AttentionToasts waiting={waiting} onJoin={handleJoinPane} onDismiss={handleDismissAttention} />
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
-      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} imported={importedPreferences} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} onExport={handleExportPreferences} onImport={handleImportPreferences} />}
+      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} imported={importedPreferences} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} onExport={handleExportPreferences} onImport={handleImportPreferences} onInstallHooks={handleInstallHooks} onRemoveHooks={handleRemoveHooks} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <Tooltip />

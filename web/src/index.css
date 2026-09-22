@@ -22,6 +22,11 @@
   --color-dock-terminal-ink: #cdd1cd;
   --color-dock-warning: #c9a65f;
   --color-dock-error: #c98078;
+  --color-dock-status-working: #3fd37c;
+  --color-dock-status-waiting: #f5b83d;
+  --color-dock-status-done: #7ee2b8;
+  --color-dock-status-error: #f07a70;
+  --color-dock-status-unknown: #9aa3a0;
   --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'CaskaydiaCove Nerd Font Mono', 'Cascadia Mono', 'Cascadia Code', Consolas, 'Symbols Nerd Font Mono', monospace;
 }
