@@ -15,13 +15,14 @@ public sealed partial class MainWindow : Window
     private static readonly Color Muted = Color.FromArgb(255, 0x84, 0x8B, 0x87);
     private static readonly Color Hover = Color.FromArgb(255, 0x24, 0x28, 0x2A);
     private readonly HostBridge _bridge;
+    private bool _closeConfirmed;
 
     public MainWindow()
     {
         InitializeComponent();
         AppWindow.Resize(new SizeInt32(1480, 900));
         ApplyDarkTitleBar();
-        _bridge = new HostBridge(DispatcherQueue, App.DataDirectory, Close);
+        _bridge = new HostBridge(DispatcherQueue, App.DataDirectory, ForceClose);
         Closed += HandleClosed;
         Activated += HandleActivated;
         _ = InitializeWebViewAsync();
@@ -81,5 +82,25 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void HandleClosed(object sender, WindowEventArgs args) => _bridge.Dispose();
+    private void ForceClose()
+    {
+        if (_closeConfirmed)
+        {
+            return;
+        }
+
+        _closeConfirmed = true;
+        Close();
+    }
+
+    private void HandleClosed(object sender, WindowEventArgs args)
+    {
+        if (!_closeConfirmed && _bridge.RequestClose())
+        {
+            args.Handled = true;
+            return;
+        }
+
+        _bridge.Dispose();
+    }
 }

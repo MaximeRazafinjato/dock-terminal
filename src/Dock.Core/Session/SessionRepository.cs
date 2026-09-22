@@ -3,6 +3,8 @@ using System.Text.Json;
 
 namespace Dock.Core.Session;
 
+public sealed record SessionLoadResultModel(SessionModel? Session, string? Error);
+
 public sealed class SessionRepository
 {
     public static readonly JsonSerializerOptions JsonOptions = new()
@@ -24,22 +26,32 @@ public sealed class SessionRepository
 
     public string FilePath => _filePath;
 
-    public SessionModel? Load()
+    public SessionLoadResultModel Load()
     {
         if (!File.Exists(_filePath))
         {
-            return null;
+            return new SessionLoadResultModel(null, null);
         }
 
+        string reason;
         try
         {
             var session = JsonSerializer.Deserialize<SessionModel>(File.ReadAllText(_filePath), JsonOptions);
-            return SessionValidator.Validate(session).IsValid ? session : null;
+            var result = SessionValidator.Validate(session);
+            if (result.IsValid)
+            {
+                return new SessionLoadResultModel(session, null);
+            }
+
+            reason = result.Error ?? "Format de session incorrect.";
         }
         catch (JsonException)
         {
-            return null;
+            reason = "JSON illisible.";
         }
+
+        var kept = CorruptedFiles.Quarantine(_filePath);
+        return new SessionLoadResultModel(null, $"La session enregistrée était inutilisable ({reason}) ; copie conservée dans {kept}. Une session de secours a été ouverte.");
     }
 
     public ValidationResultModel Save(SessionModel session)

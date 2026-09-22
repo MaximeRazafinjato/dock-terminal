@@ -10,8 +10,18 @@ import type { Pane } from '../model/session'
 
 const ACK_THRESHOLD = 256 * 1024
 const SNAPSHOT_SCROLLBACK_LINES = 2000
+const DEFAULT_SCROLLBACK_LINES = 10000
 const NEWLINE = String.fromCharCode(13, 10)
-const RESTORE_SEPARATOR = '\r\n\x1b[2m── Onglet rouvert : ancien texte ci-dessus, nouveau terminal ci-dessous ──\x1b[0m\r\n'
+
+export enum RestoreKind {
+  Tab = 'tab',
+  Session = 'session',
+}
+
+const RESTORE_SEPARATORS: Record<RestoreKind, string> = {
+  [RestoreKind.Tab]: '\r\n\x1b[2m── Onglet rouvert : ancien texte ci-dessus, nouveau terminal ci-dessous ──\x1b[0m\r\n',
+  [RestoreKind.Session]: '\r\n\x1b[2m── Session restaurée — nouvelle session : ancien texte ci-dessus, aucun processus n’a été relancé ──\x1b[0m\r\n',
+}
 const FONT_FAMILY = '"CaskaydiaCove Nerd Font Mono", "Cascadia Mono", "Cascadia Code", Consolas, "Symbols Nerd Font Mono", monospace'
 
 export enum Renderer {
@@ -28,11 +38,14 @@ export interface TerminalHandle {
   renderer: Renderer
   started: boolean
   unackedChars: number
+  dirty: boolean
+  lastSnapshot?: string
   keyHandler?: (event: KeyboardEvent) => boolean
 }
 
 const handles = new Map<string, TerminalHandle>()
-const primedText = new Map<string, string>()
+const primedText = new Map<string, { text: string; kind: RestoreKind }>()
+let scrollbackLines = DEFAULT_SCROLLBACK_LINES
 
 const start = (handle: TerminalHandle, pane: Pane): void => {
   handle.started = true
@@ -68,7 +81,7 @@ const createHandle = (pane: Pane): TerminalHandle => {
     cursorBlink: true,
     fontFamily: FONT_FAMILY,
     fontSize: 14,
-    scrollback: 10000,
+    scrollback: scrollbackLines,
     theme: { background: '#121416', foreground: '#cdd1cd', cursor: '#8fb39f', selectionBackground: '#7a9f8b40' },
   })
   const fit = new FitAddon()
@@ -78,7 +91,7 @@ const createHandle = (pane: Pane): TerminalHandle => {
   terminal.loadAddon(new Unicode11Addon())
   terminal.loadAddon(new ClipboardAddon())
   terminal.unicode.activeVersion = '11'
-  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, started: false, unackedChars: 0 }
+  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, started: false, unackedChars: 0, dirty: true }
   terminal.onData((data) => bridge.send({ type: 'terminal.input', pane: pane.id, data }))
   terminal.onResize(({ cols, rows }) => {
     if (handle.started) {
@@ -90,6 +103,10 @@ const createHandle = (pane: Pane): TerminalHandle => {
 }
 
 export const terminalRegistry = {
+  configure(linesPerPane: number): void {
+    scrollbackLines = linesPerPane
+  },
+
   get(paneId: string): TerminalHandle | undefined {
     return handles.get(paneId)
   },
@@ -112,7 +129,7 @@ export const terminalRegistry = {
       const restored = primedText.get(pane.id)
       if (restored !== undefined) {
         primedText.delete(pane.id)
-        handle.terminal.write(restored + RESTORE_SEPARATOR + NEWLINE.repeat(handle.terminal.rows))
+        handle.terminal.write(restored.text + RESTORE_SEPARATORS[restored.kind] + NEWLINE.repeat(handle.terminal.rows))
       }
       start(handle, pane)
     }
@@ -133,6 +150,7 @@ export const terminalRegistry = {
       return
     }
     handle.unackedChars += data.length
+    handle.dirty = true
     handle.terminal.write(data, () => {
       if (handle.unackedChars >= ACK_THRESHOLD) {
         bridge.send({ type: 'terminal.ack', pane: paneId, chars: handle.unackedChars })
@@ -152,8 +170,23 @@ export const terminalRegistry = {
     return text
   },
 
-  prime(paneId: string, text: string): void {
-    primedText.set(paneId, text)
+  snapshotLive(): Record<string, string> {
+    const text: Record<string, string> = {}
+    for (const handle of handles.values()) {
+      if (handle.dirty || handle.lastSnapshot === undefined) {
+        handle.lastSnapshot = handle.serializer.serialize({ scrollback: scrollbackLines })
+        handle.dirty = false
+      }
+      text[handle.paneId] = handle.lastSnapshot
+    }
+    for (const [paneId, primed] of primedText) {
+      text[paneId] = primed.text
+    }
+    return text
+  },
+
+  prime(paneId: string, text: string, kind: RestoreKind = RestoreKind.Tab): void {
+    primedText.set(paneId, { text, kind })
   },
 
   markExited(paneId: string, code: number): void {
@@ -170,11 +203,14 @@ export const terminalRegistry = {
     handles.delete(paneId)
   },
 
-  disposeMissing(livePaneIds: Set<string>): void {
+  disposeMissing(livePaneIds: Set<string>): boolean {
+    let removed = false
     for (const paneId of [...handles.keys()]) {
       if (!livePaneIds.has(paneId)) {
         terminalRegistry.dispose(paneId)
+        removed = true
       }
     }
+    return removed
   },
 }

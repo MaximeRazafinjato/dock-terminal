@@ -4,6 +4,7 @@ import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, SplitAxis, type 
 import { Direction, paneInDirection } from '../components/paneNavigation'
 import { useSessionStore } from '../store/sessionStore'
 import { closePaneKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
+import { closeApplication } from '../terminal/textPersistence'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
@@ -253,7 +254,7 @@ const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
     return !isReservedShortcut(event)
   }
   if (isCloseWindow(event)) {
-    bridge.send({ type: 'window.close' })
+    closeApplication()
     return false
   }
   if (useHostStore.getState().leaderActive) {

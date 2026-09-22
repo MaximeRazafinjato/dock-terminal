@@ -20,13 +20,21 @@ export interface GitContext {
   detachedHead: boolean
 }
 
+export interface PersistenceSettings {
+  textIntervalSeconds: number
+  linesPerPane: number
+}
+
 export interface Project {
   name: string
   path: string
 }
 
 export type HostToWebMessage =
-  | { type: 'app.hello'; session: Session; shells: ShellProfile[]; home: string }
+  | { type: 'app.hello'; session: Session; shells: ShellProfile[]; home: string; text: Record<string, string>; persistence: PersistenceSettings; recovery?: string }
+  | { type: 'app.closing' }
+  | { type: 'session.saved' }
+  | { type: 'session.saveFailed'; message: string }
   | { type: 'terminal.created'; pane: string; pid: number }
   | { type: 'terminal.output'; pane: string; data: string }
   | { type: 'terminal.cwd'; pane: string; path: string }
@@ -39,6 +47,7 @@ export type HostToWebMessage =
 export type WebToHostMessage =
   | { type: 'app.ready' }
   | { type: 'session.save'; session: Session }
+  | { type: 'text.save'; text: Record<string, string> }
   | { type: 'terminal.create'; pane: string; shell: string; cwd: string; cols: number; rows: number }
   | { type: 'terminal.input'; pane: string; data: string }
   | { type: 'terminal.resize'; pane: string; cols: number; rows: number }

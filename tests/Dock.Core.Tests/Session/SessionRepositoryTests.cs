@@ -8,11 +8,14 @@ public sealed class SessionRepositoryTests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "dock-tests-" + Guid.NewGuid().ToString("N"));
 
     [Fact]
-    public void Load_WhenNoFile_ThenReturnsNull()
+    public void Load_WhenNoFile_ThenReturnsNothingWithoutError()
     {
         var repository = new SessionRepository(_directory);
 
-        Assert.Null(repository.Load());
+        var loaded = repository.Load();
+
+        Assert.Null(loaded.Session);
+        Assert.Null(loaded.Error);
     }
 
     [Fact]
@@ -23,7 +26,7 @@ public sealed class SessionRepositoryTests : IDisposable
         session.Workspaces[0].Name = "Projet A";
 
         var saved = repository.Save(session);
-        var loaded = repository.Load();
+        var loaded = repository.Load().Session;
 
         Assert.True(saved.IsValid);
         Assert.NotNull(loaded);
@@ -42,16 +45,34 @@ public sealed class SessionRepositoryTests : IDisposable
         var result = repository.Save(invalid);
 
         Assert.False(result.IsValid);
-        Assert.NotNull(repository.Load());
+        Assert.NotNull(repository.Load().Session);
     }
 
     [Fact]
-    public void Load_WhenFileCorrupted_ThenReturnsNull()
+    public void Load_WhenFileCorrupted_ThenQuarantinesItAndReportsError()
     {
         var repository = new SessionRepository(_directory);
         File.WriteAllText(repository.FilePath, "{ pas du json");
 
-        Assert.Null(repository.Load());
+        var loaded = repository.Load();
+
+        Assert.Null(loaded.Session);
+        Assert.Contains("copie conservée", loaded.Error);
+        Assert.False(File.Exists(repository.FilePath));
+        Assert.Single(Directory.GetFiles(_directory, "session.corrompu-*.json"));
+    }
+
+    [Fact]
+    public void Load_WhenSessionInvalid_ThenQuarantinesItWithTheValidationError()
+    {
+        var repository = new SessionRepository(_directory);
+        File.WriteAllText(repository.FilePath, """{ "version": 2, "workspaces": [], "active": "fantome" }""");
+
+        var loaded = repository.Load();
+
+        Assert.Null(loaded.Session);
+        Assert.Contains("Workspace actif invalide.", loaded.Error);
+        Assert.Single(Directory.GetFiles(_directory, "session.corrompu-*.json"));
     }
 
     public void Dispose()

@@ -7,6 +7,7 @@ import { usePaneStore } from './store/paneStore'
 import { useSessionStore } from './store/sessionStore'
 import { receiveContext } from './terminal/contextActions'
 import { terminalRegistry } from './terminal/terminalRegistry'
+import { closeApplication, primeSessionText, saveTextNow, startTextAutosave } from './terminal/textPersistence'
 
 const SAVE_DEBOUNCE_MS = 500
 
@@ -17,15 +18,30 @@ export default function App() {
 
   useEffect(() => {
     const { load, setPanePath } = useSessionStore.getState()
-    const { setHello, setStatus, setProjects } = useHostStore.getState()
+    const { setHello, setStatus, setProjects, setUnsaved } = useHostStore.getState()
+    let stopAutosave: (() => void) | undefined
     const { markFailed, markExited, markPathMissing, clear } = usePaneStore.getState()
     const subscriptions = [
       bridge.on('app.hello', (message) => {
-        setHello(message.shells, message.home)
+        setHello(message.shells, message.home, message.persistence)
+        terminalRegistry.configure(message.persistence.linesPerPane)
+        primeSessionText(message.session, message.text)
         void document.fonts.load('14px "Symbols Nerd Font Mono"').then(() => {
           load(message.session)
-          setStatus('Session restaurée.')
+          stopAutosave?.()
+          stopAutosave = startTextAutosave(message.persistence.textIntervalSeconds)
+          if (message.recovery) {
+            setStatus(message.recovery, StatusLevel.Warning)
+          } else {
+            setStatus('Session restaurée : nouveaux shells, aucune commande rejouée.')
+          }
         })
+      }),
+      bridge.on('app.closing', closeApplication),
+      bridge.on('session.saved', () => setUnsaved(false)),
+      bridge.on('session.saveFailed', (message) => {
+        setUnsaved(true)
+        setStatus(`${message.message} Les changements ne sont pas enregistrés.`, StatusLevel.Error)
       }),
       bridge.on('terminal.output', (message) => terminalRegistry.write(message.pane, message.data)),
       bridge.on('terminal.cwd', (message) => {
@@ -51,7 +67,10 @@ export default function App() {
     } else {
       setStatus('Cette page doit être ouverte dans l’hôte Dock : aucun pont détecté.', StatusLevel.Error)
     }
-    return () => subscriptions.forEach((unsubscribe) => unsubscribe())
+    return () => {
+      stopAutosave?.()
+      subscriptions.forEach((unsubscribe) => unsubscribe())
+    }
   }, [])
 
   useEffect(() => {
@@ -60,9 +79,14 @@ export default function App() {
       if (!state.session || state.session === previous.session) {
         return
       }
-      terminalRegistry.disposeMissing(new Set(allPanes(state.session).map((pane) => pane.id)))
+      const removed = terminalRegistry.disposeMissing(new Set(allPanes(state.session).map((pane) => pane.id)))
       clearTimeout(timer)
-      timer = setTimeout(() => bridge.send({ type: 'session.save', session: state.session! }), SAVE_DEBOUNCE_MS)
+      timer = setTimeout(() => {
+        bridge.send({ type: 'session.save', session: state.session! })
+        if (removed) {
+          saveTextNow()
+        }
+      }, SAVE_DEBOUNCE_MS)
     })
   }, [])
 

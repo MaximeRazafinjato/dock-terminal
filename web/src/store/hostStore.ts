@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { GitContext, Project, ShellProfile } from '../bridge/messages'
+import type { GitContext, PersistenceSettings, Project, ShellProfile } from '../bridge/messages'
 
 export enum StatusLevel {
   Info = 'info',
@@ -17,7 +17,10 @@ interface HostState {
   projectsRoot: string
   projectsError: string | null
   contexts: Record<string, GitContext>
-  setHello: (shells: ShellProfile[], home: string) => void
+  unsaved: boolean
+  persistence: PersistenceSettings
+  setHello: (shells: ShellProfile[], home: string, persistence: PersistenceSettings) => void
+  setUnsaved: (unsaved: boolean) => void
   setStatus: (text: string, level?: StatusLevel) => void
   setLeaderActive: (active: boolean) => void
   setProjects: (root: string, projects: Project[], error: string | null) => void
@@ -34,7 +37,10 @@ export const useHostStore = create<HostState>()((set) => ({
   projectsRoot: '',
   projectsError: null,
   contexts: {},
-  setHello: (shells, home) => set({ connected: true, shells, home }),
+  unsaved: false,
+  persistence: { textIntervalSeconds: 30, linesPerPane: 10000 },
+  setHello: (shells, home, persistence) => set({ connected: true, shells, home, persistence }),
+  setUnsaved: (unsaved) => set({ unsaved }),
   setStatus: (text, level = StatusLevel.Info) => set({ status: { text, level } }),
   setLeaderActive: (leaderActive) => set({ leaderActive }),
   setProjects: (projectsRoot, projects, projectsError) => set({ projectsRoot, projects, projectsError }),
