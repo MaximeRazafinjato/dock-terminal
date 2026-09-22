@@ -32,16 +32,16 @@ export function PaneOverlay({ state, shells, onRestart, onChangeShell, onClose }
       <p className="text-[13px] font-semibold text-dock-ink">{TITLES[state.kind]}</p>
       <p className="max-w-full font-mono text-[11px] break-words text-dock-muted">{state.message}</p>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <button type="button" className={`${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-green-soft`} onClick={onRestart}>
+        <button type="button" className={`${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-green-soft`} data-tip="Relancer le même shell dans ce pane" onClick={onRestart}>
           Relancer
         </button>
         <div className="relative">
-          <button type="button" className={`${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={handleOpenMenu}>
+          <button type="button" className={`${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`} aria-haspopup="menu" aria-expanded={menuOpen} data-tip="Relancer ce pane avec un autre shell" onClick={handleOpenMenu}>
             Choisir un shell
           </button>
           {menuOpen && <ShellMenu shells={shells} onSelect={handleSelectShell} onClose={handleCloseMenu} />}
         </div>
-        <button type="button" className={`${BUTTON} border-dock-line text-dock-muted hover:text-dock-error`} onClick={onClose}>
+        <button type="button" className={`${BUTTON} border-dock-line text-dock-muted hover:text-dock-error`} data-tip="Fermer ce pane" onClick={onClose}>
           Fermer le pane
         </button>
       </div>

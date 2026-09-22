@@ -15,6 +15,7 @@ import { ProjectPicker } from './ProjectPicker'
 import { SidebarResizer } from './SidebarResizer'
 import { SplitView } from './SplitView'
 import { TabBar } from './TabBar'
+import { Tooltip } from './Tooltip'
 import { WorkspaceTree } from './WorkspaceTree'
 
 const STATUS_CLASSES: Record<StatusLevel, string> = {
@@ -178,6 +179,7 @@ export function AppShell({ session }: AppShellProps) {
       </div>
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
+      <Tooltip />
       <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
         <span className="truncate">{status.text}</span>
       </footer>

@@ -9,6 +9,17 @@ export interface ShellProfile {
   reportsCurrentDirectory: boolean
 }
 
+export enum OpenTarget {
+  Editor = 'editor',
+  Explorer = 'explorer',
+}
+
+export interface GitContext {
+  isRepository: boolean
+  branch: string | null
+  detachedHead: boolean
+}
+
 export interface Project {
   name: string
   path: string
@@ -21,6 +32,7 @@ export type HostToWebMessage =
   | { type: 'terminal.cwd'; pane: string; path: string }
   | { type: 'terminal.exit'; pane: string; code: number }
   | { type: 'projects.listed'; root: string; projects: Project[]; error?: string }
+  | { type: 'context.result'; pane: string; path: string; git: GitContext }
   | { type: 'error'; pane?: string; message: string }
 
 export type WebToHostMessage =
@@ -32,6 +44,8 @@ export type WebToHostMessage =
   | { type: 'terminal.ack'; pane: string; chars: number }
   | { type: 'terminal.close'; pane: string }
   | { type: 'projects.list' }
+  | { type: 'context.query'; pane: string; path: string }
+  | { type: 'context.open'; pane: string; path: string; target: OpenTarget }
   | { type: 'window.close' }
 
 export type HostMessageType = HostToWebMessage['type']

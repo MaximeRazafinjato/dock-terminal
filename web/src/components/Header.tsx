@@ -19,7 +19,7 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
       <button
         type="button"
         className="rounded border border-dock-line px-2 text-lg leading-tight text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink"
-        title={sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces'}
+        data-tip={sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces'}
         onClick={onToggleSidebar}
       >
         ☰

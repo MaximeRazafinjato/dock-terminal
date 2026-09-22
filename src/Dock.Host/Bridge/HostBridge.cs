@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using Dock.Core.Context;
 using Dock.Core.Projects;
 using Dock.Core.Session;
 using Dock.Core.Shell;
@@ -19,6 +20,7 @@ public sealed class HostBridge : IDisposable
     private readonly Action _closeWindow;
     private readonly SessionRepository _sessions;
     private readonly ShellPathsModel _shellPaths;
+    private readonly EditorSettingsModel _editor;
     private readonly TerminalManager _terminals;
     private readonly ConcurrentDictionary<string, PaneOutputBuffer> _buffers = new();
     private CoreWebView2? _core;
@@ -30,6 +32,7 @@ public sealed class HostBridge : IDisposable
         _closeWindow = closeWindow;
         _sessions = new SessionRepository(dataDirectory);
         _shellPaths = new ShellPathsRepository(dataDirectory).Load();
+        _editor = new EditorSettingsRepository(dataDirectory).Load();
         _terminals = new TerminalManager(_shellPaths);
         _terminals.OutputReceived += HandleOutput;
         _terminals.CurrentDirectoryChanged += (paneId, path) => Post(new { type = "terminal.cwd", pane = paneId, path });
@@ -103,6 +106,13 @@ public sealed class HostBridge : IDisposable
                 var projects = ProjectCatalog.List(ProjectCatalog.DefaultRoot);
                 Post(new { type = "projects.listed", root = projects.Root, projects = projects.Projects, error = projects.Error });
                 break;
+            case "context.query":
+                var path = RequirePath(command);
+                Post(new { type = "context.result", pane = RequirePane(command), path, git = GitContext.Resolve(path) });
+                break;
+            case "context.open":
+                OpenFolder(RequirePath(command), command.Target);
+                break;
             case "window.close":
                 _closeWindow();
                 break;
@@ -173,6 +183,24 @@ public sealed class HostBridge : IDisposable
             }
         }
     }
+
+    private void OpenFolder(string path, string? target)
+    {
+        switch (target)
+        {
+            case "editor":
+                LocalActions.OpenInEditor(path, _editor.Command);
+                break;
+            case "explorer":
+                LocalActions.OpenInExplorer(path);
+                break;
+            default:
+                throw new InvalidOperationException($"Cible d’ouverture inconnue : {target}");
+        }
+    }
+
+    private static string RequirePath(BridgeCommandModel command) =>
+        command.Path ?? throw new InvalidOperationException("Chemin manquant.");
 
     private static string RequirePane(BridgeCommandModel command) =>
         command.Pane ?? throw new InvalidOperationException("Identifiant de pane manquant.");
