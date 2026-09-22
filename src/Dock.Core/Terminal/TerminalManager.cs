@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Dock.Core.Agents;
 using Dock.Core.Context;
 using Dock.Core.Shell;
 
@@ -73,6 +74,12 @@ public sealed class TerminalManager : IDisposable
 
         return activity;
     }
+
+    public IReadOnlyList<PaneProbeModel> Probes() =>
+        _sessions.Values
+            .Where(session => !session.HasExited)
+            .Select(session => new PaneProbeModel(session.PaneId, session.StartedAtUtc, session.ActiveProcessNames()))
+            .ToList();
 
     public TerminalSession Require(string paneId) =>
         _sessions.TryGetValue(paneId, out var session) ? session : throw new InvalidOperationException($"Aucun terminal pour le pane {paneId}.");

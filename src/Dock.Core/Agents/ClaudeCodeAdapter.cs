@@ -1,0 +1,19 @@
+namespace Dock.Core.Agents;
+
+public sealed class ClaudeCodeAdapter : IAgentAdapter
+{
+    public string Id => "claude";
+    public string Name => "Claude Code";
+
+    public PaneAgentModel? Detect(PaneProbeModel probe, AgentStateModel? reported)
+    {
+        if (reported is not null && reported.Agent == Id)
+        {
+            return new PaneAgentModel(probe.PaneId, Id, reported.State, reported.Message);
+        }
+
+        return probe.Processes.Contains(Id, StringComparer.OrdinalIgnoreCase)
+            ? new PaneAgentModel(probe.PaneId, Id, AgentState.Unknown, null)
+            : null;
+    }
+}
