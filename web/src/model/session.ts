@@ -22,6 +22,13 @@ export interface SplitBranch {
 
 export type SplitNode = SplitLeaf | SplitBranch
 
+export enum SplitSide {
+  A = 'a',
+  B = 'b',
+}
+
+export type SplitPath = SplitSide[]
+
 export interface Tab {
   id: string
   name: string
@@ -61,6 +68,11 @@ export const SIDEBAR_MAX = 450
 export const SIDEBAR_DEFAULT = 292
 export const DEFAULT_SHELL = 'powershell'
 export const CLOSED_TABS_MAX = 5
+export const SPLIT_RATIO_MIN = 0.15
+export const SPLIT_RATIO_MAX = 0.85
+export const SPLIT_RATIO_DEFAULT = 0.5
+
+export const clampRatio = (ratio: number): number => Math.min(SPLIT_RATIO_MAX, Math.max(SPLIT_RATIO_MIN, ratio))
 
 export const isLeaf = (node: SplitNode): node is SplitLeaf => 'pane' in node
 
@@ -107,6 +119,20 @@ export const pruneNode = (node: SplitNode, paneId: string): SplitNode | null => 
 
 export const updatePane = (node: SplitNode, paneId: string, patch: Partial<Pane>): SplitNode =>
   replaceNode(node, paneId, (leaf) => ({ pane: { ...leaf.pane, ...patch } }))
+
+export const splitLeaf = (node: SplitNode, paneId: string, axis: SplitAxis, pane: Pane): SplitNode =>
+  replaceNode(node, paneId, (leaf): SplitNode => ({ axis, ratio: SPLIT_RATIO_DEFAULT, a: leaf, b: { pane } }))
+
+export const setRatioAt = (node: SplitNode, path: SplitPath, ratio: number): SplitNode => {
+  if (isLeaf(node)) {
+    return node
+  }
+  const [side, ...rest] = path
+  if (side === undefined) {
+    return { ...node, ratio: clampRatio(ratio) }
+  }
+  return { ...node, [side]: setRatioAt(node[side], rest, ratio) }
+}
 
 const renewPaneIds = (node: SplitNode, paneIds: Record<string, string>): SplitNode => {
   if (isLeaf(node)) {

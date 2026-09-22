@@ -1,6 +1,7 @@
 import { bridge } from '../bridge/bridge'
 import { useHostStore } from '../store/hostStore'
-import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, panesOf, SplitAxis, type Workspace } from '../model/session'
+import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, SplitAxis, type Workspace } from '../model/session'
+import { Direction, paneInDirection } from '../components/paneNavigation'
 import { useSessionStore } from '../store/sessionStore'
 import { closePaneKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
@@ -15,8 +16,10 @@ export enum Command {
   SplitTopBottom = 'splitTopBottom',
   NewWorkspace = 'newWorkspace',
   ClosePane = 'closePane',
-  NextPane = 'nextPane',
-  PreviousPane = 'previousPane',
+  FocusPaneLeft = 'focusPaneLeft',
+  FocusPaneRight = 'focusPaneRight',
+  FocusPaneUp = 'focusPaneUp',
+  FocusPaneDown = 'focusPaneDown',
   MoveTabLeft = 'moveTabLeft',
   MoveTabRight = 'moveTabRight',
   RestoreTab = 'restoreTab',
@@ -30,10 +33,10 @@ const LEADER_KEYS: Record<string, Command> = {
   w: Command.NewWorkspace,
   x: Command.ClosePane,
   z: Command.RestoreTab,
-  ArrowRight: Command.NextPane,
-  ArrowDown: Command.NextPane,
-  ArrowLeft: Command.PreviousPane,
-  ArrowUp: Command.PreviousPane,
+  ArrowRight: Command.FocusPaneRight,
+  ArrowDown: Command.FocusPaneDown,
+  ArrowLeft: Command.FocusPaneLeft,
+  ArrowUp: Command.FocusPaneUp,
   PageUp: Command.MoveTabLeft,
   PageDown: Command.MoveTabRight,
 }
@@ -54,10 +57,10 @@ const DIRECT_LETTER_KEYS: Record<string, Command> = {
 }
 
 const DIRECT_ARROW_KEYS: Record<string, Command> = {
-  ArrowRight: Command.NextPane,
-  ArrowDown: Command.NextPane,
-  ArrowLeft: Command.PreviousPane,
-  ArrowUp: Command.PreviousPane,
+  ArrowRight: Command.FocusPaneRight,
+  ArrowDown: Command.FocusPaneDown,
+  ArrowLeft: Command.FocusPaneLeft,
+  ArrowUp: Command.FocusPaneUp,
 }
 
 let leaderTimer: ReturnType<typeof setTimeout> | undefined
@@ -101,18 +104,6 @@ const enterLeader = (): void => {
   leaderTimer = setTimeout(exitLeader, LEADER_TIMEOUT_MS)
 }
 
-const cyclePane = (offset: number): void => {
-  const { session, selectPane } = useSessionStore.getState()
-  const workspace = session ? activeWorkspace(session) : undefined
-  if (!workspace) {
-    return
-  }
-  const tab = activeTab(workspace)
-  const panes = panesOf(tab.tree)
-  const index = panes.findIndex((pane) => pane.id === tab.active)
-  selectPane(panes[(index + offset + panes.length) % panes.length].id)
-}
-
 const currentWorkspace = (): Workspace | undefined => {
   const { session } = useSessionStore.getState()
   return session ? activeWorkspace(session) : undefined
@@ -123,7 +114,17 @@ const currentShell = (): string => {
   return workspace ? activePane(activeTab(workspace)).shell : DEFAULT_SHELL
 }
 
-const currentPaneId = (): string => currentWorkspace()?.active ?? ''
+const currentPaneId = (): string => {
+  const workspace = currentWorkspace()
+  return workspace ? activeTab(workspace).active : ''
+}
+
+const focusPaneToward = (direction: Direction): void => {
+  const target = paneInDirection(currentPaneId(), direction)
+  if (target) {
+    useSessionStore.getState().selectPane(target)
+  }
+}
 
 export const runCommand = (command: Command): void => {
   const sessionStore = useSessionStore.getState()
@@ -147,11 +148,17 @@ export const runCommand = (command: Command): void => {
     case Command.ClosePane:
       closePaneKeepingText(currentPaneId())
       break
-    case Command.NextPane:
-      cyclePane(1)
+    case Command.FocusPaneLeft:
+      focusPaneToward(Direction.Left)
       break
-    case Command.PreviousPane:
-      cyclePane(-1)
+    case Command.FocusPaneRight:
+      focusPaneToward(Direction.Right)
+      break
+    case Command.FocusPaneUp:
+      focusPaneToward(Direction.Up)
+      break
+    case Command.FocusPaneDown:
+      focusPaneToward(Direction.Down)
       break
     case Command.MoveTabLeft:
       sessionStore.moveActiveTab(-1)

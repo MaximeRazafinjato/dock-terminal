@@ -1,27 +1,39 @@
-import { isLeaf, SplitAxis, type SplitNode } from '../model/session'
+import { useRef } from 'react'
+import { isLeaf, SplitAxis, SplitSide, type SplitNode, type SplitPath } from '../model/session'
 import { PaneView } from './PaneView'
+import { SplitResizer } from './SplitResizer'
+
+export type SplitResizeHandler = (path: SplitPath, ratio: number) => void
 
 interface SplitViewProps {
   node: SplitNode
+  path?: SplitPath
   activePaneId: string
   onFocus: (paneId: string) => void
   onClose: (paneId: string) => void
+  onSplit: (paneId: string, axis: SplitAxis) => void
+  onResize: SplitResizeHandler
 }
 
-export function SplitView({ node, activePaneId, onFocus, onClose }: SplitViewProps) {
+const ROOT_PATH: SplitPath = []
+
+export function SplitView({ node, path = ROOT_PATH, activePaneId, onFocus, onClose, onSplit, onResize }: SplitViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   if (isLeaf(node)) {
-    return <PaneView pane={node.pane} active={node.pane.id === activePaneId} onFocus={onFocus} onClose={onClose} />
+    return <PaneView pane={node.pane} active={node.pane.id === activePaneId} onFocus={onFocus} onClose={onClose} onSplit={onSplit} />
   }
   const horizontal = node.axis === SplitAxis.Horizontal
-  const first = `${node.ratio * 100}%`
+  const handleResize = (ratio: number) => onResize(path, ratio)
+  const child = (side: SplitSide, flex: number) => (
+    <div className="min-h-0 min-w-0" style={{ flex, flexBasis: 0 }}>
+      <SplitView node={node[side]} path={[...path, side]} activePaneId={activePaneId} onFocus={onFocus} onClose={onClose} onSplit={onSplit} onResize={onResize} />
+    </div>
+  )
   return (
-    <div className={`flex h-full min-h-0 min-w-0 gap-1 ${horizontal ? 'flex-row' : 'flex-col'}`}>
-      <div className="min-h-0 min-w-0" style={horizontal ? { width: first } : { height: first }}>
-        <SplitView node={node.a} activePaneId={activePaneId} onFocus={onFocus} onClose={onClose} />
-      </div>
-      <div className="min-h-0 min-w-0 flex-1">
-        <SplitView node={node.b} activePaneId={activePaneId} onFocus={onFocus} onClose={onClose} />
-      </div>
+    <div ref={containerRef} className={`flex h-full min-h-0 min-w-0 ${horizontal ? 'flex-row' : 'flex-col'}`}>
+      {child(SplitSide.A, node.ratio)}
+      <SplitResizer axis={node.axis} ratio={node.ratio} containerRef={containerRef} onResize={handleResize} />
+      {child(SplitSide.B, 1 - node.ratio)}
     </div>
   )
 }
