@@ -21,9 +21,11 @@ export function TerminalPane({ pane, active, onFocus }: TerminalPaneProps) {
     const handle = terminalRegistry.attach(pane, host)
     handle.keyHandler = (event) =>
       handleTerminalKey(event, {
+        hasSelection: () => handle.terminal.hasSelection(),
         copySelection: () => {
           if (handle.terminal.hasSelection()) {
             void navigator.clipboard.writeText(handle.terminal.getSelection())
+            handle.terminal.clearSelection()
           }
         },
         pasteClipboard: () => {
