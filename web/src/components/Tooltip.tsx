@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 const TIP_ATTRIBUTE = 'data-tip'
 const SHOW_DELAY_MS = 250
@@ -17,11 +17,23 @@ const tipTargetOf = (target: EventTarget | null): HTMLElement | null => (target 
 const placeFor = (element: HTMLElement, text: string): TooltipState => {
   const rect = element.getBoundingClientRect()
   const above = rect.bottom + GAP_PX > window.innerHeight - 40
-  return { text, x: Math.min(Math.max(rect.left + rect.width / 2, EDGE_MARGIN_PX), window.innerWidth - EDGE_MARGIN_PX), y: above ? rect.top - GAP_PX : rect.bottom + GAP_PX, above }
+  return { text, x: rect.left + rect.width / 2, y: above ? rect.top - GAP_PX : rect.bottom + GAP_PX, above }
 }
 
 export function Tooltip() {
   const [state, setState] = useState<TooltipState | null>(null)
+  const bubbleRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const bubble = bubbleRef.current
+    if (!bubble || !state) {
+      return
+    }
+    const width = bubble.offsetWidth
+    const left = Math.min(Math.max(state.x - width / 2, EDGE_MARGIN_PX), window.innerWidth - EDGE_MARGIN_PX - width)
+    bubble.style.left = `${left}px`
+    bubble.style.visibility = 'visible'
+  }, [state])
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -81,9 +93,10 @@ export function Tooltip() {
   }
   return (
     <div
+      ref={bubbleRef}
       role="tooltip"
-      className="pointer-events-none fixed z-50 max-w-[360px] rounded border border-dock-line bg-dock-panel px-2 py-1 text-[11px] leading-snug text-dock-ink shadow-lg"
-      style={{ left: state.x, top: state.y, transform: `translate(-50%, ${state.above ? '-100%' : '0'})` }}
+      className="pointer-events-none fixed z-50 max-w-[360px] rounded border border-dock-line bg-dock-panel px-2 py-1 text-[11px] leading-snug w-max text-dock-ink shadow-lg"
+      style={{ left: 0, top: state.y, visibility: 'hidden', transform: state.above ? 'translateY(-100%)' : undefined }}
     >
       {state.text}
     </div>
