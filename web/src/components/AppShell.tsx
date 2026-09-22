@@ -32,7 +32,7 @@ const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.foc
 
 export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
-  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError } = useHostStore()
+  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker } = useUiStore()
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
@@ -182,6 +182,11 @@ export function AppShell({ session }: AppShellProps) {
       <Tooltip />
       <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
         <span className="truncate">{status.text}</span>
+        {unsaved && (
+          <span className="ml-auto shrink-0 pl-3 text-dock-error" data-tip="La dernière sauvegarde a échoué : la session restera en l’état d’avant tant qu’une écriture ne réussit pas.">
+            Non enregistré
+          </span>
+        )}
       </footer>
     </div>
   )
