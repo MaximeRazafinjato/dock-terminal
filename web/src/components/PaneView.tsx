@@ -95,29 +95,29 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
         onMouseDown={handleHeaderMouseDown}
       >
         <span className="mr-1 font-semibold text-dock-ink">{pane.shell}</span>
-        <span className="min-w-0 flex-1 truncate font-mono text-dock-green" title={pane.path}>
+        <span className="min-w-0 flex-1 truncate font-mono text-dock-green" data-tip={pane.path}>
           {pane.path}
         </span>
-        <button type="button" className={HEADER_BUTTON} title={`Copier le chemin ${pane.path}`} aria-label="Copier le chemin" onClick={handleCopyPath}>
+        <button type="button" className={HEADER_BUTTON} data-tip={`Copier le chemin ${pane.path}`} aria-label="Copier le chemin" onClick={handleCopyPath}>
           <CopyIcon />
         </button>
-        <button type="button" className={HEADER_BUTTON} title="Ouvrir dans l’éditeur" aria-label="Ouvrir dans l’éditeur" onClick={handleOpenEditor}>
+        <button type="button" className={HEADER_BUTTON} data-tip="Ouvrir dans l’éditeur" aria-label="Ouvrir dans l’éditeur" onClick={handleOpenEditor}>
           <EditorIcon />
         </button>
-        <button type="button" className={HEADER_BUTTON} title="Ouvrir dans l’explorateur" aria-label="Ouvrir dans l’explorateur" onClick={handleOpenExplorer}>
+        <button type="button" className={HEADER_BUTTON} data-tip="Ouvrir dans l’explorateur" aria-label="Ouvrir dans l’explorateur" onClick={handleOpenExplorer}>
           <FolderIcon />
         </button>
-        <button type="button" className={HEADER_BUTTON} title={branchTitle} aria-label="Copier la branche Git" disabled={!context?.branch} onClick={handleCopyBranch}>
+        <button type="button" className={HEADER_BUTTON} data-tip={branchTitle} aria-label="Copier la branche Git" disabled={!context?.branch} onClick={handleCopyBranch}>
           <BranchIcon />
         </button>
         <span className="mx-1 h-3 w-px bg-dock-line" aria-hidden="true" />
-        <button type="button" className={HEADER_BUTTON} title="Split côte à côte" aria-label="Split côte à côte" onClick={handleSplitSideBySide}>
+        <button type="button" className={HEADER_BUTTON} data-tip="Split côte à côte" aria-label="Split côte à côte" onClick={handleSplitSideBySide}>
           <SplitIcon horizontal />
         </button>
-        <button type="button" className={HEADER_BUTTON} title="Split haut / bas" aria-label="Split haut / bas" onClick={handleSplitTopBottom}>
+        <button type="button" className={HEADER_BUTTON} data-tip="Split haut / bas" aria-label="Split haut / bas" onClick={handleSplitTopBottom}>
           <SplitIcon horizontal={false} />
         </button>
-        <button type="button" className={`${HEADER_BUTTON} hover:text-dock-error`} title="Fermer le pane" aria-label="Fermer le pane" onClick={handleClose}>
+        <button type="button" className={`${HEADER_BUTTON} hover:text-dock-error`} data-tip="Fermer le pane" aria-label="Fermer le pane" onClick={handleClose}>
           <CloseIcon />
         </button>
       </header>

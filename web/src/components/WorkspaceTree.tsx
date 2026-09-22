@@ -34,7 +34,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
     <aside className="flex h-full min-h-0 flex-col bg-dock-paper" style={{ width: session.sidebar }}>
       <div className="flex items-center justify-between px-3 py-2 text-[11px] font-semibold tracking-wide text-dock-muted uppercase">
         <span>Workspaces</span>
-        <button type="button" className="rounded px-2 text-base hover:bg-dock-green-hover" title="Nouveau workspace" onClick={onNewWorkspace}>
+        <button type="button" className="rounded px-2 text-base hover:bg-dock-green-hover" data-tip="Nouveau workspace" onClick={onNewWorkspace}>
           +
         </button>
       </div>
@@ -75,6 +75,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                   aria-expanded={expanded}
                   aria-controls={tabsId}
                   aria-label={`${expanded ? 'Replier' : 'Afficher'} les onglets de ${workspace.name}`}
+                  data-tip={expanded ? 'Replier les onglets' : 'Afficher les onglets'}
                   className="w-6 shrink-0 cursor-pointer self-center text-center text-sm text-dock-green"
                   onClick={handleChevron}
                 >
@@ -87,12 +88,12 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                 ) : selected ? (
                   <EditableName name={workspace.name} className="py-0.5 leading-none font-semibold" onClick={handleSelect} />
                 ) : (
-                  <button type="button" className="min-w-0 cursor-pointer truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" title="Sélectionner le workspace" onClick={handleSelect}>
+                  <button type="button" className="min-w-0 cursor-pointer truncate rounded px-1 text-left leading-none font-semibold hover:bg-dock-green-hover" data-tip="Sélectionner le workspace" onClick={handleSelect}>
                     {workspace.name}
                   </button>
                 )}
                 <span className="ml-auto shrink-0 text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
-                <button type="button" className={CLOSE_BUTTON} title="Fermer le workspace" aria-label={`Fermer le workspace ${workspace.name}`} onClick={handleCloseWorkspace}>
+                <button type="button" className={CLOSE_BUTTON} data-tip="Fermer le workspace" aria-label={`Fermer le workspace ${workspace.name}`} onClick={handleCloseWorkspace}>
                   ×
                 </button>
               </div>
@@ -116,7 +117,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                         <button
                           type="button"
                           aria-current={activeTab || undefined}
-                          title={tab.name}
+                          data-tip={tab.name}
                           data-drop-workspace={workspace.id}
                           data-drop-tab={tab.id}
                           className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'font-semibold text-dock-green-deep' : 'text-dock-ink'} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
@@ -126,9 +127,9 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                         >
                           <span className="min-w-0 flex-1 truncate">{tab.name}</span>
                           {shellTag && <span className="shrink-0 rounded border border-dock-line px-1.5 py-px text-[10px] leading-tight font-medium text-dock-muted">{shellTag}</span>}
-                          {paneCount > 1 && <span className="shrink-0 text-[11px] leading-none font-normal text-dock-muted" title={`${paneCount} panes`}>{`${paneCount} panes`}</span>}
+                          {paneCount > 1 && <span className="shrink-0 text-[11px] leading-none font-normal text-dock-muted" data-tip={`${paneCount} panes`}>{`${paneCount} panes`}</span>}
                         </button>
-                        <button type="button" className={CLOSE_BUTTON} title="Fermer l’onglet" aria-label={`Fermer l’onglet ${tab.name}`} onClick={handleCloseTab}>
+                        <button type="button" className={CLOSE_BUTTON} data-tip="Fermer l’onglet" aria-label={`Fermer l’onglet ${tab.name}`} onClick={handleCloseTab}>
                           ×
                         </button>
                         </div>

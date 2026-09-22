@@ -110,7 +110,7 @@ export function SearchDialog<T extends SearchItem>({ label, placeholder, emptyMe
                     tabIndex={-1}
                     aria-pressed={item.favorite}
                     aria-label={item.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-                    title={item.favorite ? 'Retirer des favoris (Ctrl + Entrée)' : 'Ajouter aux favoris (Ctrl + Entrée)'}
+                    data-tip={item.favorite ? 'Retirer des favoris (Ctrl + Entrée)' : 'Ajouter aux favoris (Ctrl + Entrée)'}
                     className={`shrink-0 cursor-pointer rounded px-1.5 py-1 text-[13px] leading-none hover:bg-dock-green-hover focus:outline-none ${item.favorite ? 'text-dock-warning' : 'text-dock-muted opacity-50 hover:opacity-100'}`}
                     onPointerDown={handleResultPointerDown}
                     onClick={handleToggleFavorite}

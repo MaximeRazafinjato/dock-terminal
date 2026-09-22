@@ -84,7 +84,7 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  title="Double-clic pour renommer, glisser pour déplacer"
+                  data-tip="Double-clic pour renommer, glisser pour déplacer"
                   className="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-xs"
                   onClick={handleSelect}
                   onDoubleClick={handleStartRename}
@@ -93,7 +93,7 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
                   {tab.name}
                 </button>
               )}
-              <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" title="Fermer l’onglet" onClick={handleClose}>
+              <button type="button" className="shrink-0 cursor-pointer px-2 text-xs hover:text-dock-error" data-tip="Fermer l’onglet" onClick={handleClose}>
                 ×
               </button>
             </div>
@@ -108,7 +108,7 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           className="cursor-pointer rounded px-2 py-1 text-base hover:bg-dock-green-hover"
-          title="Nouvel onglet PowerShell (clic droit : choisir le shell)"
+          data-tip="Nouvel onglet PowerShell (clic droit : choisir le shell)"
           onClick={handleNewDefault}
           onContextMenu={handleContextMenu}
           onKeyDown={handleAddKeyDown}
