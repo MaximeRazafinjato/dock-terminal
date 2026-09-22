@@ -16,6 +16,9 @@ interface UiState {
   renamingTabId: string | null
   draggingTabId: string | null
   tabDropTarget: TabDropTarget | null
+  paletteOpen: boolean
+  openPalette: () => void
+  closePalette: () => void
   startRenamingTab: (tabId: string) => void
   stopRenamingTab: () => void
   startRenamingWorkspace: (workspaceId: string, origin: RenameOrigin) => void
@@ -31,6 +34,9 @@ export const useUiStore = create<UiState>()((set) => ({
   renamingTabId: null,
   draggingTabId: null,
   tabDropTarget: null,
+  paletteOpen: false,
+  openPalette: () => set({ paletteOpen: true }),
+  closePalette: () => set({ paletteOpen: false }),
   startRenamingTab: (renamingTabId) => set({ renamingTabId }),
   stopRenamingTab: () => set({ renamingTabId: null }),
   startRenamingWorkspace: (renamingWorkspaceId, renameOrigin) => set({ renamingWorkspaceId, renameOrigin }),

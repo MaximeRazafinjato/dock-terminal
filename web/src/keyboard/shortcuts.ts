@@ -178,7 +178,7 @@ export const runCommand = (command: Command): void => {
   const hostStore = useHostStore.getState()
   switch (command) {
     case Command.Palette:
-      hostStore.setStatus('Palette Ctrl + P : à venir (F12).')
+      useUiStore.getState().openPalette()
       break
     case Command.NewTab:
       sessionStore.newTab(currentShell())

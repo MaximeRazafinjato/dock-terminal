@@ -37,6 +37,12 @@ public static class SessionValidator
             return closedResult;
         }
 
+        if (session.Favorites.Count > SessionLimits.MaxFavorites || session.Favorites.Any(favorite => string.IsNullOrWhiteSpace(favorite) || favorite.Length > SessionLimits.MaxFavoriteLength))
+        {
+            return ValidationResultModel.Fail("Favoris invalides.");
+        }
+
+        session.Favorites = session.Favorites.Distinct().ToList();
         session.Sidebar = Math.Clamp(session.Sidebar, SessionLimits.MinSidebarWidth, SessionLimits.MaxSidebarWidth);
         return ValidationResultModel.Ok();
     }

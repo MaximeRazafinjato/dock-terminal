@@ -60,6 +60,7 @@ export interface Session {
   sidebar: number
   sidebarCollapsed: boolean
   closed: ClosedTab[]
+  favorites: string[]
 }
 
 export const SESSION_VERSION = 2
