@@ -6,9 +6,10 @@ import { StatusLevel, useHostStore } from './store/hostStore'
 import { usePaneStore } from './store/paneStore'
 import { useSessionStore } from './store/sessionStore'
 import { useUiStore } from './store/uiStore'
+import { receiveActivity, receiveApplicationClosing } from './terminal/closeGuard'
 import { receiveContext } from './terminal/contextActions'
 import { terminalRegistry } from './terminal/terminalRegistry'
-import { closeApplication, primeSessionText, saveTextNow, startTextAutosave } from './terminal/textPersistence'
+import { primeSessionText, saveTextNow, startTextAutosave } from './terminal/textPersistence'
 
 const SAVE_DEBOUNCE_MS = 500
 
@@ -51,7 +52,8 @@ export default function App() {
         setStatus(warnings.length > 0 ? `Réglages enregistrés. ${warnings}` : 'Réglages enregistrés et appliqués.', warnings.length > 0 ? StatusLevel.Warning : StatusLevel.Info)
       }),
       bridge.on('dialog.picked', (message) => setPickedPath({ field: message.field, path: message.path })),
-      bridge.on('app.closing', closeApplication),
+      bridge.on('app.closing', (message) => receiveApplicationClosing(message.activity)),
+      bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
         setUnsaved(true)

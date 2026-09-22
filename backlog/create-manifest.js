@@ -125,7 +125,7 @@ const tasks=[
 'Ne pas introduire de service persistant qui reprend les anciens agents.',
 'Sauvegarder la disposition avant fermeture lorsque possible.',
 'Tester avec serveur et agent actifs ainsi qu’un programme qui ne se termine pas immédiatement.'
-],['F11','F17'],'Arrêt forcé. Demander une confirmation ciblée si un serveur, un agent ou un programme est actif, puis arrêter tous les processus concernés.'],
+],['F11','F17'],'Arrêt forcé. Demander une confirmation ciblée si un serveur, un agent ou un programme est actif, puis arrêter tous les processus concernés.',true],
 ['F19','Sauvegarder, exporter et importer les préférences','14','R24','Versionner la configuration et la réutiliser.',[
 'Définir un format versionné pour shells, raccourcis, éditeur, Projets et préférences visuelles.',
 'Séparer préférences, disposition et historique terminal.',

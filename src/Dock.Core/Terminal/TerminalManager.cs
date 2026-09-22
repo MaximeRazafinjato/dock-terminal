@@ -52,6 +52,28 @@ public sealed class TerminalManager : IDisposable
             .Select(session => new MissingDirectoryModel(session.PaneId, session.CurrentDirectory!, PathFallback.NearestExisting(session.CurrentDirectory!)))
             .ToList();
 
+    public IReadOnlyList<PaneActivityModel> Activity() => Activity(_sessions.Keys.ToList());
+
+    public IReadOnlyList<PaneActivityModel> Activity(IEnumerable<string> paneIds)
+    {
+        var activity = new List<PaneActivityModel>();
+        foreach (var paneId in paneIds)
+        {
+            if (!_sessions.TryGetValue(paneId, out var session))
+            {
+                continue;
+            }
+
+            var processes = session.ActiveProcessNames();
+            if (processes.Count > 0)
+            {
+                activity.Add(new PaneActivityModel(paneId, processes));
+            }
+        }
+
+        return activity;
+    }
+
     public TerminalSession Require(string paneId) =>
         _sessions.TryGetValue(paneId, out var session) ? session : throw new InvalidOperationException($"Aucun terminal pour le pane {paneId}.");
 
