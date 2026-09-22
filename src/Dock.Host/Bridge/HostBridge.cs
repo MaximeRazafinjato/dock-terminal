@@ -87,19 +87,31 @@ public sealed class HostBridge : IDisposable
 
     public bool RequestClose()
     {
-        if (_core is null || _closing)
+        if (_core is null)
         {
             return false;
         }
 
+        if (_closing)
+        {
+            return true;
+        }
+
         _closing = true;
-        PostNow(new { type = "app.closing" });
+        PostNow(new { type = "app.closing", activity = _terminals.Activity() });
         _closeTimer = _dispatcher.CreateTimer();
         _closeTimer.Interval = TimeSpan.FromSeconds(3);
         _closeTimer.IsRepeating = false;
         _closeTimer.Tick += (_, _) => _closeWindow();
         _closeTimer.Start();
         return true;
+    }
+
+    private void CancelClose()
+    {
+        _closing = false;
+        _closeTimer?.Stop();
+        _closeTimer = null;
     }
 
     private void Dispatch(BridgeCommandModel command)
@@ -143,6 +155,9 @@ public sealed class HostBridge : IDisposable
             case "terminal.close":
                 CloseTerminal(RequirePane(command));
                 break;
+            case "terminal.activity":
+                Post(new { type = "terminal.activityResult", panes = _terminals.Activity(command.Panes ?? []) });
+                break;
             case "projects.list":
                 var projects = ProjectCatalog.List(_settings.ProjectsRoot);
                 Post(new { type = "projects.listed", root = projects.Root, projects = projects.Projects, error = projects.Error });
@@ -156,6 +171,9 @@ public sealed class HostBridge : IDisposable
                 break;
             case "window.close":
                 _closeWindow();
+                break;
+            case "window.closeCancel":
+                CancelClose();
                 break;
             default:
                 Post(new { type = "error", pane = command.Pane, message = $"Commande inconnue : {command.Type}" });
