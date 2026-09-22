@@ -5,20 +5,22 @@ import {
   activeWorkspace,
   CLOSED_TABS_MAX,
   cloneTabWithNewIds,
+  createPane,
   createTab,
   createWorkspace,
   findWorkspace,
   folderName,
   panesOf,
   pruneNode,
-  replaceNode,
+  setRatioAt,
+  splitLeaf,
   updatePane,
   SIDEBAR_MAX,
   SIDEBAR_MIN,
   SplitAxis,
   type ClosedTab,
   type Session,
-  type SplitNode,
+  type SplitPath,
   type Tab,
   type Workspace,
 } from '../model/session'
@@ -41,6 +43,7 @@ interface SessionState {
   closeTab: (tabId: string, text?: Record<string, string>) => void
   restoreTab: () => { tab: Tab; text: Record<string, string> } | null
   splitPane: (axis: SplitAxis) => void
+  setSplitRatio: (tabId: string, path: SplitPath, ratio: number) => void
   closePane: (paneId: string) => void
   setPanePath: (paneId: string, path: string) => void
 }
@@ -237,9 +240,19 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     set((state) => ({
       session: mutateTab(state.session, (tab) => {
         const current = activePane(tab)
-        const fresh = createTab(current.path, current.shell).tree as { pane: { id: string } }
-        tab.tree = replaceNode(tab.tree, current.id, (leaf): SplitNode => ({ axis, ratio: 0.5, a: leaf, b: fresh as SplitNode }))
-        tab.active = fresh.pane.id
+        const fresh = createPane(current.path, current.shell)
+        tab.tree = splitLeaf(tab.tree, current.id, axis, fresh)
+        tab.active = fresh.id
+      }),
+    })),
+
+  setSplitRatio: (tabId, path, ratio) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        const tab = draft.workspaces.flatMap((workspace) => workspace.tabs).find((candidate) => candidate.id === tabId)
+        if (tab) {
+          tab.tree = setRatioAt(tab.tree, path, ratio)
+        }
       }),
     })),
 

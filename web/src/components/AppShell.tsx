@@ -1,4 +1,4 @@
-import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type Workspace } from '../model/session'
+import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
@@ -24,7 +24,7 @@ interface AppShellProps {
 const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.focus()
 
 export function AppShell({ session }: AppShellProps) {
-  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab } = useSessionStore()
+  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio } = useSessionStore()
   const { status, leaderActive, home, shells } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab } = useUiStore()
   const workspace = activeWorkspace(session)
@@ -77,9 +77,14 @@ export function AppShell({ session }: AppShellProps) {
     }
     finishTabRename()
   }
+  const handleSplit = (paneId: string, axis: SplitAxis) => {
+    selectPane(paneId)
+    splitPane(axis)
+  }
 
   const renderMain = (current: Workspace) => {
     const currentTab = activeTab(current)
+    const handleResize = (path: SplitPath, ratio: number) => setSplitRatio(currentTab.id, path, ratio)
     return (
       <>
         <TabBar
@@ -95,7 +100,7 @@ export function AppShell({ session }: AppShellProps) {
           onMove={moveTab}
         />
         <div className="min-h-0 flex-1 border-t border-dock-line bg-dock-panel p-1">
-          <SplitView key={currentTab.id} node={currentTab.tree} activePaneId={currentTab.active} onFocus={selectPane} onClose={closePaneKeepingText} />
+          <SplitView key={currentTab.id} node={currentTab.tree} activePaneId={currentTab.active} onFocus={selectPane} onClose={closePaneKeepingText} onSplit={handleSplit} onResize={handleResize} />
         </div>
       </>
     )
