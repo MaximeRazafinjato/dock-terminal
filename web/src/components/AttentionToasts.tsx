@@ -1,0 +1,41 @@
+import { AgentState } from '../bridge/messages'
+import type { WaitingPane } from '../agents/agentSummary'
+import { AgentStateIcon } from './AgentStateIcon'
+
+interface AttentionToastsProps {
+  waiting: WaitingPane[]
+  onJoin: (paneId: string) => void
+  onDismiss: (paneId: string) => void
+}
+
+export function AttentionToasts({ waiting, onJoin, onDismiss }: AttentionToastsProps) {
+  if (waiting.length === 0) {
+    return null
+  }
+
+  return (
+    <div role="region" aria-live="polite" aria-label="Terminaux en attente" className="pointer-events-none absolute bottom-8 left-3 z-20 flex w-[380px] max-w-[calc(100vw-24px)] flex-col gap-2">
+      {waiting.map((pane) => {
+        const handleJoin = () => onJoin(pane.paneId)
+        const handleDismiss = () => onDismiss(pane.paneId)
+        return (
+          <div key={pane.paneId} role="status" className="pointer-events-auto rounded-lg border border-dock-status-waiting/60 bg-dock-panel px-3 py-2.5 text-[12px] shadow-xl">
+            <div className="flex items-center gap-2">
+              <AgentStateIcon state={AgentState.Waiting} tip="Une réponse est attendue" />
+              <span className="min-w-0 flex-1 truncate font-semibold text-dock-ink" data-tip={pane.label}>{`${pane.workspaceName} › ${pane.tabName}`}</span>
+              <button type="button" className="shrink-0 cursor-pointer rounded px-1.5 text-[13px] leading-none text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink" aria-label="Ignorer cette notification" data-tip="Ignorer jusqu’au prochain changement d’état" onClick={handleDismiss}>
+                ×
+              </button>
+            </div>
+            <p className="mt-1.5 line-clamp-3 break-words text-dock-muted">{pane.detail}</p>
+            <div className="mt-2 flex justify-end">
+              <button type="button" className="cursor-pointer rounded border border-dock-status-waiting px-2.5 py-1 text-[12px] text-dock-status-waiting hover:bg-dock-green-hover" onClick={handleJoin}>
+                Rejoindre le terminal ↗
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}

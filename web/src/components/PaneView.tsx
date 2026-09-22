@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
 import { OpenTarget, type ShellProfile } from '../bridge/messages'
 import { SplitAxis, type Pane } from '../model/session'
+import { useAgentStore } from '../store/agentStore'
 import { useHostStore } from '../store/hostStore'
 import { usePaneStore } from '../store/paneStore'
 import { copyPaneBranch, copyPanePath, gitSummary, openPaneFolder, queryContext } from '../terminal/contextActions'
 import { TerminalPane } from '../terminal/TerminalPane'
+import { AgentBadge } from './AgentBadge'
 import { PaneOverlay } from './PaneOverlay'
 
 interface PaneViewProps {
@@ -71,6 +73,7 @@ const CloseIcon = () => (
 export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onRestartIn, onChangeShell, onDismissState }: PaneViewProps) {
   const paneState = usePaneStore((state) => state.states[pane.id])
   const context = useHostStore((state) => state.contexts[pane.id])
+  const agent = useAgentStore((state) => state.agents[pane.id])
 
   useEffect(() => {
     queryContext(pane.id)
@@ -100,6 +103,7 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
         onMouseDown={handleHeaderMouseDown}
       >
         <span className="mr-1 font-semibold text-dock-ink">{pane.shell}</span>
+        {agent && <AgentBadge agent={agent} />}
         <span className="min-w-0 flex-1 truncate font-mono text-dock-green" data-tip={pane.path}>
           {pane.path}
         </span>

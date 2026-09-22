@@ -1,16 +1,20 @@
+import { waitingPanes } from '../agents/agentSummary'
 import { bridge } from '../bridge/bridge'
 import type { ShellProfile } from '../bridge/messages'
 import { Command, runCommand } from '../keyboard/shortcuts'
 import { activeTab, activeWorkspace, panesOf, type Session } from '../model/session'
+import { useAgentStore } from '../store/agentStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { restoreClosedTab } from '../terminal/tabLifecycle'
+import { terminalRegistry } from '../terminal/terminalRegistry'
 import { OpenTarget } from '../bridge/messages'
 import { copyPaneBranch, copyPanePath, openPaneFolder } from '../terminal/contextActions'
 import type { SearchItem } from './searchFilter'
 
 export enum PaletteKind {
   Command = 'command',
+  Attention = 'attention',
   Workspace = 'workspace',
   Tab = 'tab',
   Pane = 'pane',
@@ -69,6 +73,21 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
   return items
 }
 
+const attentionItems = (session: Session): PaletteItem[] => {
+  const { selectPane } = useSessionStore.getState()
+  return waitingPanes(session, useAgentStore.getState().agents).map((pane) => ({
+    id: `attention-${pane.paneId}`,
+    kind: PaletteKind.Attention,
+    label: `Rejoindre${SEPARATOR}${pane.label}`,
+    hint: pane.detail,
+    favorite: false,
+    run: () => {
+      selectPane(pane.paneId)
+      terminalRegistry.get(pane.paneId)?.terminal.focus()
+    },
+  }))
+}
+
 const navigationItems = (session: Session): PaletteItem[] => {
   const { selectWorkspace, selectTab, selectPane } = useSessionStore.getState()
   return session.workspaces.flatMap((workspace) => [
@@ -98,6 +117,6 @@ export const buildPaletteItems = (session: Session, shells: ShellProfile[]): Pal
   const commands = commandItems(session, shells).map((item) => ({ ...item, favorite: session.favorites.includes(item.id) }))
   const favorites = commands.filter((item) => item.favorite)
   const others = commands.filter((item) => !item.favorite)
-  return [...favorites, ...others, ...navigationItems(session)]
+  return [...attentionItems(session), ...favorites, ...others, ...navigationItems(session)]
 }
 
