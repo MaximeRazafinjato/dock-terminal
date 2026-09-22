@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { Pane } from '../model/session'
 import { handleTerminalKey } from '../keyboard/shortcuts'
+import { useUiStore } from '../store/uiStore'
 import { terminalRegistry } from './terminalRegistry'
 
 interface TerminalPaneProps {
@@ -35,7 +36,8 @@ export function TerminalPane({ pane, active, onFocus }: TerminalPaneProps) {
   }, [pane])
 
   useEffect(() => {
-    if (active) {
+    const { renamingWorkspaceId, renamingTabId, paletteOpen } = useUiStore.getState()
+    if (active && !renamingWorkspaceId && !renamingTabId && !paletteOpen) {
       terminalRegistry.get(pane.id)?.terminal.focus()
     }
   }, [active, pane.id])
