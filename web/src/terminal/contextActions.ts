@@ -81,12 +81,3 @@ export const openPaneFolder = (paneId: string, target: OpenTarget): void => {
     useHostStore.getState().setStatus(`${target === OpenTarget.Editor ? 'Éditeur' : 'Explorateur'} ouvert sur ${pane.path}`)
   }
 }
-
-export const newTabInPaneFolder = (paneId: string): void => {
-  const pane = paneById(paneId)
-  if (pane) {
-    const { selectPane, newTab } = useSessionStore.getState()
-    selectPane(paneId)
-    newTab(pane.shell)
-  }
-}

@@ -5,7 +5,7 @@ import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { restoreClosedTab } from '../terminal/tabLifecycle'
 import { OpenTarget } from '../bridge/messages'
-import { copyPaneBranch, copyPanePath, newTabInPaneFolder, openPaneFolder } from '../terminal/contextActions'
+import { copyPaneBranch, copyPanePath, openPaneFolder } from '../terminal/contextActions'
 import type { SearchItem } from './searchFilter'
 
 export enum PaletteKind {
@@ -50,7 +50,6 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
       command('open-editor', 'Ouvrir le dossier du pane actif dans l’éditeur', () => openPaneFolder(paneId, OpenTarget.Editor)),
       command('open-explorer', 'Ouvrir le dossier du pane actif dans l’explorateur', () => openPaneFolder(paneId, OpenTarget.Explorer)),
       command('copy-branch', 'Copier la branche Git du pane actif', () => copyPaneBranch(paneId)),
-      command('new-tab-here', 'Nouvel onglet dans le dossier du pane actif', () => newTabInPaneFolder(paneId)),
     )
     items.push(command('rename-tab', 'Renommer l’onglet', () => ui.startRenamingTab(tab.id)))
     for (const target of session.workspaces.filter((candidate) => candidate.id !== workspace?.id)) {
