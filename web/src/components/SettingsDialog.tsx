@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
 import type { PersistenceSettings, Settings, SettingsSnapshot } from '../bridge/messages'
 
 interface SettingsDialogProps {
@@ -32,10 +32,29 @@ const SECONDARY = `${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-
 export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProps) {
   const [draft, setDraft] = useState<Settings | null>(null)
   const [seenSnapshot, setSeenSnapshot] = useState<SettingsSnapshot | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   if (snapshot !== seenSnapshot) {
     setSeenSnapshot(snapshot)
     setDraft(snapshot ? structuredClone(snapshot.settings) : null)
   }
+
+  useEffect(() => {
+    const handleDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleDocumentKeyDown)
+    return () => document.removeEventListener('keydown', handleDocumentKeyDown)
+  }, [onClose])
+
+  const loaded = draft !== null
+  useEffect(() => {
+    if (loaded) {
+      dialogRef.current?.querySelector<HTMLInputElement>('input')?.focus()
+    }
+  }, [loaded])
 
   const handleBackdropPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -48,10 +67,7 @@ export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProp
     }
   }
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      onClose()
-    } else if (event.key === 'Enter' && event.ctrlKey) {
+    if (event.key === 'Enter' && event.ctrlKey) {
       event.preventDefault()
       handleSave()
     }
@@ -125,7 +141,7 @@ export function SettingsDialog({ snapshot, onClose, onSave }: SettingsDialogProp
 
   return (
     <div className="absolute inset-0 z-30 flex items-start justify-center bg-dock-paper/60 pt-[6vh]" onPointerDown={handleBackdropPointerDown}>
-      <div role="dialog" aria-label="Paramètres" className="flex max-h-[86vh] w-[640px] max-w-[94vw] flex-col rounded-lg border border-dock-line bg-dock-panel shadow-xl" onKeyDown={handleKeyDown}>
+      <div ref={dialogRef} role="dialog" aria-label="Paramètres" className="flex max-h-[86vh] w-[640px] max-w-[94vw] flex-col rounded-lg border border-dock-line bg-dock-panel shadow-xl" onKeyDown={handleKeyDown}>
         <div className="flex items-center justify-between border-b border-dock-line px-4 py-3">
           <h2 className="text-[15px] font-semibold text-dock-ink">Paramètres</h2>
           <span className={HINT}>Ctrl + Entrée enregistre · Échap ferme</span>
