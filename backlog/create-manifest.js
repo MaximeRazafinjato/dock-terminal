@@ -132,7 +132,7 @@ const tasks=[
 'Ne pas inclure implicitement le texte des terminaux dans l’export.',
 'Valider l’import intégralement avant toute mutation ; conserver la session si invalide.',
 'Définir migrations et politique de fusion/remplacement avec protection des données existantes.'
-],['F17'],'JSON ; préférences, session et historique séparés ; import validé puis appliqué par remplacement. L’emplacement Windows exact reste une décision d’implémentation documentée.'],
+],['F17'],'JSON ; préférences, session et historique séparés ; import validé puis appliqué par remplacement. L’emplacement Windows exact reste une décision d’implémentation documentée.',true],
 ['F20','Afficher les états de Claude Code et Codex CLI dans les workspaces','12','R18','Repérer une activité nécessitant une intervention sans quitter la logique de workspaces.',[
 'Supporter en cours, attente de réponse/autorisation, terminé, erreur et inconnu.',
 'Rattacher les états au pane puis les résumer sur onglet/workspace.',
