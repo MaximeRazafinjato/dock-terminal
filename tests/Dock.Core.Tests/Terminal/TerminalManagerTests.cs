@@ -47,6 +47,33 @@ public sealed class TerminalManagerTests
     }
 
     [Fact]
+    public async Task Activity_WhenProgramRunning_ThenListsItWithoutTheShell()
+    {
+        using var manager = new TerminalManager();
+        var directory = new TaskCompletionSource<string>();
+        manager.CurrentDirectoryChanged += (_, path) => directory.TrySetResult(path);
+        var session = manager.Start("pane-activity", ShellCatalog.DefaultShellId, Path.GetTempPath(), 100, 30);
+        await directory.Task.WaitAsync(Timeout);
+
+        session.Write(Encoding.UTF8.GetBytes("ping -t 127.0.0.1 > $null\r"));
+        await WaitForAsync(() => manager.Activity(new[] { "pane-activity" }).Any(activity => activity.Processes.Contains("ping", StringComparer.OrdinalIgnoreCase)));
+        var activity = manager.Activity(new[] { "pane-activity" }).Single();
+
+        Assert.Equal("pane-activity", activity.PaneId);
+        Assert.DoesNotContain("powershell", activity.Processes, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Activity_WhenPaneUnknown_ThenReportsNothing()
+    {
+        using var manager = new TerminalManager();
+
+        var activity = manager.Activity(new[] { "pane-inconnu" });
+
+        Assert.Empty(activity);
+    }
+
+    [Fact]
     public void Start_WhenShellUnknown_ThenThrowsFrenchMessage()
     {
         using var manager = new TerminalManager();

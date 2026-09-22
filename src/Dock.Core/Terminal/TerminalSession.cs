@@ -58,6 +58,26 @@ public sealed class TerminalSession : IDisposable
 
     public IReadOnlyList<int> JobProcessIds() => _job.ProcessIds();
 
+    public IReadOnlyList<string> ActiveProcessNames()
+    {
+        if (HasExited || Volatile.Read(ref _closed) == 1)
+        {
+            return Array.Empty<string>();
+        }
+
+        var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var processId in _job.ProcessIds())
+        {
+            var name = processId == ProcessId ? null : ProcessNameOf(processId);
+            if (name is not null)
+            {
+                names.Add(name);
+            }
+        }
+
+        return names.ToList();
+    }
+
     public void Write(ReadOnlySpan<byte> data)
     {
         if (Volatile.Read(ref _closed) == 1)
@@ -120,6 +140,19 @@ public sealed class TerminalSession : IDisposable
         HasExited = true;
         Close();
         Exited?.Invoke(ExitCode);
+    }
+
+    private static string? ProcessNameOf(int processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            return process.ProcessName;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private void HandleCurrentDirectoryChanged(string directory)
