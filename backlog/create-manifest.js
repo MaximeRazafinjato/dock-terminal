@@ -146,7 +146,7 @@ const tasks=[
 'Permettre de rejoindre précisément le pane concerné.',
 'Définir le choix de destination lorsque plusieurs panes attendent.',
 'Définir un comportement utile lorsque le panneau est replié.'
-],['F20'],'Les canaux et événements seront définis avec les adaptateurs réels ; afficher « état inconnu » lorsque la source ne permet pas de conclure.']
+],['F20'],'Les canaux et événements seront définis avec les adaptateurs réels ; afficher « état inconnu » lorsque la source ne permet pas de conclure.',true]
 ,
 ['T01','Valider la pile Windows et le pipeline de terminal','8, 15','R27','Valider la pile retenue avant l’implémentation complète : hôte C# .NET 10 (WinUI 3), une seule WebView2 portant toute l’interface avec xterm.js, ConPTY et Job Objects côté hôte.',[
 'Créer un spike C# .NET 10 LTS avec une fenêtre WinUI 3 (Windows App SDK) hébergeant une WebView2 unique ; l’hôte ne définit aucun KeyboardAccelerator.',
