@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
-import { PickTarget, type PersistenceSettings, type PickedPath, type Settings, type SettingsSnapshot } from '../bridge/messages'
+import { PickTarget, type ImportedPreferences, type PersistenceSettings, type PickedPath, type Settings, type SettingsSnapshot } from '../bridge/messages'
 
 interface SettingsDialogProps {
   snapshot: SettingsSnapshot | null
   pickedPath: PickedPath | null
+  imported: ImportedPreferences | null
   onClose: () => void
   onSave: (settings: Settings) => void
   onPick: (field: string, target: PickTarget) => void
+  onExport: () => void
+  onImport: () => void
 }
 
 const SHELL_FIELD_PREFIX = 'shell:'
@@ -36,14 +39,24 @@ const PRIMARY = `${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-
 const SECONDARY = `${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`
 const BROWSE = 'shrink-0 rounded border border-dock-line px-2 text-[12px] text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink'
 
-export function SettingsDialog({ snapshot, pickedPath, onClose, onSave, onPick }: SettingsDialogProps) {
+export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave, onPick, onExport, onImport }: SettingsDialogProps) {
   const [draft, setDraft] = useState<Settings | null>(null)
   const [seenSnapshot, setSeenSnapshot] = useState<SettingsSnapshot | null>(null)
   const [seenPick, setSeenPick] = useState<PickedPath | null>(pickedPath)
+  const [seenImport, setSeenImport] = useState<ImportedPreferences | null>(imported)
+  const [importSource, setImportSource] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   if (snapshot !== seenSnapshot) {
     setSeenSnapshot(snapshot)
     setDraft(snapshot ? structuredClone(snapshot.settings) : null)
+    setImportSource(null)
+  }
+  if (imported !== seenImport) {
+    setSeenImport(imported)
+    if (imported && snapshot) {
+      setDraft(structuredClone(imported.settings))
+      setImportSource(imported.path)
+    }
   }
 
   useEffect(() => {
@@ -105,6 +118,7 @@ export function SettingsDialog({ snapshot, pickedPath, onClose, onSave, onPick }
 
   const renderBody = (settings: Settings, current: SettingsSnapshot) => (
     <>
+      {importSource && <p className="rounded border border-dock-green/50 bg-dock-paper px-3 py-2 text-[12px] text-dock-green">Préférences lues depuis {importSource}. Rien n’est écrit tant que vous n’enregistrez pas ; Enregistrer remplace la configuration actuelle.</p>}
       {current.warnings.length > 0 && (
         <ul className="rounded border border-dock-warning/50 bg-dock-paper px-3 py-2 text-[12px] text-dock-warning">
           {current.warnings.map((warning) => (
@@ -186,8 +200,14 @@ export function SettingsDialog({ snapshot, pickedPath, onClose, onSave, onPick }
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
           {draft && snapshot ? renderBody(draft, snapshot) : <p className={HINT}>Chargement des réglages…</p>}
         </div>
-        <div className="flex items-center justify-end gap-2 border-t border-dock-line px-4 py-3">
-          <button type="button" className={SECONDARY} onClick={onClose}>
+        <div className="flex items-center gap-2 border-t border-dock-line px-4 py-3">
+          <button type="button" className={SECONDARY} data-tip="Lit un fichier de préférences JSON et remplit le formulaire sans rien écrire" onClick={onImport}>
+            Importer…
+          </button>
+          <button type="button" className={SECONDARY} data-tip="Écrit la configuration enregistrée (sans les modifications en cours) dans un fichier JSON versionné" onClick={onExport}>
+            Exporter…
+          </button>
+          <button type="button" className={`${SECONDARY} ml-auto`} onClick={onClose}>
             Annuler
           </button>
           <button type="button" className={PRIMARY} aria-disabled={!draft} data-tip="Écrit les quatre fichiers et applique immédiatement" onClick={handleSave}>

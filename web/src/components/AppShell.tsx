@@ -36,7 +36,7 @@ const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.foc
 
 export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
-  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved, settingsSnapshot, pickedPath } = useHostStore()
+  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved, settingsSnapshot, pickedPath, importedPreferences } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker, settingsOpen, openSettings, closeSettings, closeConfirmation } = useUiStore()
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
@@ -82,6 +82,8 @@ export function AppShell({ session }: AppShellProps) {
     focusActivePane()
   }
   const handlePickPath = (field: string, target: PickTarget) => bridge.send({ type: 'dialog.pick', field, target })
+  const handleExportPreferences = () => bridge.send({ type: 'settings.export' })
+  const handleImportPreferences = () => bridge.send({ type: 'settings.import' })
   const handleCloseProjectPicker = () => {
     closeProjectPicker()
     focusActivePane()
@@ -198,7 +200,7 @@ export function AppShell({ session }: AppShellProps) {
         </main>
       </div>
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
-      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} />}
+      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} imported={importedPreferences} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} onExport={handleExportPreferences} onImport={handleImportPreferences} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <Tooltip />

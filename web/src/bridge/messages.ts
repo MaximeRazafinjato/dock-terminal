@@ -51,6 +51,11 @@ export interface ShellSetting {
   available: boolean
 }
 
+export interface ImportedPreferences {
+  settings: Settings
+  path: string
+}
+
 export interface SettingsSnapshot {
   settings: Settings
   shellSettings: ShellSetting[]
@@ -75,6 +80,8 @@ export type HostToWebMessage =
   | { type: 'session.saveFailed'; message: string }
   | ({ type: 'dialog.picked' } & PickedPath)
   | ({ type: 'settings.result'; shells: ShellProfile[]; persistence: PersistenceSettings; saved: boolean } & SettingsSnapshot)
+  | { type: 'settings.exported'; path: string }
+  | ({ type: 'settings.imported' } & ImportedPreferences)
   | { type: 'terminal.created'; pane: string; pid: number }
   | { type: 'terminal.output'; pane: string; data: string }
   | { type: 'terminal.cwd'; pane: string; path: string }
@@ -91,6 +98,8 @@ export type WebToHostMessage =
   | { type: 'text.save'; text: Record<string, string> }
   | { type: 'settings.get' }
   | { type: 'settings.save'; settings: Settings }
+  | { type: 'settings.export' }
+  | { type: 'settings.import' }
   | { type: 'dialog.pick'; field: string; target: PickTarget }
   | { type: 'terminal.create'; pane: string; shell: string; cwd: string; cols: number; rows: number }
   | { type: 'terminal.input'; pane: string; data: string }
