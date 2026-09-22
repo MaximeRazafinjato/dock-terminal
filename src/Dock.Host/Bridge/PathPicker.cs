@@ -25,4 +25,22 @@ public static class PathPicker
         var file = await filePicker.PickSingleFileAsync();
         return file?.Path;
     }
+
+    public static async Task<string?> PickJsonAsync(nint windowHandle)
+    {
+        var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
+        picker.FileTypeFilter.Add(".json");
+        InitializeWithWindow.Initialize(picker, windowHandle);
+        var file = await picker.PickSingleFileAsync();
+        return file?.Path;
+    }
+
+    public static async Task<string?> SaveJsonAsync(nint windowHandle, string suggestedName)
+    {
+        var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = suggestedName };
+        picker.FileTypeChoices.Add("Préférences JSON", new List<string> { ".json" });
+        InitializeWithWindow.Initialize(picker, windowHandle);
+        var file = await picker.PickSaveFileAsync();
+        return file?.Path;
+    }
 }

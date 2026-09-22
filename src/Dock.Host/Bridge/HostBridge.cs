@@ -133,6 +133,12 @@ public sealed class HostBridge : IDisposable
             case "settings.save":
                 SaveSettings(command);
                 break;
+            case "settings.export":
+                _ = ExportPreferencesAsync();
+                break;
+            case "settings.import":
+                _ = ImportPreferencesAsync();
+                break;
             case "dialog.pick":
                 _ = PickPathAsync(command.Field ?? throw new InvalidOperationException("Champ manquant."), command.Target == "folder");
                 break;
@@ -341,6 +347,50 @@ public sealed class HostBridge : IDisposable
                 var length = Math.Min(MaxCharsPerMessage, text.Length - offset);
                 PostNow(new { type = "terminal.output", pane = buffer.PaneId, data = text.Substring(offset, length) });
             }
+        }
+    }
+
+    private async Task ExportPreferencesAsync()
+    {
+        try
+        {
+            var path = await PathPicker.SaveJsonAsync(_windowHandle, "dock-preferences");
+            if (path is null)
+            {
+                return;
+            }
+
+            _settingsService.Export(_settings, path);
+            PostNow(new { type = "settings.exported", path });
+        }
+        catch (Exception exception)
+        {
+            PostNow(new { type = "error", message = $"Export des préférences impossible : {exception.Message}" });
+        }
+    }
+
+    private async Task ImportPreferencesAsync()
+    {
+        try
+        {
+            var path = await PathPicker.PickJsonAsync(_windowHandle);
+            if (path is null)
+            {
+                return;
+            }
+
+            var result = _settingsService.Import(path);
+            if (result.Settings is null)
+            {
+                PostNow(new { type = "error", message = result.Error });
+                return;
+            }
+
+            PostNow(new { type = "settings.imported", settings = result.Settings, path });
+        }
+        catch (Exception exception)
+        {
+            PostNow(new { type = "error", message = $"Import des préférences impossible : {exception.Message}" });
         }
     }
 
