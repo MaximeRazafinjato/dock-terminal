@@ -6,6 +6,12 @@ namespace Dock.Core.Terminal;
 public sealed class TerminalManager : IDisposable
 {
     private readonly ConcurrentDictionary<string, TerminalSession> _sessions = new();
+    private readonly ShellPathsModel _paths;
+
+    public TerminalManager(ShellPathsModel? paths = null)
+    {
+        _paths = paths ?? ShellPathsModel.Empty;
+    }
 
     public event Action<string, ReadOnlyMemory<byte>>? OutputReceived;
     public event Action<string, string>? CurrentDirectoryChanged;
@@ -14,7 +20,7 @@ public sealed class TerminalManager : IDisposable
     public TerminalSession Start(string paneId, string shellId, string workingDirectory, int columns, int rows)
     {
         Stop(paneId);
-        var profile = ShellCatalog.Resolve(shellId);
+        var profile = ShellCatalog.Resolve(shellId, _paths);
         var directory = Directory.Exists(workingDirectory) ? workingDirectory : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var session = new TerminalSession(new TerminalSessionOptions
         {

@@ -34,6 +34,11 @@ export interface TerminalHandle {
 const handles = new Map<string, TerminalHandle>()
 const primedText = new Map<string, string>()
 
+const start = (handle: TerminalHandle, pane: Pane): void => {
+  handle.started = true
+  bridge.send({ type: 'terminal.create', pane: pane.id, shell: pane.shell, cwd: pane.path, cols: handle.terminal.cols, rows: handle.terminal.rows })
+}
+
 const loadCanvas = (terminal: Terminal): Renderer => {
   try {
     terminal.loadAddon(new CanvasAddon())
@@ -109,9 +114,17 @@ export const terminalRegistry = {
         primedText.delete(pane.id)
         handle.terminal.write(restored + RESTORE_SEPARATOR + NEWLINE.repeat(handle.terminal.rows))
       }
-      bridge.send({ type: 'terminal.create', pane: pane.id, shell: pane.shell, cwd: pane.path, cols: handle.terminal.cols, rows: handle.terminal.rows })
+      start(handle, pane)
     }
     return handle
+  },
+
+  restart(pane: Pane): void {
+    const handle = handles.get(pane.id)
+    if (handle) {
+      handle.terminal.write(NEWLINE)
+      start(handle, pane)
+    }
   },
 
   write(paneId: string, data: string): void {

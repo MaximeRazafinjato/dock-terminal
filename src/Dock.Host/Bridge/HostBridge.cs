@@ -17,7 +17,8 @@ public sealed class HostBridge : IDisposable
     private readonly DispatcherQueue _dispatcher;
     private readonly Action _closeWindow;
     private readonly SessionRepository _sessions;
-    private readonly TerminalManager _terminals = new();
+    private readonly ShellPathsModel _shellPaths;
+    private readonly TerminalManager _terminals;
     private readonly ConcurrentDictionary<string, PaneOutputBuffer> _buffers = new();
     private CoreWebView2? _core;
     private int _flushScheduled;
@@ -27,6 +28,8 @@ public sealed class HostBridge : IDisposable
         _dispatcher = dispatcher;
         _closeWindow = closeWindow;
         _sessions = new SessionRepository(dataDirectory);
+        _shellPaths = new ShellPathsRepository(dataDirectory).Load();
+        _terminals = new TerminalManager(_shellPaths);
         _terminals.OutputReceived += HandleOutput;
         _terminals.CurrentDirectoryChanged += (paneId, path) => Post(new { type = "terminal.cwd", pane = paneId, path });
         _terminals.Exited += (paneId, code) => Post(new { type = "terminal.exit", pane = paneId, code });
@@ -71,7 +74,7 @@ public sealed class HostBridge : IDisposable
         switch (command.Type)
         {
             case "app.ready":
-                Post(new { type = "app.hello", session = _sessions.Load() ?? SessionFactory.Initial(), shells = ShellCatalog.Profiles(), home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) });
+                Post(new { type = "app.hello", session = _sessions.Load() ?? SessionFactory.Initial(), shells = ShellCatalog.Profiles(_shellPaths), home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) });
                 break;
             case "session.save":
                 SaveSession(command);

@@ -1,5 +1,8 @@
+import type { ShellProfile } from '../bridge/messages'
 import { SplitAxis, type Pane } from '../model/session'
+import { usePaneStore } from '../store/paneStore'
 import { TerminalPane } from '../terminal/TerminalPane'
+import { PaneOverlay } from './PaneOverlay'
 
 interface PaneViewProps {
   pane: Pane
@@ -7,6 +10,9 @@ interface PaneViewProps {
   onFocus: (paneId: string) => void
   onClose: (paneId: string) => void
   onSplit: (paneId: string, axis: SplitAxis) => void
+  shells: ShellProfile[]
+  onRestart: (paneId: string) => void
+  onChangeShell: (paneId: string, shellId: string) => void
 }
 
 const HEADER_BUTTON = 'flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-dock-green-hover hover:text-dock-ink'
@@ -26,8 +32,11 @@ const CloseIcon = () => (
   </svg>
 )
 
-export function PaneView({ pane, active, onFocus, onClose, onSplit }: PaneViewProps) {
+export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onChangeShell }: PaneViewProps) {
+  const paneState = usePaneStore((state) => state.states[pane.id])
   const handleHeaderMouseDown = () => onFocus(pane.id)
+  const handleRestart = () => onRestart(pane.id)
+  const handleChangeShell = (shellId: string) => onChangeShell(pane.id, shellId)
   const handleSplitSideBySide = () => onSplit(pane.id, SplitAxis.Horizontal)
   const handleSplitTopBottom = () => onSplit(pane.id, SplitAxis.Vertical)
   const handleClose = () => onClose(pane.id)
@@ -55,7 +64,10 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit }: PaneViewPr
           <CloseIcon />
         </button>
       </header>
-      <TerminalPane pane={pane} active={active} onFocus={onFocus} />
+      <div className="relative min-h-0">
+        <TerminalPane pane={pane} active={active} onFocus={onFocus} />
+        {paneState && <PaneOverlay state={paneState} shells={shells} onRestart={handleRestart} onChangeShell={handleChangeShell} onClose={handleClose} />}
+      </div>
     </section>
   )
 }

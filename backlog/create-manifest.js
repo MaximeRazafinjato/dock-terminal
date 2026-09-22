@@ -80,7 +80,7 @@ const tasks=[
 'Obtenir ce dossier par une intégration shell propre à Dock (variable d’environnement dédiée et séquence OSC émise par le prompt), compatible avec le profil et oh-my-posh, sans simuler WezTerm.',
 'Signaler localement un shell introuvable avec relance ou choix alternatif, sans substitution silencieuse.',
 'Valider redimensionnement et touches de contrôle avec les outils réels.'
-],[],'VS Code est l’éditeur retenu. Le profil observé est celui de Windows PowerShell 5.1 ; le profil PowerShell 7 n’a pas été trouvé dans Documents\\PowerShell et ne doit pas être supposé identique.'],
+],[],'VS Code est l’éditeur retenu. Le profil observé est celui de Windows PowerShell 5.1 ; le profil PowerShell 7 n’a pas été trouvé dans Documents\\PowerShell et ne doit pas être supposé identique.',true],
 ['F12','Palette Ctrl + P avec navigation clavier et destinations','9','R10','Trouver une commande ou rejoindre une activité rapidement.',[
 'Ouvrir avec Ctrl + P ; conserver Ctrl + Maj + P comme alias proposé.',
 'Rechercher les commandes, workspaces, onglets et panes.',

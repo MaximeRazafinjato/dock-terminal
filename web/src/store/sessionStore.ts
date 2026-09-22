@@ -46,6 +46,7 @@ interface SessionState {
   setSplitRatio: (tabId: string, path: SplitPath, ratio: number) => void
   closePane: (paneId: string) => void
   setPanePath: (paneId: string, path: string) => void
+  setPaneShell: (paneId: string, shell: string) => void
 }
 
 const mutateSession = (session: Session | null, mutate: (draft: Session) => void): Session | null => {
@@ -281,6 +282,17 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         }),
       }
     }),
+
+  setPaneShell: (paneId, shell) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        for (const workspace of draft.workspaces) {
+          for (const tab of workspace.tabs) {
+            tab.tree = updatePane(tab.tree, paneId, { shell })
+          }
+        }
+      }),
+    })),
 
   setPanePath: (paneId, path) =>
     set((state) => ({
