@@ -76,7 +76,9 @@ public sealed partial class MainWindow : Window
 
     private void HandleActivated(object sender, WindowActivatedEventArgs args)
     {
-        if (args.WindowActivationState != WindowActivationState.Deactivated)
+        var active = args.WindowActivationState != WindowActivationState.Deactivated;
+        _bridge.SetWindowActive(active);
+        if (active)
         {
             View.Focus(FocusState.Programmatic);
         }

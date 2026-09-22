@@ -12,6 +12,8 @@ public sealed class BridgeCommandModel
     public string? Path { get; init; }
     public string? Target { get; init; }
     public string? Field { get; init; }
+    public string? Title { get; init; }
+    public string? Body { get; init; }
     public string[]? Panes { get; init; }
     public int Cols { get; init; }
     public int Rows { get; init; }
@@ -19,4 +21,5 @@ public sealed class BridgeCommandModel
     public JsonElement? Session { get; init; }
     public JsonElement? Text { get; init; }
     public JsonElement? Settings { get; init; }
+    public JsonElement? Notifications { get; init; }
 }
