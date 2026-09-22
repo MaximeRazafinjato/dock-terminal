@@ -26,6 +26,7 @@ export const LEADER_HINTS: LeaderHint[] = [
   { keys: 'X', label: 'fermer le pane' },
   { keys: 'Z', label: 'rouvrir' },
   { keys: 'P', label: 'palette' },
+  { keys: ',', label: 'paramètres' },
   { keys: '← ↑ → ↓', label: 'pane voisin' },
   { keys: 'PgUp / PgDn', label: 'déplacer l’onglet' },
   { keys: 'Échap', label: 'annuler' },
@@ -39,6 +40,7 @@ export enum Command {
   SplitTopBottom = 'splitTopBottom',
   NewWorkspace = 'newWorkspace',
   Projects = 'projects',
+  Settings = 'settings',
   ClosePane = 'closePane',
   FocusPaneLeft = 'focusPaneLeft',
   FocusPaneRight = 'focusPaneRight',
@@ -56,6 +58,7 @@ const LEADER_KEYS: Record<string, Command> = {
   h: Command.SplitTopBottom,
   w: Command.NewWorkspace,
   f: Command.Projects,
+  ',': Command.Settings,
   x: Command.ClosePane,
   z: Command.RestoreTab,
   ArrowRight: Command.FocusPaneRight,
@@ -196,6 +199,10 @@ export const runCommand = (command: Command): void => {
       break
     case Command.NewWorkspace:
       useUiStore.getState().startRenamingWorkspace(sessionStore.newWorkspace(`Workspace ${(sessionStore.session?.workspaces.length ?? 0) + 1}`, hostStore.home, DEFAULT_SHELL), RenameOrigin.Header)
+      break
+    case Command.Settings:
+      bridge.send({ type: 'settings.get' })
+      useUiStore.getState().openSettings()
       break
     case Command.Projects:
       bridge.send({ type: 'projects.list' })

@@ -38,8 +38,8 @@ export function TerminalPane({ pane, active, onFocus }: TerminalPaneProps) {
   }, [pane])
 
   useEffect(() => {
-    const { renamingWorkspaceId, renamingTabId, paletteOpen } = useUiStore.getState()
-    if (active && !renamingWorkspaceId && !renamingTabId && !paletteOpen) {
+    const { renamingWorkspaceId, renamingTabId, paletteOpen, projectPickerOpen, settingsOpen } = useUiStore.getState()
+    if (active && !renamingWorkspaceId && !renamingTabId && !paletteOpen && !projectPickerOpen && !settingsOpen) {
       terminalRegistry.get(pane.id)?.terminal.focus()
     }
   }, [active, pane.id])

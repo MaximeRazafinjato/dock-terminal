@@ -5,6 +5,7 @@ import { allPanes } from './model/session'
 import { StatusLevel, useHostStore } from './store/hostStore'
 import { usePaneStore } from './store/paneStore'
 import { useSessionStore } from './store/sessionStore'
+import { useUiStore } from './store/uiStore'
 import { receiveContext } from './terminal/contextActions'
 import { terminalRegistry } from './terminal/terminalRegistry'
 import { closeApplication, primeSessionText, saveTextNow, startTextAutosave } from './terminal/textPersistence'
@@ -18,7 +19,7 @@ export default function App() {
 
   useEffect(() => {
     const { load, setPanePath } = useSessionStore.getState()
-    const { setHello, setStatus, setProjects, setUnsaved } = useHostStore.getState()
+    const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath } = useHostStore.getState()
     let stopAutosave: (() => void) | undefined
     const { markFailed, markExited, markPathMissing, clear } = usePaneStore.getState()
     const subscriptions = [
@@ -37,6 +38,19 @@ export default function App() {
           }
         })
       }),
+      bridge.on('settings.result', (message) => {
+        applySettings({ settings: message.settings, shellSettings: message.shellSettings, files: message.files, warnings: message.warnings }, message.shells, message.persistence)
+        if (!message.saved) {
+          return
+        }
+        terminalRegistry.configure(message.persistence.linesPerPane)
+        stopAutosave?.()
+        stopAutosave = startTextAutosave(message.persistence.textIntervalSeconds)
+        useUiStore.getState().closeSettings()
+        const warnings = message.warnings.join(' ')
+        setStatus(warnings.length > 0 ? `Réglages enregistrés. ${warnings}` : 'Réglages enregistrés et appliqués.', warnings.length > 0 ? StatusLevel.Warning : StatusLevel.Info)
+      }),
+      bridge.on('dialog.picked', (message) => setPickedPath({ field: message.field, path: message.path })),
       bridge.on('app.closing', closeApplication),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {

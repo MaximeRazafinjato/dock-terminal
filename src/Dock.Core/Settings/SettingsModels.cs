@@ -1,0 +1,17 @@
+using Dock.Core.Context;
+using Dock.Core.Projects;
+using Dock.Core.Session;
+
+namespace Dock.Core.Settings;
+
+public sealed class SettingsModel
+{
+    public Dictionary<string, string> Shells { get; set; } = new();
+    public string Editor { get; set; } = EditorSettingsModel.DefaultCommand;
+    public PersistenceSettingsModel Persistence { get; set; } = PersistenceSettingsModel.Default;
+    public string ProjectsRoot { get; set; } = ProjectCatalog.DefaultRoot;
+}
+
+public sealed record ShellSettingModel(string Id, string Name, string DefaultExecutable, string Configured, bool Available);
+
+public sealed record SettingsSnapshotModel(SettingsModel Settings, IReadOnlyList<ShellSettingModel> Shells, IReadOnlyDictionary<string, string> Files, IReadOnlyList<string> Warnings);

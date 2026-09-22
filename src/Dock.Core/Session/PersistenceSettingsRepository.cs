@@ -37,6 +37,8 @@ public sealed class PersistenceSettingsRepository
 
     public string FilePath => _filePath;
 
+    public void Save(PersistenceSettingsModel settings) => AtomicFile.Write(_filePath, JsonSerializer.Serialize(settings.Clamped(), SessionRepository.JsonOptions));
+
     public PersistenceSettingsModel Load()
     {
         if (!File.Exists(_filePath))

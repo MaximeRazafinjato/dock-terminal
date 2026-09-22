@@ -22,7 +22,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AppWindow.Resize(new SizeInt32(1480, 900));
         ApplyDarkTitleBar();
-        _bridge = new HostBridge(DispatcherQueue, App.DataDirectory, ForceClose);
+        _bridge = new HostBridge(DispatcherQueue, App.DataDirectory, WinRT.Interop.WindowNative.GetWindowHandle(this), ForceClose);
         Closed += HandleClosed;
         Activated += HandleActivated;
         _ = InitializeWebViewAsync();

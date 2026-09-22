@@ -62,9 +62,7 @@ public sealed class SessionRepository
             return result;
         }
 
-        var temporaryPath = _filePath + ".tmp";
-        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(session, JsonOptions));
-        File.Move(temporaryPath, _filePath, true);
+        AtomicFile.Write(_filePath, JsonSerializer.Serialize(session, JsonOptions));
         return result;
     }
 }

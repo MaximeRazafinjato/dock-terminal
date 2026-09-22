@@ -37,6 +37,7 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
     command('close-pane', 'Fermer le pane actif', () => runCommand(Command.ClosePane), 'Ctrl + Maj + X'),
     command('new-workspace', 'Nouveau workspace', () => runCommand(Command.NewWorkspace), 'Ctrl + Maj + W'),
     command('projects', 'Ouvrir un projet', () => runCommand(Command.Projects), 'Leader puis F'),
+    command('settings', 'Paramètres', () => runCommand(Command.Settings), 'Leader puis ,'),
     command('restore-tab', 'Rouvrir le dernier onglet fermé', restoreClosedTab, 'Ctrl + Maj + Z'),
     command('toggle-sidebar', session.sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces', store.toggleSidebar),
   ]
