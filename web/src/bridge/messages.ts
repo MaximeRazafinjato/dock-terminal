@@ -12,6 +12,7 @@ export interface ShellProfile {
 export enum PickTarget {
   File = 'file',
   Folder = 'folder',
+  Sound = 'sound',
 }
 
 export interface PickedPath {
@@ -36,11 +37,27 @@ export interface PersistenceSettings {
   maxTextMebibytes: number
 }
 
+export enum NotificationSound {
+  None = 'none',
+  Default = 'Notification.Default',
+  InstantMessage = 'Notification.IM',
+  Mail = 'Notification.Mail',
+  Reminder = 'Notification.Reminder',
+  Sms = 'Notification.SMS',
+}
+
+export interface NotificationSettings {
+  windowsToast: boolean
+  sound: NotificationSound | string
+  taskbarFlash: boolean
+}
+
 export interface Settings {
   shells: Record<string, string>
   editor: string
   persistence: PersistenceSettings
   projectsRoot: string
+  notifications: NotificationSettings
 }
 
 export interface ShellSetting {
@@ -63,12 +80,18 @@ export interface AgentHooksInfo {
   hooksInstalled: boolean
 }
 
+export interface NotificationAvailability {
+  toastAvailable: boolean
+  toastError?: string
+}
+
 export interface SettingsSnapshot {
   settings: Settings
   shellSettings: ShellSetting[]
   files: Record<string, string>
   warnings: string[]
   agents: AgentHooksInfo
+  notifications: NotificationAvailability
 }
 
 export interface Project {
@@ -112,6 +135,7 @@ export type HostToWebMessage =
   | { type: 'terminal.pathMissing'; pane: string; path: string; fallback: string }
   | { type: 'terminal.activityResult'; panes: PaneActivity[] }
   | { type: 'agent.states'; panes: PaneAgent[] }
+  | { type: 'agent.join'; pane: string }
   | { type: 'projects.listed'; root: string; projects: Project[]; error?: string }
   | { type: 'context.result'; pane: string; path: string; git: GitContext }
   | { type: 'error'; pane?: string; message: string }
@@ -124,6 +148,8 @@ export type WebToHostMessage =
   | { type: 'settings.save'; settings: Settings }
   | { type: 'settings.export' }
   | { type: 'settings.import' }
+  | { type: 'attention.raise'; pane: string; title: string; body: string }
+  | { type: 'attention.test'; pane: string; notifications: NotificationSettings }
   | { type: 'agents.installHooks' }
   | { type: 'agents.removeHooks' }
   | { type: 'dialog.pick'; field: string; target: PickTarget }

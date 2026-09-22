@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { bridge } from '../bridge/bridge'
-import { PickTarget, type Project, type Settings } from '../bridge/messages'
+import { PickTarget, type NotificationSettings, type Project, type Settings } from '../bridge/messages'
 import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
 import { waitingPanes } from '../agents/agentSummary'
@@ -92,6 +92,7 @@ export function AppShell({ session }: AppShellProps) {
   const handleImportPreferences = () => bridge.send({ type: 'settings.import' })
   const handleInstallHooks = () => bridge.send({ type: 'agents.installHooks' })
   const handleRemoveHooks = () => bridge.send({ type: 'agents.removeHooks' })
+  const handleTestNotification = (notifications: NotificationSettings) => bridge.send({ type: 'attention.test', pane: tab?.active ?? '', notifications })
   const handleCloseProjectPicker = () => {
     closeProjectPicker()
     focusActivePane()
@@ -215,7 +216,7 @@ export function AppShell({ session }: AppShellProps) {
       </div>
       <AttentionToasts waiting={waiting} onJoin={handleJoinPane} onDismiss={handleDismissAttention} />
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
-      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} imported={importedPreferences} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} onExport={handleExportPreferences} onImport={handleImportPreferences} onInstallHooks={handleInstallHooks} onRemoveHooks={handleRemoveHooks} />}
+      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} imported={importedPreferences} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} onExport={handleExportPreferences} onImport={handleImportPreferences} onInstallHooks={handleInstallHooks} onRemoveHooks={handleRemoveHooks} onTestNotification={handleTestNotification} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <Tooltip />
