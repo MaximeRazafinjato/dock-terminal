@@ -117,7 +117,7 @@ const tasks=[
 'Ne pas réexécuter les anciennes commandes ou rétablir de faux états actifs.',
 'Résister à un arrêt inattendu ; signaler échec de sauvegarde et données corrompues sans écrasement silencieux.',
 'Gérer dossiers disparus et shells indisponibles avec un état local compréhensible.'
-],['F03','F04','F09','F11'],'Valeurs par défaut configurables : 10 000 lignes par pane, 256 Mio d’historique global, texte sauvegardé toutes les 30 secondes, cinq onglets fermés restaurables et historique conservé après redémarrage.'],
+],['F03','F04','F09','F11'],'Valeurs par défaut configurables : 10 000 lignes par pane, 256 Mio d’historique global, texte sauvegardé toutes les 30 secondes, cinq onglets fermés restaurables et historique conservé après redémarrage.',true],
 ['F18','Arrêter proprement les processus à la fermeture','8, 13','R20','Fermer l’application sans laisser volontairement agents et serveurs en arrière-plan.',[
 'Définir le traitement des shells et de leurs processus enfants.',
 'Rattacher chaque pane à un Job Object Windows afin que la fermeture arrête tout l’arbre de processus, y compris les enfants détachés du shell.',
