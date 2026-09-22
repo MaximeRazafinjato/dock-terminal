@@ -23,6 +23,8 @@ public sealed class EditorSettingsRepository
 
     public string FilePath => _filePath;
 
+    public void Save(EditorSettingsModel settings) => AtomicFile.Write(_filePath, JsonSerializer.Serialize(settings, SessionRepository.JsonOptions));
+
     public EditorSettingsModel Load()
     {
         if (!File.Exists(_filePath))

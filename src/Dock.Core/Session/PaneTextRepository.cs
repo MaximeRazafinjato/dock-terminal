@@ -48,9 +48,7 @@ public sealed class PaneTextRepository
     public Dictionary<string, string> Save(Dictionary<string, string> text)
     {
         var trimmed = Trim(text);
-        var temporaryPath = _filePath + ".tmp";
-        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(trimmed, SessionRepository.JsonOptions));
-        File.Move(temporaryPath, _filePath, true);
+        AtomicFile.Write(_filePath, JsonSerializer.Serialize(trimmed, SessionRepository.JsonOptions));
         return trimmed;
     }
 

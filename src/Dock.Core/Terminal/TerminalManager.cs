@@ -7,12 +7,14 @@ namespace Dock.Core.Terminal;
 public sealed class TerminalManager : IDisposable
 {
     private readonly ConcurrentDictionary<string, TerminalSession> _sessions = new();
-    private readonly ShellPathsModel _paths;
+    private ShellPathsModel _paths;
 
     public TerminalManager(ShellPathsModel? paths = null)
     {
         _paths = paths ?? ShellPathsModel.Empty;
     }
+
+    public void UpdatePaths(ShellPathsModel paths) => _paths = paths;
 
     public event Action<string, ReadOnlyMemory<byte>>? OutputReceived;
     public event Action<string, string>? CurrentDirectoryChanged;

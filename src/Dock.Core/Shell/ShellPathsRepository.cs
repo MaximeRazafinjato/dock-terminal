@@ -39,6 +39,8 @@ public sealed class ShellPathsRepository
         }
     }
 
+    public void Save(Dictionary<string, string> executables) => AtomicFile.Write(_filePath, JsonSerializer.Serialize(executables, SessionRepository.JsonOptions));
+
     private void WriteTemplate()
     {
         var defaults = ShellCatalog.Profiles(ShellPathsModel.Empty)

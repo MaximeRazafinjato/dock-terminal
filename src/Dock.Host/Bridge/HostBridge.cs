@@ -4,6 +4,7 @@ using System.Text.Json;
 using Dock.Core.Context;
 using Dock.Core.Projects;
 using Dock.Core.Session;
+using Dock.Core.Settings;
 using Dock.Core.Shell;
 using Dock.Core.Terminal;
 using Microsoft.UI.Dispatching;
@@ -18,12 +19,14 @@ public sealed class HostBridge : IDisposable
 
     private readonly DispatcherQueue _dispatcher;
     private readonly Action _closeWindow;
+    private readonly string _dataDirectory;
     private readonly SessionRepository _sessions;
-    private readonly PersistenceSettingsModel _persistence;
-    private readonly PaneTextRepository _texts;
-    private readonly ShellPathsModel _shellPaths;
-    private readonly EditorSettingsModel _editor;
+    private readonly SettingsService _settingsService;
     private readonly TerminalManager _terminals;
+    private SettingsModel _settings;
+    private ShellPathsModel _shellPaths = ShellPathsModel.Empty;
+    private PersistenceSettingsModel _persistence = PersistenceSettingsModel.Default;
+    private PaneTextRepository _texts;
     private readonly ConcurrentDictionary<string, PaneOutputBuffer> _buffers = new();
     private CoreWebView2? _core;
     private int _flushScheduled;
@@ -34,12 +37,13 @@ public sealed class HostBridge : IDisposable
     {
         _dispatcher = dispatcher;
         _closeWindow = closeWindow;
+        _dataDirectory = dataDirectory;
         _sessions = new SessionRepository(dataDirectory);
-        _persistence = new PersistenceSettingsRepository(dataDirectory).Load();
+        _settingsService = new SettingsService(dataDirectory);
+        _settings = _settingsService.Load();
         _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextChars);
-        _shellPaths = new ShellPathsRepository(dataDirectory).Load();
-        _editor = new EditorSettingsRepository(dataDirectory).Load();
-        _terminals = new TerminalManager(_shellPaths);
+        _terminals = new TerminalManager();
+        ApplySettings(_settings);
         _terminals.OutputReceived += HandleOutput;
         _terminals.CurrentDirectoryChanged += HandleCurrentDirectoryChanged;
         _terminals.Exited += (paneId, code) => Post(new { type = "terminal.exit", pane = paneId, code });
@@ -109,6 +113,12 @@ public sealed class HostBridge : IDisposable
             case "text.save":
                 SaveText(command);
                 break;
+            case "settings.get":
+                PostSettings(false);
+                break;
+            case "settings.save":
+                SaveSettings(command);
+                break;
             case "terminal.create":
                 CreateTerminal(command);
                 break;
@@ -129,7 +139,7 @@ public sealed class HostBridge : IDisposable
                 CloseTerminal(RequirePane(command));
                 break;
             case "projects.list":
-                var projects = ProjectCatalog.List(ProjectCatalog.DefaultRoot);
+                var projects = ProjectCatalog.List(_settings.ProjectsRoot);
                 Post(new { type = "projects.listed", root = projects.Root, projects = projects.Projects, error = projects.Error });
                 break;
             case "context.query":
@@ -148,6 +158,44 @@ public sealed class HostBridge : IDisposable
         }
     }
 
+    private void ApplySettings(SettingsModel settings)
+    {
+        _settings = settings;
+        _shellPaths = SettingsService.ShellPaths(settings);
+        _persistence = settings.Persistence;
+        _texts = new PaneTextRepository(_dataDirectory, _persistence.MaxTextChars);
+        _terminals.UpdatePaths(_shellPaths);
+    }
+
+    private void PostSettings(bool saved)
+    {
+        var snapshot = _settingsService.Snapshot(_settings);
+        Post(new
+        {
+            type = "settings.result",
+            settings = snapshot.Settings,
+            shellSettings = snapshot.Shells,
+            files = snapshot.Files,
+            warnings = snapshot.Warnings,
+            shells = ShellCatalog.Profiles(_shellPaths),
+            persistence = _persistence,
+            saved
+        });
+    }
+
+    private void SaveSettings(BridgeCommandModel command)
+    {
+        var settings = command.Settings?.Deserialize<SettingsModel>(JsonOptions) ?? throw new InvalidOperationException("Réglages manquants.");
+        var result = _settingsService.Save(settings);
+        if (!result.IsValid)
+        {
+            throw new InvalidOperationException($"Réglages refusés : {result.Error}");
+        }
+
+        ApplySettings(settings);
+        PostSettings(true);
+    }
+
     private void SendHello()
     {
         var loaded = _sessions.Load();
@@ -160,7 +208,7 @@ public sealed class HostBridge : IDisposable
             shells = ShellCatalog.Profiles(_shellPaths),
             home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             text = text.Text,
-            persistence = new { textIntervalSeconds = _persistence.TextIntervalSeconds, linesPerPane = _persistence.LinesPerPane },
+            persistence = _persistence,
             recovery = recovery.Length > 0 ? recovery : null
         });
     }
@@ -278,7 +326,7 @@ public sealed class HostBridge : IDisposable
         switch (target)
         {
             case "editor":
-                LocalActions.OpenInEditor(path, _editor.Command);
+                LocalActions.OpenInEditor(path, _settings.Editor);
                 break;
             case "explorer":
                 LocalActions.OpenInExplorer(path);
