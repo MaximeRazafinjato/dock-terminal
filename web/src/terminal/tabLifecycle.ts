@@ -1,6 +1,7 @@
-import { findWorkspace, panesOf } from '../model/session'
+import { findWorkspace, panesOf, type Tab } from '../model/session'
 import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
+import { requestClose } from './closeGuard'
 import { terminalRegistry } from './terminalRegistry'
 
 const tabOf = (tabId: string) =>
@@ -9,26 +10,42 @@ const tabOf = (tabId: string) =>
     .session?.workspaces.flatMap((workspace) => workspace.tabs)
     .find((tab) => tab.id === tabId)
 
-export const closeTabKeepingText = (tabId: string): void => {
+const paneIdsOf = (tab: Tab): string[] => panesOf(tab.tree).map((pane) => pane.id)
+
+const closeTabNow = (tabId: string): void => {
   const tab = tabOf(tabId)
   if (!tab) {
     return
   }
-  const text = terminalRegistry.snapshot(panesOf(tab.tree).map((pane) => pane.id))
-  useSessionStore.getState().closeTab(tabId, text)
+  useSessionStore.getState().closeTab(tabId, terminalRegistry.snapshot(paneIdsOf(tab)))
   useHostStore.getState().setStatus('Onglet fermé. Ctrl + Maj + Z le rouvre avec un nouveau terminal.')
 }
 
-export const closeWorkspaceKeepingText = (workspaceId: string): void => {
+export const closeTabKeepingText = (tabId: string): void => {
+  const tab = tabOf(tabId)
+  if (tab) {
+    requestClose(`Fermer l’onglet « ${tab.name} » ?`, paneIdsOf(tab), () => closeTabNow(tabId))
+  }
+}
+
+const closeWorkspaceNow = (workspaceId: string): void => {
   const { session, closeTab } = useSessionStore.getState()
   const workspace = session ? findWorkspace(session, workspaceId) : undefined
   if (!workspace) {
     return
   }
   for (const tab of workspace.tabs) {
-    closeTab(tab.id, terminalRegistry.snapshot(panesOf(tab.tree).map((pane) => pane.id)))
+    closeTab(tab.id, terminalRegistry.snapshot(paneIdsOf(tab)))
   }
   useHostStore.getState().setStatus(`Workspace « ${workspace.name} » fermé. Ctrl + Maj + Z rouvre ses derniers onglets un par un.`)
+}
+
+export const closeWorkspaceKeepingText = (workspaceId: string): void => {
+  const { session } = useSessionStore.getState()
+  const workspace = session ? findWorkspace(session, workspaceId) : undefined
+  if (workspace) {
+    requestClose(`Fermer le workspace « ${workspace.name} » ?`, workspace.tabs.flatMap(paneIdsOf), () => closeWorkspaceNow(workspaceId))
+  }
 }
 
 export const closePaneKeepingText = (paneId: string): void => {
@@ -40,7 +57,7 @@ export const closePaneKeepingText = (paneId: string): void => {
   if (panesOf(tab.tree).length === 1) {
     closeTabKeepingText(tab.id)
   } else {
-    closePane(paneId)
+    requestClose('Fermer le pane ?', [paneId], () => closePane(paneId))
   }
 }
 

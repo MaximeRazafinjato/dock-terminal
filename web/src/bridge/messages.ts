@@ -63,9 +63,14 @@ export interface Project {
   path: string
 }
 
+export interface PaneActivity {
+  paneId: string
+  processes: string[]
+}
+
 export type HostToWebMessage =
   | { type: 'app.hello'; session: Session; shells: ShellProfile[]; home: string; text: Record<string, string>; persistence: PersistenceSettings; recovery?: string }
-  | { type: 'app.closing' }
+  | { type: 'app.closing'; activity: PaneActivity[] }
   | { type: 'session.saved' }
   | { type: 'session.saveFailed'; message: string }
   | ({ type: 'dialog.picked' } & PickedPath)
@@ -75,6 +80,7 @@ export type HostToWebMessage =
   | { type: 'terminal.cwd'; pane: string; path: string }
   | { type: 'terminal.exit'; pane: string; code: number }
   | { type: 'terminal.pathMissing'; pane: string; path: string; fallback: string }
+  | { type: 'terminal.activityResult'; panes: PaneActivity[] }
   | { type: 'projects.listed'; root: string; projects: Project[]; error?: string }
   | { type: 'context.result'; pane: string; path: string; git: GitContext }
   | { type: 'error'; pane?: string; message: string }
@@ -91,10 +97,12 @@ export type WebToHostMessage =
   | { type: 'terminal.resize'; pane: string; cols: number; rows: number }
   | { type: 'terminal.ack'; pane: string; chars: number }
   | { type: 'terminal.close'; pane: string }
+  | { type: 'terminal.activity'; panes: string[] }
   | { type: 'projects.list' }
   | { type: 'context.query'; pane: string; path: string }
   | { type: 'context.open'; pane: string; path: string; target: OpenTarget }
   | { type: 'window.close' }
+  | { type: 'window.closeCancel' }
 
 export type HostMessageType = HostToWebMessage['type']
 export type HostMessageOf<T extends HostMessageType> = Extract<HostToWebMessage, { type: T }>

@@ -6,9 +6,11 @@ import type { PaletteItem } from '../palette/paletteItems'
 import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
+import { cancelClose, confirmClose } from '../terminal/closeGuard'
 import { changePaneShell, dismissPaneState, restartPane, restartPaneIn } from '../terminal/paneLifecycle'
 import { closePaneKeepingText, closeTabKeepingText, closeWorkspaceKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { terminalRegistry } from '../terminal/terminalRegistry'
+import { CloseConfirmDialog } from './CloseConfirmDialog'
 import { CommandPalette } from './CommandPalette'
 import { EmptyState } from './EmptyState'
 import { Header } from './Header'
@@ -35,7 +37,7 @@ const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.foc
 export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
   const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved, settingsSnapshot, pickedPath } = useHostStore()
-  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker, settingsOpen, openSettings, closeSettings } = useUiStore()
+  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker, settingsOpen, openSettings, closeSettings, closeConfirmation } = useUiStore()
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
   const availableShells = shells.filter((shell) => shell.available)
@@ -48,7 +50,8 @@ export function AppShell({ session }: AppShellProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!event.defaultPrevented && event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'p' && !useUiStore.getState().settingsOpen) {
+      const { settingsOpen: settingsShown, closeConfirmation: confirmationShown } = useUiStore.getState()
+      if (!event.defaultPrevented && event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'p' && !settingsShown && !confirmationShown) {
         event.preventDefault()
         openPalette()
       }
@@ -74,6 +77,10 @@ export function AppShell({ session }: AppShellProps) {
     focusActivePane()
   }
   const handleSaveSettings = (settings: Settings) => bridge.send({ type: 'settings.save', settings })
+  const handleCancelClose = () => {
+    cancelClose()
+    focusActivePane()
+  }
   const handlePickPath = (field: string, target: PickTarget) => bridge.send({ type: 'dialog.pick', field, target })
   const handleCloseProjectPicker = () => {
     closeProjectPicker()
@@ -193,6 +200,7 @@ export function AppShell({ session }: AppShellProps) {
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
       {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
+      {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <Tooltip />
       <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
         <span className="truncate">{status.text}</span>

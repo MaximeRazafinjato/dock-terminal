@@ -3,8 +3,8 @@ import { useHostStore } from '../store/hostStore'
 import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, SplitAxis, type Workspace } from '../model/session'
 import { Direction, paneInDirection } from '../components/paneNavigation'
 import { useSessionStore } from '../store/sessionStore'
+import { requestApplicationClose } from '../terminal/closeGuard'
 import { closePaneKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
-import { closeApplication } from '../terminal/textPersistence'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
@@ -261,7 +261,7 @@ const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
     return !isReservedShortcut(event)
   }
   if (isCloseWindow(event)) {
-    closeApplication()
+    requestApplicationClose()
     return false
   }
   if (useHostStore.getState().leaderActive) {
