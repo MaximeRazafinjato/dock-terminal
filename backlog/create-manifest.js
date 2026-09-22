@@ -70,7 +70,7 @@ const tasks=[
 'Gérer expiration, annulation et collisions avec les applications terminal.',
 'Préserver les saisies lors des opérations de présentation.',
 'Assurer un focus visible et le fonctionnement avec IME/composition.'
-],['F09'],'Leader par défaut Ctrl + Espace, délai 5 secondes, mapping personnalisable ; navigation spatiale selon la position visuelle.'],
+],['F09'],'Leader par défaut Ctrl + Espace, délai 5 secondes, mapping personnalisable ; navigation spatiale selon la position visuelle.',true],
 ['F11','Exécuter de vrais shells et charger le profil PowerShell','8','R12, R13, R14','Utiliser l’application comme un terminal Windows complet.',[
  'Lancer Windows PowerShell 5.1 par défaut ; proposer PowerShell 7, CMD et Git Bash lorsque les chemins sont configurés.',
  'Charger le vrai profil avec alias, fonctions, modules et prompt.',
