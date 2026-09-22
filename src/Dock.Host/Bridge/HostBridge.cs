@@ -35,7 +35,7 @@ public sealed class HostBridge : IDisposable
         _editor = new EditorSettingsRepository(dataDirectory).Load();
         _terminals = new TerminalManager(_shellPaths);
         _terminals.OutputReceived += HandleOutput;
-        _terminals.CurrentDirectoryChanged += (paneId, path) => Post(new { type = "terminal.cwd", pane = paneId, path });
+        _terminals.CurrentDirectoryChanged += HandleCurrentDirectoryChanged;
         _terminals.Exited += (paneId, code) => Post(new { type = "terminal.exit", pane = paneId, code });
     }
 
@@ -137,8 +137,22 @@ public sealed class HostBridge : IDisposable
         var paneId = RequirePane(command);
         CloseTerminal(paneId);
         _buffers[paneId] = new PaneOutputBuffer(paneId);
-        var session = _terminals.Start(paneId, command.Shell ?? ShellCatalog.DefaultShellId, command.Cwd ?? string.Empty, command.Cols, command.Rows);
+        var cwd = command.Cwd ?? string.Empty;
+        var session = _terminals.Start(paneId, command.Shell ?? ShellCatalog.DefaultShellId, cwd, command.Cols, command.Rows);
         Post(new { type = "terminal.created", pane = paneId, pid = session.ProcessId });
+        if (cwd.Length > 0 && !Directory.Exists(cwd))
+        {
+            Post(new { type = "terminal.pathMissing", pane = paneId, path = cwd, fallback = PathFallback.NearestExisting(cwd) });
+        }
+    }
+
+    private void HandleCurrentDirectoryChanged(string paneId, string path)
+    {
+        Post(new { type = "terminal.cwd", pane = paneId, path });
+        foreach (var missing in _terminals.MissingDirectories())
+        {
+            Post(new { type = "terminal.pathMissing", pane = missing.PaneId, path = missing.Path, fallback = missing.Fallback });
+        }
     }
 
     private void CloseTerminal(string paneId)

@@ -7,18 +7,24 @@ interface PaneOverlayProps {
   state: PaneState
   shells: ShellProfile[]
   onRestart: () => void
+  onRestartIn: (path: string) => void
   onChangeShell: (shellId: string) => void
+  onDismiss: () => void
   onClose: () => void
 }
 
 const TITLES: Record<PaneStateKind, string> = {
   [PaneStateKind.Failed]: 'Le shell n’a pas pu démarrer.',
   [PaneStateKind.Exited]: 'Le shell est terminé.',
+  [PaneStateKind.PathMissing]: 'Le dossier de ce pane n’existe plus.',
 }
 
 const BUTTON = 'cursor-pointer rounded border px-3 py-1.5 text-[12px]'
+const PRIMARY = `${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-green-soft`
+const SECONDARY = `${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`
+const DANGER = `${BUTTON} border-dock-line text-dock-muted hover:text-dock-error`
 
-export function PaneOverlay({ state, shells, onRestart, onChangeShell, onClose }: PaneOverlayProps) {
+export function PaneOverlay({ state, shells, onRestart, onRestartIn, onChangeShell, onDismiss, onClose }: PaneOverlayProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const handleOpenMenu = () => setMenuOpen(true)
   const handleCloseMenu = useCallback(() => setMenuOpen(false), [])
@@ -26,25 +32,45 @@ export function PaneOverlay({ state, shells, onRestart, onChangeShell, onClose }
     setMenuOpen(false)
     onChangeShell(shellId)
   }
+  const handleRestartInFallback = () => {
+    if (state.fallback) {
+      onRestartIn(state.fallback)
+    }
+  }
+  const pathMissing = state.kind === PaneStateKind.PathMissing
 
   return (
     <div role="alert" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-dock-terminal/90 p-4 text-center">
       <p className="text-[13px] font-semibold text-dock-ink">{TITLES[state.kind]}</p>
       <p className="max-w-full font-mono text-[11px] break-words text-dock-muted">{state.message}</p>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <button type="button" className={`${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-green-soft`} data-tip="Relancer le même shell dans ce pane" onClick={onRestart}>
-          Relancer
-        </button>
-        <div className="relative">
-          <button type="button" className={`${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`} aria-haspopup="menu" aria-expanded={menuOpen} data-tip="Relancer ce pane avec un autre shell" onClick={handleOpenMenu}>
-            Choisir un shell
-          </button>
-          {menuOpen && <ShellMenu shells={shells} onSelect={handleSelectShell} onClose={handleCloseMenu} />}
-        </div>
-        <button type="button" className={`${BUTTON} border-dock-line text-dock-muted hover:text-dock-error`} data-tip="Fermer ce pane" onClick={onClose}>
+        {pathMissing ? (
+          <>
+            <button type="button" className={PRIMARY} data-tip={`Relancer un shell neuf dans ${state.fallback ?? ''}`} onClick={handleRestartInFallback}>
+              Relancer dans le dossier de repli
+            </button>
+            <button type="button" className={SECONDARY} data-tip="Garder ce shell tel quel et masquer ce message" onClick={onDismiss}>
+              Ignorer
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" className={PRIMARY} data-tip="Relancer le même shell dans ce pane" onClick={onRestart}>
+              Relancer
+            </button>
+            <div className="relative">
+              <button type="button" className={SECONDARY} aria-haspopup="menu" aria-expanded={menuOpen} data-tip="Relancer ce pane avec un autre shell" onClick={handleOpenMenu}>
+                Choisir un shell
+              </button>
+              {menuOpen && <ShellMenu shells={shells} onSelect={handleSelectShell} onClose={handleCloseMenu} />}
+            </div>
+          </>
+        )}
+        <button type="button" className={DANGER} data-tip="Fermer ce pane" onClick={onClose}>
           Fermer le pane
         </button>
       </div>
+      {pathMissing && state.fallback && <p className="font-mono text-[11px] text-dock-green">{`Repli : ${state.fallback}`}</p>}
     </div>
   )
 }

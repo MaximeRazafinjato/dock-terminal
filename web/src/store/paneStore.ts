@@ -3,17 +3,21 @@ import { create } from 'zustand'
 export enum PaneStateKind {
   Failed = 'failed',
   Exited = 'exited',
+  PathMissing = 'pathMissing',
 }
 
 export interface PaneState {
   kind: PaneStateKind
   message: string
+  fallback?: string
 }
 
 interface PaneStoreState {
   states: Record<string, PaneState>
   markFailed: (paneId: string, message: string) => void
   markExited: (paneId: string, code: number) => void
+  markPathMissing: (paneId: string, path: string, fallback: string) => void
+  dismiss: (paneId: string) => void
   clear: (paneId: string) => void
 }
 
@@ -22,11 +26,26 @@ const without = (states: Record<string, PaneState>, paneId: string): Record<stri
   return rest
 }
 
+const ignoredPaths = new Map<string, string>()
+
 export const usePaneStore = create<PaneStoreState>()((set) => ({
   states: {},
   markFailed: (paneId, message) =>
     set((state) => (state.states[paneId]?.kind === PaneStateKind.Exited ? state : { states: { ...state.states, [paneId]: { kind: PaneStateKind.Failed, message } } })),
   markExited: (paneId, code) =>
     set((state) => ({ states: { ...state.states, [paneId]: { kind: PaneStateKind.Exited, message: `Le shell s’est terminé (code ${code}).` } } })),
+  markPathMissing: (paneId, path, fallback) =>
+    set((state) => {
+      const blocked = (state.states[paneId] && state.states[paneId].kind !== PaneStateKind.PathMissing) || ignoredPaths.get(paneId) === path
+      return blocked ? state : { states: { ...state.states, [paneId]: { kind: PaneStateKind.PathMissing, message: path, fallback } } }
+    }),
+  dismiss: (paneId) =>
+    set((state) => {
+      const current = state.states[paneId]
+      if (current?.kind === PaneStateKind.PathMissing) {
+        ignoredPaths.set(paneId, current.message)
+      }
+      return { states: without(state.states, paneId) }
+    }),
   clear: (paneId) => set((state) => ({ states: without(state.states, paneId) })),
 }))

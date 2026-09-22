@@ -21,6 +21,13 @@ const relaunch = (paneId: string): void => {
 
 export const restartPane = (paneId: string): void => relaunch(paneId)
 
+export const restartPaneIn = (paneId: string, path: string): void => {
+  useSessionStore.getState().setPanePath(paneId, path)
+  relaunch(paneId)
+}
+
+export const dismissPaneState = (paneId: string): void => usePaneStore.getState().dismiss(paneId)
+
 export const changePaneShell = (paneId: string, shellId: string): void => {
   useSessionStore.getState().setPaneShell(paneId, shellId)
   relaunch(paneId)
