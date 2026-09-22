@@ -20,7 +20,7 @@ export default function App() {
 
   useEffect(() => {
     const { load, setPanePath } = useSessionStore.getState()
-    const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath } = useHostStore.getState()
+    const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath, setImportedPreferences } = useHostStore.getState()
     let stopAutosave: (() => void) | undefined
     const { markFailed, markExited, markPathMissing, clear } = usePaneStore.getState()
     const subscriptions = [
@@ -52,6 +52,11 @@ export default function App() {
         setStatus(warnings.length > 0 ? `Réglages enregistrés. ${warnings}` : 'Réglages enregistrés et appliqués.', warnings.length > 0 ? StatusLevel.Warning : StatusLevel.Info)
       }),
       bridge.on('dialog.picked', (message) => setPickedPath({ field: message.field, path: message.path })),
+      bridge.on('settings.exported', (message) => setStatus(`Préférences exportées dans ${message.path}.`)),
+      bridge.on('settings.imported', (message) => {
+        setImportedPreferences({ settings: message.settings, path: message.path })
+        setStatus(`Préférences lues depuis ${message.path} : Enregistrer remplace la configuration actuelle.`)
+      }),
       bridge.on('app.closing', (message) => receiveApplicationClosing(message.activity)),
       bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
       bridge.on('session.saved', () => setUnsaved(false)),

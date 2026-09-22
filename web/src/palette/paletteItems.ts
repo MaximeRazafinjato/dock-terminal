@@ -1,3 +1,4 @@
+import { bridge } from '../bridge/bridge'
 import type { ShellProfile } from '../bridge/messages'
 import { Command, runCommand } from '../keyboard/shortcuts'
 import { activeTab, activeWorkspace, panesOf, type Session } from '../model/session'
@@ -38,6 +39,14 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
     command('new-workspace', 'Nouveau workspace', () => runCommand(Command.NewWorkspace), 'Ctrl + Maj + W'),
     command('projects', 'Ouvrir un projet', () => runCommand(Command.Projects), 'Leader puis F'),
     command('settings', 'Paramètres', () => runCommand(Command.Settings), 'Leader puis ,'),
+    command('settings-export', 'Exporter les préférences…', () => {
+      runCommand(Command.Settings)
+      bridge.send({ type: 'settings.export' })
+    }),
+    command('settings-import', 'Importer les préférences…', () => {
+      runCommand(Command.Settings)
+      bridge.send({ type: 'settings.import' })
+    }),
     command('restore-tab', 'Rouvrir le dernier onglet fermé', restoreClosedTab, 'Ctrl + Maj + Z'),
     command('toggle-sidebar', session.sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces', store.toggleSidebar),
   ]

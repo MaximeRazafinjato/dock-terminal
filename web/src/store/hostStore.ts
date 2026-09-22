@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { GitContext, PersistenceSettings, PickedPath, Project, SettingsSnapshot, ShellProfile } from '../bridge/messages'
+import type { GitContext, ImportedPreferences, PersistenceSettings, PickedPath, Project, SettingsSnapshot, ShellProfile } from '../bridge/messages'
 
 export enum StatusLevel {
   Info = 'info',
@@ -22,6 +22,8 @@ interface HostState {
   settingsSnapshot: SettingsSnapshot | null
   pickedPath: PickedPath | null
   setPickedPath: (picked: PickedPath) => void
+  importedPreferences: ImportedPreferences | null
+  setImportedPreferences: (imported: ImportedPreferences) => void
   applySettings: (snapshot: SettingsSnapshot, shells: ShellProfile[], persistence: PersistenceSettings) => void
   setHello: (shells: ShellProfile[], home: string, persistence: PersistenceSettings) => void
   setUnsaved: (unsaved: boolean) => void
@@ -46,6 +48,8 @@ export const useHostStore = create<HostState>()((set) => ({
   settingsSnapshot: null,
   pickedPath: null,
   setPickedPath: (pickedPath) => set({ pickedPath }),
+  importedPreferences: null,
+  setImportedPreferences: (importedPreferences) => set({ importedPreferences }),
   applySettings: (settingsSnapshot, shells, persistence) => set({ settingsSnapshot, shells, persistence }),
   setHello: (shells, home, persistence) => set({ connected: true, shells, home, persistence }),
   setUnsaved: (unsaved) => set({ unsaved }),
