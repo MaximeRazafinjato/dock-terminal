@@ -1,3 +1,4 @@
+using Dock.Core.Agents;
 using Dock.Core.Session;
 using Dock.Core.Settings;
 using Xunit;
@@ -18,7 +19,8 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("code.cmd", settings.Editor);
         Assert.Equal(PersistenceSettingsModel.Default, settings.Persistence);
         Assert.Equal(@"C:\Files\Projects", settings.ProjectsRoot);
-        Assert.Equal(4, Directory.GetFiles(_directory, "*.json").Length);
+        Assert.Equal(NotificationSettingsModel.Default, settings.Notifications);
+        Assert.Equal(5, Directory.GetFiles(_directory, "*.json").Length);
     }
 
     [Fact]
@@ -30,7 +32,8 @@ public sealed class SettingsServiceTests : IDisposable
             Shells = new Dictionary<string, string> { ["cmd"] = @"D:\outils\cmd.exe", ["pwsh"] = "  " },
             Editor = " notepad.exe ",
             Persistence = new PersistenceSettingsModel(60, 5000, 128),
-            ProjectsRoot = _directory
+            ProjectsRoot = _directory,
+            Notifications = new NotificationSettingsModel(false, "notification.im", true)
         };
 
         var result = service.Save(settings);
@@ -41,6 +44,31 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("notepad.exe", loaded.Editor);
         Assert.Equal(new PersistenceSettingsModel(60, 5000, 128), loaded.Persistence);
         Assert.Equal(_directory, loaded.ProjectsRoot);
+        Assert.Equal(new NotificationSettingsModel(false, "Notification.IM", true), loaded.Notifications);
+    }
+
+    [Fact]
+    public void Load_WhenNotificationSoundUnknown_ThenFallsBackToDefaultSound()
+    {
+        var service = new SettingsService(_directory);
+        File.WriteAllText(Path.Combine(_directory, NotificationSettingsRepository.FileName), "{ \"windowsToast\": false, \"sound\": \"Klaxon\", \"taskbarFlash\": false }");
+
+        var settings = service.Load();
+
+        Assert.Equal(new NotificationSettingsModel(false, NotificationSettingsModel.DefaultSound, false), settings.Notifications);
+    }
+
+    [Fact]
+    public void Load_WhenNotificationSoundIsWavPath_ThenKeepsItAndWarnsIfMissing()
+    {
+        var service = new SettingsService(_directory);
+        File.WriteAllText(Path.Combine(_directory, NotificationSettingsRepository.FileName), "{ \"windowsToast\": true, \"sound\": \"C:\\\\Sons\\\\ding.WAV\", \"taskbarFlash\": true }");
+
+        var settings = service.Load();
+        var snapshot = service.Snapshot(settings);
+
+        Assert.Equal(@"C:\Sons\ding.WAV", settings.Notifications.Sound);
+        Assert.Contains(snapshot.Warnings, warning => warning.Contains(@"C:\Sons\ding.WAV"));
     }
 
     [Fact]
@@ -82,7 +110,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.False(snapshot.Shells.Single(shell => shell.Id == "gitbash").Available);
         Assert.Contains(snapshot.Warnings, warning => warning.Contains(@"C:\introuvable\bash.exe"));
         Assert.Contains(snapshot.Warnings, warning => warning.Contains(@"C:\introuvable\projets"));
-        Assert.Equal(4, snapshot.Files.Count);
+        Assert.Equal(5, snapshot.Files.Count);
     }
 
     [Fact]
@@ -133,6 +161,19 @@ public sealed class SettingsServiceTests : IDisposable
         var result = service.Import(path);
 
         Assert.Equal("Le fichier de préférences est incomplet : clé « persistence » absente.", result.Error);
+    }
+
+    [Fact]
+    public void Import_WhenNotificationsMissing_ThenUsesDefaults()
+    {
+        var service = new SettingsService(_directory);
+        var path = Path.Combine(_directory, "prefs.json");
+        File.WriteAllText(path, "{ \"version\": 1, \"shells\": {}, \"editor\": \"code.cmd\", \"persistence\": { \"textIntervalSeconds\": 30, \"linesPerPane\": 1000, \"maxTextMebibytes\": 32 }, \"projectsRoot\": \"C:\\\\Projets\" }");
+
+        var result = service.Import(path);
+
+        Assert.Null(result.Error);
+        Assert.Equal(NotificationSettingsModel.Default, result.Settings!.Notifications);
     }
 
     [Fact]
