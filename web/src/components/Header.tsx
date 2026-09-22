@@ -1,5 +1,6 @@
 import { EditableName } from './EditableName'
 import { InlineNameEditor } from './InlineNameEditor'
+import { LeaderHints } from './LeaderHints'
 
 interface HeaderProps {
   workspaceName: string | null
@@ -33,7 +34,7 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
           <EditableName name={workspaceName} className="text-[16px]" onClick={onStartRename} />
         )}
       </div>
-      {leaderActive && <span className="rounded bg-dock-focus px-2 py-0.5 text-xs font-semibold text-dock-terminal">Leader…</span>}
+      {leaderActive && <LeaderHints />}
     </header>
   )
 }

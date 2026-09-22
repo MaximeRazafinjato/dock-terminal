@@ -8,6 +8,27 @@ import { RenameOrigin, useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'AltGraph', 'Meta'])
+const CANCEL_KEY = 'Escape'
+const LEADER_EXPIRED_STATUS = 'Leader expiré : la saisie revient au terminal.'
+
+export interface LeaderHint {
+  keys: string
+  label: string
+}
+
+export const LEADER_HINTS: LeaderHint[] = [
+  { keys: 'T', label: 'onglet' },
+  { keys: 'V', label: 'côte à côte' },
+  { keys: 'H', label: 'haut / bas' },
+  { keys: 'W', label: 'workspace' },
+  { keys: 'X', label: 'fermer le pane' },
+  { keys: 'Z', label: 'rouvrir' },
+  { keys: 'P', label: 'palette' },
+  { keys: '← ↑ → ↓', label: 'pane voisin' },
+  { keys: 'PgUp / PgDn', label: 'déplacer l’onglet' },
+  { keys: 'Échap', label: 'annuler' },
+  { keys: 'Ctrl + Espace', label: 'envoyer au terminal' },
+]
 
 export enum Command {
   Palette = 'palette',
@@ -98,10 +119,36 @@ const exitLeader = (): void => {
   useHostStore.getState().setLeaderActive(false)
 }
 
+const expireLeader = (): void => {
+  exitLeader()
+  useHostStore.getState().setStatus(LEADER_EXPIRED_STATUS)
+}
+
 const enterLeader = (): void => {
   useHostStore.getState().setLeaderActive(true)
   clearTimeout(leaderTimer)
-  leaderTimer = setTimeout(exitLeader, LEADER_TIMEOUT_MS)
+  leaderTimer = setTimeout(expireLeader, LEADER_TIMEOUT_MS)
+}
+
+const leaderKeyOf = (event: KeyboardEvent): string => (event.key.length === 1 ? event.key.toLowerCase() : event.key)
+
+const decideInLeader = (event: KeyboardEvent): boolean => {
+  if (MODIFIER_KEYS.has(event.key)) {
+    return false
+  }
+  exitLeader()
+  if (isLeaderChord(event)) {
+    return true
+  }
+  if (event.key === CANCEL_KEY) {
+    return false
+  }
+  const command = LEADER_KEYS[leaderKeyOf(event)]
+  if (command) {
+    runCommand(command)
+    return false
+  }
+  return true
 }
 
 const currentWorkspace = (): Workspace | undefined => {
@@ -190,6 +237,9 @@ export const handleTerminalKey = (event: KeyboardEvent, actions: ShortcutActions
 }
 
 const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
+  if (event.isComposing) {
+    return true
+  }
   if (event.type !== 'keydown') {
     return !isReservedShortcut(event)
   }
@@ -198,14 +248,7 @@ const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
     return false
   }
   if (useHostStore.getState().leaderActive) {
-    if (!MODIFIER_KEYS.has(event.key)) {
-      exitLeader()
-      const command = LEADER_KEYS[event.key.length === 1 ? event.key.toLowerCase() : event.key]
-      if (command) {
-        runCommand(command)
-      }
-    }
-    return false
+    return decideInLeader(event)
   }
   if (isLeaderChord(event)) {
     enterLeader()
