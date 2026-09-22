@@ -8,12 +8,13 @@ interface HeaderProps {
   sidebarCollapsed: boolean
   leaderActive: boolean
   onToggleSidebar: () => void
+  onOpenSettings: () => void
   onStartRename: () => void
   onCommitRename: (name: string) => void
   onCancelRename: () => void
 }
 
-export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive, onToggleSidebar, onStartRename, onCommitRename, onCancelRename }: HeaderProps) {
+export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive, onToggleSidebar, onOpenSettings, onStartRename, onCommitRename, onCancelRename }: HeaderProps) {
   return (
     <header className="flex h-[42px] shrink-0 items-center gap-4 border-b border-dock-line bg-dock-panel px-3 text-dock-ink">
       <button
@@ -35,6 +36,15 @@ export function Header({ workspaceName, renaming, sidebarCollapsed, leaderActive
         )}
       </div>
       {leaderActive && <LeaderHints />}
+      <button
+        type="button"
+        className="ml-auto rounded border border-dock-line px-2 text-lg leading-tight text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink"
+        aria-label="Paramètres"
+        data-tip="Paramètres (Leader puis ,)"
+        onClick={onOpenSettings}
+      >
+        ⚙
+      </button>
     </header>
   )
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { GitContext, PersistenceSettings, Project, ShellProfile } from '../bridge/messages'
+import type { GitContext, PersistenceSettings, Project, SettingsSnapshot, ShellProfile } from '../bridge/messages'
 
 export enum StatusLevel {
   Info = 'info',
@@ -19,6 +19,8 @@ interface HostState {
   contexts: Record<string, GitContext>
   unsaved: boolean
   persistence: PersistenceSettings
+  settingsSnapshot: SettingsSnapshot | null
+  applySettings: (snapshot: SettingsSnapshot, shells: ShellProfile[], persistence: PersistenceSettings) => void
   setHello: (shells: ShellProfile[], home: string, persistence: PersistenceSettings) => void
   setUnsaved: (unsaved: boolean) => void
   setStatus: (text: string, level?: StatusLevel) => void
@@ -38,7 +40,9 @@ export const useHostStore = create<HostState>()((set) => ({
   projectsError: null,
   contexts: {},
   unsaved: false,
-  persistence: { textIntervalSeconds: 30, linesPerPane: 10000 },
+  persistence: { textIntervalSeconds: 30, linesPerPane: 10000, maxTextMebibytes: 256 },
+  settingsSnapshot: null,
+  applySettings: (settingsSnapshot, shells, persistence) => set({ settingsSnapshot, shells, persistence }),
   setHello: (shells, home, persistence) => set({ connected: true, shells, home, persistence }),
   setUnsaved: (unsaved) => set({ unsaved }),
   setStatus: (text, level = StatusLevel.Info) => set({ status: { text, level } }),

@@ -23,6 +23,29 @@ export interface GitContext {
 export interface PersistenceSettings {
   textIntervalSeconds: number
   linesPerPane: number
+  maxTextMebibytes: number
+}
+
+export interface Settings {
+  shells: Record<string, string>
+  editor: string
+  persistence: PersistenceSettings
+  projectsRoot: string
+}
+
+export interface ShellSetting {
+  id: string
+  name: string
+  defaultExecutable: string
+  configured: string
+  available: boolean
+}
+
+export interface SettingsSnapshot {
+  settings: Settings
+  shellSettings: ShellSetting[]
+  files: Record<string, string>
+  warnings: string[]
 }
 
 export interface Project {
@@ -35,6 +58,7 @@ export type HostToWebMessage =
   | { type: 'app.closing' }
   | { type: 'session.saved' }
   | { type: 'session.saveFailed'; message: string }
+  | ({ type: 'settings.result'; shells: ShellProfile[]; persistence: PersistenceSettings; saved: boolean } & SettingsSnapshot)
   | { type: 'terminal.created'; pane: string; pid: number }
   | { type: 'terminal.output'; pane: string; data: string }
   | { type: 'terminal.cwd'; pane: string; path: string }
@@ -48,6 +72,8 @@ export type WebToHostMessage =
   | { type: 'app.ready' }
   | { type: 'session.save'; session: Session }
   | { type: 'text.save'; text: Record<string, string> }
+  | { type: 'settings.get' }
+  | { type: 'settings.save'; settings: Settings }
   | { type: 'terminal.create'; pane: string; shell: string; cwd: string; cols: number; rows: number }
   | { type: 'terminal.input'; pane: string; data: string }
   | { type: 'terminal.resize'; pane: string; cols: number; rows: number }

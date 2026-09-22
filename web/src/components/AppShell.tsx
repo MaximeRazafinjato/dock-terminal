@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import type { Project } from '../bridge/messages'
+import { bridge } from '../bridge/bridge'
+import type { Project, Settings } from '../bridge/messages'
 import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
 import { useHostStore, StatusLevel } from '../store/hostStore'
@@ -12,6 +13,7 @@ import { CommandPalette } from './CommandPalette'
 import { EmptyState } from './EmptyState'
 import { Header } from './Header'
 import { ProjectPicker } from './ProjectPicker'
+import { SettingsDialog } from './SettingsDialog'
 import { SidebarResizer } from './SidebarResizer'
 import { SplitView } from './SplitView'
 import { TabBar } from './TabBar'
@@ -32,8 +34,8 @@ const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.foc
 
 export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
-  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved } = useHostStore()
-  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker } = useUiStore()
+  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved, settingsSnapshot } = useHostStore()
+  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker, settingsOpen, openSettings, closeSettings } = useUiStore()
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
   const availableShells = shells.filter((shell) => shell.available)
@@ -46,7 +48,7 @@ export function AppShell({ session }: AppShellProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!event.defaultPrevented && event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'p') {
+      if (!event.defaultPrevented && event.ctrlKey && !event.altKey && event.key.toLowerCase() === 'p' && !useUiStore.getState().settingsOpen) {
         event.preventDefault()
         openPalette()
       }
@@ -63,6 +65,15 @@ export function AppShell({ session }: AppShellProps) {
     handleClosePalette()
     item.run()
   }
+  const handleOpenSettings = () => {
+    bridge.send({ type: 'settings.get' })
+    openSettings()
+  }
+  const handleCloseSettings = () => {
+    closeSettings()
+    focusActivePane()
+  }
+  const handleSaveSettings = (settings: Settings) => bridge.send({ type: 'settings.save', settings })
   const handleCloseProjectPicker = () => {
     closeProjectPicker()
     focusActivePane()
@@ -149,6 +160,7 @@ export function AppShell({ session }: AppShellProps) {
         sidebarCollapsed={session.sidebarCollapsed}
         leaderActive={leaderActive}
         onToggleSidebar={handleToggleSidebar}
+        onOpenSettings={handleOpenSettings}
         onStartRename={handleStartRename}
         onCommitRename={handleCommitRename}
         onCancelRename={finishRename}
@@ -178,6 +190,7 @@ export function AppShell({ session }: AppShellProps) {
         </main>
       </div>
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
+      {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} onClose={handleCloseSettings} onSave={handleSaveSettings} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       <Tooltip />
       <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
