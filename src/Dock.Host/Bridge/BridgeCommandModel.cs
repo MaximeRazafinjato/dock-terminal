@@ -9,6 +9,8 @@ public sealed class BridgeCommandModel
     public string? Data { get; init; }
     public string? Shell { get; init; }
     public string? Cwd { get; init; }
+    public string? Path { get; init; }
+    public string? Target { get; init; }
     public int Cols { get; init; }
     public int Rows { get; init; }
     public int Chars { get; init; }

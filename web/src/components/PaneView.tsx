@@ -1,7 +1,9 @@
+import { useCallback, useState } from 'react'
 import type { ShellProfile } from '../bridge/messages'
 import { SplitAxis, type Pane } from '../model/session'
 import { usePaneStore } from '../store/paneStore'
 import { TerminalPane } from '../terminal/TerminalPane'
+import { PaneActionsMenu } from './PaneActionsMenu'
 import { PaneOverlay } from './PaneOverlay'
 
 interface PaneViewProps {
@@ -25,6 +27,12 @@ const SplitIcon = ({ horizontal }: { horizontal: boolean }) => (
   </svg>
 )
 
+const FolderIcon = () => (
+  <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" aria-hidden="true">
+    <path d="M1.5 3.5h3l1 1h5v5.5h-9z" />
+  </svg>
+)
+
 const CloseIcon = () => (
   <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" aria-hidden="true">
     <line x1="3" y1="3" x2="9" y2="9" />
@@ -34,6 +42,9 @@ const CloseIcon = () => (
 
 export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onChangeShell }: PaneViewProps) {
   const paneState = usePaneStore((state) => state.states[pane.id])
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const handleOpenActions = () => setActionsOpen(true)
+  const handleCloseActions = useCallback(() => setActionsOpen(false), [])
   const handleHeaderMouseDown = () => onFocus(pane.id)
   const handleRestart = () => onRestart(pane.id)
   const handleChangeShell = (shellId: string) => onChangeShell(pane.id, shellId)
@@ -54,6 +65,12 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
         <span className="min-w-0 flex-1 truncate font-mono text-dock-green" title={pane.path}>
           {pane.path}
         </span>
+        <div className="relative">
+          <button type="button" className={HEADER_BUTTON} title="Actions sur le dossier" aria-label="Actions sur le dossier" aria-haspopup="menu" aria-expanded={actionsOpen} onClick={handleOpenActions}>
+            <FolderIcon />
+          </button>
+          {actionsOpen && <PaneActionsMenu pane={pane} onClose={handleCloseActions} />}
+        </div>
         <button type="button" className={HEADER_BUTTON} title="Split côte à côte" aria-label="Split côte à côte" onClick={handleSplitSideBySide}>
           <SplitIcon horizontal />
         </button>

@@ -5,6 +5,7 @@ import { allPanes } from './model/session'
 import { StatusLevel, useHostStore } from './store/hostStore'
 import { usePaneStore } from './store/paneStore'
 import { useSessionStore } from './store/sessionStore'
+import { receiveContext } from './terminal/contextActions'
 import { terminalRegistry } from './terminal/terminalRegistry'
 
 const SAVE_DEBOUNCE_MS = 500
@@ -29,6 +30,7 @@ export default function App() {
       bridge.on('terminal.output', (message) => terminalRegistry.write(message.pane, message.data)),
       bridge.on('terminal.cwd', (message) => setPanePath(message.pane, message.path)),
       bridge.on('projects.listed', (message) => setProjects(message.root, message.projects, message.error ?? null)),
+      bridge.on('context.result', (message) => receiveContext(message.pane, message.path, message.git)),
       bridge.on('terminal.exit', (message) => {
         terminalRegistry.markExited(message.pane, message.code)
         markExited(message.pane, message.code)

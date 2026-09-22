@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, ShellProfile } from '../bridge/messages'
+import type { GitContext, Project, ShellProfile } from '../bridge/messages'
 
 export enum StatusLevel {
   Info = 'info',
@@ -16,10 +16,12 @@ interface HostState {
   projects: Project[]
   projectsRoot: string
   projectsError: string | null
+  contexts: Record<string, GitContext>
   setHello: (shells: ShellProfile[], home: string) => void
   setStatus: (text: string, level?: StatusLevel) => void
   setLeaderActive: (active: boolean) => void
   setProjects: (root: string, projects: Project[], error: string | null) => void
+  setContext: (paneId: string, context: GitContext) => void
 }
 
 export const useHostStore = create<HostState>()((set) => ({
@@ -31,8 +33,10 @@ export const useHostStore = create<HostState>()((set) => ({
   projects: [],
   projectsRoot: '',
   projectsError: null,
+  contexts: {},
   setHello: (shells, home) => set({ connected: true, shells, home }),
   setStatus: (text, level = StatusLevel.Info) => set({ status: { text, level } }),
   setLeaderActive: (leaderActive) => set({ leaderActive }),
   setProjects: (projectsRoot, projects, projectsError) => set({ projectsRoot, projects, projectsError }),
+  setContext: (paneId, context) => set((state) => ({ contexts: { ...state.contexts, [paneId]: context } })),
 }))

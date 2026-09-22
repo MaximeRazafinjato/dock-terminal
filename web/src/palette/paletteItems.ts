@@ -4,6 +4,8 @@ import { activeTab, activeWorkspace, panesOf, type Session } from '../model/sess
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { restoreClosedTab } from '../terminal/tabLifecycle'
+import { OpenTarget } from '../bridge/messages'
+import { copyPaneBranch, copyPanePath, newTabInPaneFolder, openPaneFolder } from '../terminal/contextActions'
 import type { SearchItem } from './searchFilter'
 
 export enum PaletteKind {
@@ -42,6 +44,14 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
     items.push(command('rename-workspace', 'Renommer le workspace', () => ui.startRenamingWorkspace(workspace.id, RenameOrigin.Header)))
   }
   if (tab) {
+    const paneId = tab.active
+    items.push(
+      command('copy-path', 'Copier le chemin du pane actif', () => copyPanePath(paneId)),
+      command('open-editor', 'Ouvrir le dossier du pane actif dans l’éditeur', () => openPaneFolder(paneId, OpenTarget.Editor)),
+      command('open-explorer', 'Ouvrir le dossier du pane actif dans l’explorateur', () => openPaneFolder(paneId, OpenTarget.Explorer)),
+      command('copy-branch', 'Copier la branche Git du pane actif', () => copyPaneBranch(paneId)),
+      command('new-tab-here', 'Nouvel onglet dans le dossier du pane actif', () => newTabInPaneFolder(paneId)),
+    )
     items.push(command('rename-tab', 'Renommer l’onglet', () => ui.startRenamingTab(tab.id)))
     for (const target of session.workspaces.filter((candidate) => candidate.id !== workspace?.id)) {
       items.push(command(`move-tab-${target.id}`, `Déplacer l’onglet vers${SEPARATOR}${target.name}`, () => store.moveTab(tab.id, target.id)))
