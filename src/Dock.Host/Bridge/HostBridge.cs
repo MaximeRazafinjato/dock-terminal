@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using Dock.Core.Projects;
 using Dock.Core.Session;
 using Dock.Core.Shell;
 using Dock.Core.Terminal;
@@ -97,6 +98,10 @@ public sealed class HostBridge : IDisposable
                 break;
             case "terminal.close":
                 CloseTerminal(RequirePane(command));
+                break;
+            case "projects.list":
+                var projects = ProjectCatalog.List(ProjectCatalog.DefaultRoot);
+                Post(new { type = "projects.listed", root = projects.Root, projects = projects.Projects, error = projects.Error });
                 break;
             case "window.close":
                 _closeWindow();

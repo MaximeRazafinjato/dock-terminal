@@ -4,6 +4,7 @@ import { activeTab, activeWorkspace, panesOf, type Session } from '../model/sess
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { restoreClosedTab } from '../terminal/tabLifecycle'
+import type { SearchItem } from './searchFilter'
 
 export enum PaletteKind {
   Command = 'command',
@@ -12,12 +13,8 @@ export enum PaletteKind {
   Pane = 'pane',
 }
 
-export interface PaletteItem {
-  id: string
+export interface PaletteItem extends SearchItem {
   kind: PaletteKind
-  label: string
-  hint?: string
-  favorite: boolean
   run: () => void
 }
 
@@ -37,6 +34,7 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
     command('split-y', 'Split haut / bas', () => runCommand(Command.SplitTopBottom), 'Ctrl + Maj + H'),
     command('close-pane', 'Fermer le pane actif', () => runCommand(Command.ClosePane), 'Ctrl + Maj + X'),
     command('new-workspace', 'Nouveau workspace', () => runCommand(Command.NewWorkspace), 'Ctrl + Maj + W'),
+    command('projects', 'Ouvrir un projet', () => runCommand(Command.Projects), 'Leader puis F'),
     command('restore-tab', 'Rouvrir le dernier onglet fermé', restoreClosedTab, 'Ctrl + Maj + Z'),
     command('toggle-sidebar', session.sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces', store.toggleSidebar),
   ]
@@ -55,13 +53,12 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
 const navigationItems = (session: Session): PaletteItem[] => {
   const { selectWorkspace, selectTab, selectPane } = useSessionStore.getState()
   return session.workspaces.flatMap((workspace) => [
-    { id: `ws-${workspace.id}`, kind: PaletteKind.Workspace, label: `Workspace${SEPARATOR}${workspace.name}`, favorite: false, run: () => selectWorkspace(workspace.id) },
+    { id: `ws-${workspace.id}`, kind: PaletteKind.Workspace, label: `Workspace${SEPARATOR}${workspace.name}`, run: () => selectWorkspace(workspace.id) },
     ...workspace.tabs.flatMap((tab) => [
       {
         id: `tab-${tab.id}`,
         kind: PaletteKind.Tab,
         label: `Onglet${SEPARATOR}${workspace.name} / ${tab.name}`,
-        favorite: false,
         run: () => {
           selectWorkspace(workspace.id)
           selectTab(tab.id)
@@ -72,7 +69,6 @@ const navigationItems = (session: Session): PaletteItem[] => {
         kind: PaletteKind.Pane,
         label: `Pane${SEPARATOR}${workspace.name} / ${tab.name} / ${pane.shell}`,
         hint: pane.path,
-        favorite: false,
         run: () => selectPane(pane.id),
       })),
     ]),
@@ -86,19 +82,3 @@ export const buildPaletteItems = (session: Session, shells: ShellProfile[]): Pal
   return [...favorites, ...others, ...navigationItems(session)]
 }
 
-const normalize = (text: string): string =>
-  text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-
-export const filterPaletteItems = (items: PaletteItem[], query: string): PaletteItem[] => {
-  const tokens = normalize(query).split(/\s+/).filter((token) => token.length > 0)
-  if (tokens.length === 0) {
-    return items
-  }
-  return items.filter((item) => {
-    const haystack = normalize(`${item.label} ${item.hint ?? ''}`)
-    return tokens.every((token) => haystack.includes(token))
-  })
-}

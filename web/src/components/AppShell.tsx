@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { Project } from '../bridge/messages'
 import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
 import { useHostStore, StatusLevel } from '../store/hostStore'
@@ -10,6 +11,7 @@ import { terminalRegistry } from '../terminal/terminalRegistry'
 import { CommandPalette } from './CommandPalette'
 import { EmptyState } from './EmptyState'
 import { Header } from './Header'
+import { ProjectPicker } from './ProjectPicker'
 import { SidebarResizer } from './SidebarResizer'
 import { SplitView } from './SplitView'
 import { TabBar } from './TabBar'
@@ -29,8 +31,8 @@ const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.foc
 
 export function AppShell({ session }: AppShellProps) {
   const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
-  const { status, leaderActive, home, shells } = useHostStore()
-  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette } = useUiStore()
+  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError } = useHostStore()
+  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker } = useUiStore()
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
   const availableShells = shells.filter((shell) => shell.available)
@@ -59,6 +61,14 @@ export function AppShell({ session }: AppShellProps) {
   const handleRunPaletteItem = (item: PaletteItem) => {
     handleClosePalette()
     item.run()
+  }
+  const handleCloseProjectPicker = () => {
+    closeProjectPicker()
+    focusActivePane()
+  }
+  const handleSelectProject = (project: Project) => {
+    closeProjectPicker()
+    newWorkspace(project.name, project.path, DEFAULT_SHELL)
   }
   const handleSelectTab = (workspaceId: string, tabId: string) => {
     selectWorkspace(workspaceId)
@@ -164,6 +174,7 @@ export function AppShell({ session }: AppShellProps) {
           {workspace ? renderMain(workspace) : <EmptyState canRestore={session.closed.length > 0} onNewWorkspace={handleNewWorkspace} onRestoreTab={restoreClosedTab} />}
         </main>
       </div>
+      {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
         <span className="truncate">{status.text}</span>

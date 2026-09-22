@@ -95,7 +95,7 @@ const tasks=[
 'Créer un workspace avec son premier terminal dans le dossier choisi.',
 'Conserver une interface compacte intégrée et l’accès par Leader/palette.',
 'Traiter dossiers absents/inaccessibles sans modifier le contexte courant par erreur.'
-],['F02','F11'],'Le sélecteur reprend le premier niveau de C:\\Files\\Projects, exclut worktrees de la liste des projets et crée toujours un nouveau workspace.'],
+],['F02','F11'],'Le sélecteur reprend le premier niveau de C:\\Files\\Projects, exclut worktrees de la liste des projets et crée toujours un nouveau workspace.',true],
 ['F15','Actions de dossier et de branche sur le pane actif','11','R17','Agir sur le contexte réel du terminal sélectionné.',[
 'Copier le chemin réel et ouvrir le dossier dans l’éditeur configuré ou l’explorateur.',
 'Copier la branche du dépôt/worktree courant lorsqu’elle existe.',

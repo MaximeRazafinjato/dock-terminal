@@ -19,6 +19,9 @@ interface UiState {
   paletteOpen: boolean
   openPalette: () => void
   closePalette: () => void
+  projectPickerOpen: boolean
+  openProjectPicker: () => void
+  closeProjectPicker: () => void
   startRenamingTab: (tabId: string) => void
   stopRenamingTab: () => void
   startRenamingWorkspace: (workspaceId: string, origin: RenameOrigin) => void
@@ -35,8 +38,11 @@ export const useUiStore = create<UiState>()((set) => ({
   draggingTabId: null,
   tabDropTarget: null,
   paletteOpen: false,
-  openPalette: () => set({ paletteOpen: true }),
+  openPalette: () => set({ paletteOpen: true, projectPickerOpen: false }),
   closePalette: () => set({ paletteOpen: false }),
+  projectPickerOpen: false,
+  openProjectPicker: () => set({ projectPickerOpen: true, paletteOpen: false }),
+  closeProjectPicker: () => set({ projectPickerOpen: false }),
   startRenamingTab: (renamingTabId) => set({ renamingTabId }),
   stopRenamingTab: () => set({ renamingTabId: null }),
   startRenamingWorkspace: (renamingWorkspaceId, renameOrigin) => set({ renamingWorkspaceId, renameOrigin }),
