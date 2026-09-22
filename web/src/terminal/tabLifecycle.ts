@@ -1,4 +1,4 @@
-import { panesOf } from '../model/session'
+import { findWorkspace, panesOf } from '../model/session'
 import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { terminalRegistry } from './terminalRegistry'
@@ -17,6 +17,18 @@ export const closeTabKeepingText = (tabId: string): void => {
   const text = terminalRegistry.snapshot(panesOf(tab.tree).map((pane) => pane.id))
   useSessionStore.getState().closeTab(tabId, text)
   useHostStore.getState().setStatus('Onglet fermé. Ctrl + Maj + Z le rouvre avec un nouveau terminal.')
+}
+
+export const closeWorkspaceKeepingText = (workspaceId: string): void => {
+  const { session, closeTab } = useSessionStore.getState()
+  const workspace = session ? findWorkspace(session, workspaceId) : undefined
+  if (!workspace) {
+    return
+  }
+  for (const tab of workspace.tabs) {
+    closeTab(tab.id, terminalRegistry.snapshot(panesOf(tab.tree).map((pane) => pane.id)))
+  }
+  useHostStore.getState().setStatus(`Workspace « ${workspace.name} » fermé. Ctrl + Maj + Z rouvre ses derniers onglets un par un.`)
 }
 
 export const closePaneKeepingText = (paneId: string): void => {

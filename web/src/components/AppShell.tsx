@@ -6,7 +6,7 @@ import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { changePaneShell, restartPane } from '../terminal/paneLifecycle'
-import { closePaneKeepingText, closeTabKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
+import { closePaneKeepingText, closeTabKeepingText, closeWorkspaceKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { terminalRegistry } from '../terminal/terminalRegistry'
 import { CommandPalette } from './CommandPalette'
 import { EmptyState } from './EmptyState'
@@ -166,6 +166,8 @@ export function AppShell({ session }: AppShellProps) {
               onToggle={toggleWorkspace}
               onNewWorkspace={handleNewWorkspace}
               onMoveTab={moveTab}
+              onCloseTab={closeTabKeepingText}
+              onCloseWorkspace={closeWorkspaceKeepingText}
             />
             <SidebarResizer width={session.sidebar} onResize={setSidebarWidth} />
           </>

@@ -20,9 +20,14 @@ interface WorkspaceTreeProps {
   onToggle: (workspaceId: string) => void
   onNewWorkspace: () => void
   onMoveTab: MoveTabHandler
+  onCloseTab: (tabId: string) => void
+  onCloseWorkspace: (workspaceId: string) => void
 }
 
-export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace, onMoveTab }: WorkspaceTreeProps) {
+const MIDDLE_BUTTON = 1
+const CLOSE_BUTTON = 'shrink-0 cursor-pointer rounded px-1.5 text-[13px] leading-none opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-dock-green-hover hover:text-dock-error'
+
+export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace, onStartRename, onCommitRename, onCancelRename, onSelectTab, onToggle, onNewWorkspace, onMoveTab, onCloseTab, onCloseWorkspace }: WorkspaceTreeProps) {
   const { draggingTabId, tabDropTarget } = useUiStore()
   const dropLine = (workspaceId: string, tabId?: string) => (isDropTarget(tabDropTarget, workspaceId, tabId) ? 'border-dock-focus' : 'border-transparent')
   return (
@@ -46,6 +51,10 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
           const renaming = workspace.id === renamingWorkspaceId
           const workspaceTargeted = isDropTarget(tabDropTarget, workspace.id)
           const stopClick = (event: MouseEvent) => event.stopPropagation()
+          const handleCloseWorkspace = (event: MouseEvent) => {
+            event.stopPropagation()
+            onCloseWorkspace(workspace.id)
+          }
           const handleSelect = (event: MouseEvent) => {
             event.stopPropagation()
             if (selected) {
@@ -57,7 +66,7 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
           return (
             <div key={workspace.id} className="mb-1">
               <div
-                className={`flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-2 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${workspaceTargeted && !expanded ? 'shadow-[inset_0_-2px_0_var(--color-dock-focus)]' : ''}`}
+                className={`group flex cursor-pointer items-baseline gap-1 rounded-md py-2.5 pr-1 text-[14px] leading-none select-none ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${workspaceTargeted && !expanded ? 'shadow-[inset_0_-2px_0_var(--color-dock-focus)]' : ''}`}
                 data-drop-workspace={workspace.id}
                 onClick={handleToggle}
               >
@@ -83,6 +92,9 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                   </button>
                 )}
                 <span className="text-[11px] leading-none text-dock-muted">{workspace.tabs.length} ong.</span>
+                <button type="button" className={CLOSE_BUTTON} title="Fermer le workspace" aria-label={`Fermer le workspace ${workspace.name}`} onClick={handleCloseWorkspace}>
+                  ×
+                </button>
               </div>
               {expanded && (
                 <ul id={tabsId} className="mt-1 mb-2 ml-5 border-l-2 border-dock-line pl-2">
@@ -92,22 +104,34 @@ export function WorkspaceTree({ session, renamingWorkspaceId, onSelectWorkspace,
                     const shellTag = shellTagOf(activePane(tab).shell)
                     const paneCount = panesOf(tab.tree).length
                     const handleTabPointerDown = (event: PointerEvent<HTMLElement>) => beginTabDrag(event, tab.id, onMoveTab)
+                    const handleCloseTab = () => onCloseTab(tab.id)
+                    const handleTabAuxClick = (event: MouseEvent) => {
+                      if (event.button === MIDDLE_BUTTON) {
+                        onCloseTab(tab.id)
+                      }
+                    }
                     return (
                       <li key={tab.id} className={`border-t-2 ${dropLine(workspace.id, tab.id)}`}>
+                        <div className={`group flex items-center rounded pr-1 ${activeTab ? 'bg-dock-green-soft' : 'hover:bg-dock-green-hover'}`}>
                         <button
                           type="button"
                           aria-current={activeTab || undefined}
                           title={tab.name}
                           data-drop-workspace={workspace.id}
                           data-drop-tab={tab.id}
-                          className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'bg-dock-green-soft font-semibold text-dock-green-deep' : 'text-dock-ink hover:bg-dock-green-hover'} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
+                          className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded px-2 py-2 text-left text-[13px] ${activeTab ? 'font-semibold text-dock-green-deep' : 'text-dock-ink'} ${draggingTabId === tab.id ? 'opacity-50' : ''}`}
                           onClick={handleTab}
+                          onAuxClick={handleTabAuxClick}
                           onPointerDown={handleTabPointerDown}
                         >
                           <span className="min-w-0 flex-1 truncate">{tab.name}</span>
                           {shellTag && <span className="shrink-0 rounded border border-dock-line px-1.5 py-px text-[10px] leading-tight font-medium text-dock-muted">{shellTag}</span>}
                           {paneCount > 1 && <span className="shrink-0 text-[11px] leading-none font-normal text-dock-muted" title={`${paneCount} panes`}>{`${paneCount} panes`}</span>}
                         </button>
+                        <button type="button" className={CLOSE_BUTTON} title="Fermer l’onglet" aria-label={`Fermer l’onglet ${tab.name}`} onClick={handleCloseTab}>
+                          ×
+                        </button>
+                        </div>
                       </li>
                     )
                   })}
