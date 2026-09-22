@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import type { ShellProfile } from '../bridge/messages'
 import type { Session } from '../model/session'
-import { buildPaletteItems, filterPaletteItems, type PaletteItem } from '../palette/paletteItems'
+import { buildPaletteItems, filterPaletteItems, PaletteKind, type PaletteItem } from '../palette/paletteItems'
 
 interface CommandPaletteProps {
   session: Session
   shells: ShellProfile[]
   onClose: () => void
   onRun: (item: PaletteItem) => void
+  onToggleFavorite: (commandId: string) => void
 }
 
 const RESULT_ID_PREFIX = 'palette-result-'
 const LISTBOX_ID = 'palette-results'
 
-export function CommandPalette({ session, shells, onClose, onRun }: CommandPaletteProps) {
+export function CommandPalette({ session, shells, onClose, onRun, onToggleFavorite }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(0)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const items = useMemo(() => buildPaletteItems(session, shells), [session, shells])
   const filtered = useMemo(() => filterPaletteItems(items, query), [items, query])
+  const selected = Math.max(0, filtered.findIndex((item) => item.id === selectedId))
   const selectedItem = filtered[selected]
 
   useEffect(() => {
@@ -27,12 +29,12 @@ export function CommandPalette({ session, shells, onClose, onRun }: CommandPalet
 
   const move = (offset: number) => {
     if (filtered.length > 0) {
-      setSelected((current) => (current + offset + filtered.length) % filtered.length)
+      setSelectedId(filtered[(selected + offset + filtered.length) % filtered.length].id)
     }
   }
   const handleQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(event.target.value)
-    setSelected(0)
+    setSelectedId(null)
   }
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing) {
@@ -41,6 +43,11 @@ export function CommandPalette({ session, shells, onClose, onRun }: CommandPalet
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
       move(event.key === 'ArrowDown' ? 1 : -1)
+    } else if (event.key === 'Enter' && event.ctrlKey) {
+      event.preventDefault()
+      if (selectedItem?.kind === PaletteKind.Command) {
+        onToggleFavorite(selectedItem.id)
+      }
     } else if (event.key === 'Enter') {
       event.preventDefault()
       if (selectedItem) {
@@ -78,25 +85,41 @@ export function CommandPalette({ session, shells, onClose, onRun }: CommandPalet
         <div ref={listRef} id={LISTBOX_ID} role="listbox" aria-label="Résultats" className="mt-2 min-h-0 flex-1 overflow-y-auto">
           {filtered.length === 0 && <p className="px-3 py-2 text-xs text-dock-muted">Aucun résultat.</p>}
           {filtered.map((item, index) => {
-            const handleHover = () => setSelected(index)
+            const handleHover = () => setSelectedId(item.id)
             const handleClick = () => onRun(item)
+            const handleToggleFavorite = (event: React.MouseEvent<HTMLButtonElement>) => {
+              event.stopPropagation()
+              onToggleFavorite(item.id)
+            }
             const isSelected = index === selected
             return (
-              <button
+              <div
                 key={item.id}
                 id={`${RESULT_ID_PREFIX}${index}`}
-                type="button"
                 role="option"
                 aria-selected={isSelected}
-                tabIndex={-1}
-                className={`flex w-full cursor-pointer items-baseline gap-3 rounded px-3 py-2 text-left text-[13px] focus:outline-none ${isSelected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink'}`}
+                className={`flex w-full items-baseline gap-2 rounded pl-3 pr-1 text-[13px] ${isSelected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink'}`}
                 onPointerMove={handleHover}
-                onPointerDown={handleResultPointerDown}
-                onClick={handleClick}
               >
-                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                {item.hint && <span className="shrink-0 truncate font-mono text-[11px] text-dock-muted">{item.hint}</span>}
-              </button>
+                <button type="button" tabIndex={-1} className="flex min-w-0 flex-1 cursor-pointer items-baseline gap-3 py-2 text-left focus:outline-none" onPointerDown={handleResultPointerDown} onClick={handleClick}>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {item.hint && <span className="shrink-0 truncate font-mono text-[11px] text-dock-muted">{item.hint}</span>}
+                </button>
+                {item.kind === PaletteKind.Command && (
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-pressed={item.favorite}
+                    aria-label={item.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                    title={item.favorite ? 'Retirer des favoris (Ctrl + Entrée)' : 'Ajouter aux favoris (Ctrl + Entrée)'}
+                    className={`shrink-0 cursor-pointer rounded px-1.5 py-1 text-[13px] leading-none hover:bg-dock-green-hover focus:outline-none ${item.favorite ? 'text-dock-warning' : 'text-dock-muted opacity-50 hover:opacity-100'}`}
+                    onPointerDown={handleResultPointerDown}
+                    onClick={handleToggleFavorite}
+                  >
+                    {item.favorite ? '★' : '☆'}
+                  </button>
+                )}
+              </div>
             )
           })}
         </div>

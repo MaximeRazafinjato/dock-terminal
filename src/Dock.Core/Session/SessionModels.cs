@@ -10,6 +10,7 @@ public sealed class SessionModel
     public int Sidebar { get; set; } = SessionLimits.DefaultSidebarWidth;
     public bool SidebarCollapsed { get; set; }
     public List<ClosedTabModel> Closed { get; set; } = new();
+    public List<string> Favorites { get; set; } = new();
 }
 
 public sealed class ClosedTabModel
@@ -70,4 +71,6 @@ public static class SessionLimits
     public const int DefaultSidebarWidth = 292;
     public const int MaxClosedTabs = 5;
     public const int MaxClosedTextChars = 2_000_000;
+    public const int MaxFavorites = 50;
+    public const int MaxFavoriteLength = 100;
 }

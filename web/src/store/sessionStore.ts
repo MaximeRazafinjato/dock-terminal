@@ -47,6 +47,7 @@ interface SessionState {
   closePane: (paneId: string) => void
   setPanePath: (paneId: string, path: string) => void
   setPaneShell: (paneId: string, shell: string) => void
+  toggleFavorite: (commandId: string) => void
 }
 
 const mutateSession = (session: Session | null, mutate: (draft: Session) => void): Session | null => {
@@ -72,7 +73,7 @@ const mutateTab = (session: Session | null, mutate: (tab: Tab, workspace: Worksp
 export const useSessionStore = create<SessionState>()((set, get) => ({
   session: null,
 
-  load: (session) => set({ session: { ...session, closed: session.closed ?? [] } }),
+  load: (session) => set({ session: { ...session, closed: session.closed ?? [], favorites: session.favorites ?? [] } }),
 
   selectWorkspace: (workspaceId) =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.active = workspaceId }) })),
@@ -282,6 +283,13 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         }),
       }
     }),
+
+  toggleFavorite: (commandId) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        draft.favorites = draft.favorites.includes(commandId) ? draft.favorites.filter((candidate) => candidate !== commandId) : [...draft.favorites, commandId]
+      }),
+    })),
 
   setPaneShell: (paneId, shell) =>
     set((state) => ({

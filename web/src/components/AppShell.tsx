@@ -28,7 +28,7 @@ interface AppShellProps {
 const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.focus()
 
 export function AppShell({ session }: AppShellProps) {
-  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio } = useSessionStore()
+  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
   const { status, leaderActive, home, shells } = useHostStore()
   const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette } = useUiStore()
   const workspace = activeWorkspace(session)
@@ -164,7 +164,7 @@ export function AppShell({ session }: AppShellProps) {
           {workspace ? renderMain(workspace) : <EmptyState canRestore={session.closed.length > 0} onNewWorkspace={handleNewWorkspace} onRestoreTab={restoreClosedTab} />}
         </main>
       </div>
-      {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} />}
+      {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
         <span className="truncate">{status.text}</span>
       </footer>

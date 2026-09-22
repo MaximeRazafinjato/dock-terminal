@@ -17,12 +17,13 @@ export interface PaletteItem {
   kind: PaletteKind
   label: string
   hint?: string
+  favorite: boolean
   run: () => void
 }
 
 const SEPARATOR = ' · '
 
-const command = (id: string, label: string, run: () => void, hint?: string): PaletteItem => ({ id, kind: PaletteKind.Command, label, hint, run })
+const command = (id: string, label: string, run: () => void, hint?: string): PaletteItem => ({ id, kind: PaletteKind.Command, label, hint, favorite: false, run })
 
 const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] => {
   const store = useSessionStore.getState()
@@ -54,12 +55,13 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
 const navigationItems = (session: Session): PaletteItem[] => {
   const { selectWorkspace, selectTab, selectPane } = useSessionStore.getState()
   return session.workspaces.flatMap((workspace) => [
-    { id: `ws-${workspace.id}`, kind: PaletteKind.Workspace, label: `Workspace${SEPARATOR}${workspace.name}`, run: () => selectWorkspace(workspace.id) },
+    { id: `ws-${workspace.id}`, kind: PaletteKind.Workspace, label: `Workspace${SEPARATOR}${workspace.name}`, favorite: false, run: () => selectWorkspace(workspace.id) },
     ...workspace.tabs.flatMap((tab) => [
       {
         id: `tab-${tab.id}`,
         kind: PaletteKind.Tab,
         label: `Onglet${SEPARATOR}${workspace.name} / ${tab.name}`,
+        favorite: false,
         run: () => {
           selectWorkspace(workspace.id)
           selectTab(tab.id)
@@ -70,13 +72,19 @@ const navigationItems = (session: Session): PaletteItem[] => {
         kind: PaletteKind.Pane,
         label: `Pane${SEPARATOR}${workspace.name} / ${tab.name} / ${pane.shell}`,
         hint: pane.path,
+        favorite: false,
         run: () => selectPane(pane.id),
       })),
     ]),
   ])
 }
 
-export const buildPaletteItems = (session: Session, shells: ShellProfile[]): PaletteItem[] => [...commandItems(session, shells), ...navigationItems(session)]
+export const buildPaletteItems = (session: Session, shells: ShellProfile[]): PaletteItem[] => {
+  const commands = commandItems(session, shells).map((item) => ({ ...item, favorite: session.favorites.includes(item.id) }))
+  const favorites = commands.filter((item) => item.favorite)
+  const others = commands.filter((item) => !item.favorite)
+  return [...favorites, ...others, ...navigationItems(session)]
+}
 
 const normalize = (text: string): string =>
   text
