@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Dock.Core.Context;
 using Dock.Core.Shell;
 
 namespace Dock.Core.Terminal;
@@ -42,6 +43,12 @@ public sealed class TerminalManager : IDisposable
         _sessions[paneId] = session;
         return session;
     }
+
+    public IReadOnlyList<MissingDirectoryModel> MissingDirectories() =>
+        _sessions.Values
+            .Where(session => !session.HasExited && session.CurrentDirectory is not null && !Directory.Exists(session.CurrentDirectory))
+            .Select(session => new MissingDirectoryModel(session.PaneId, session.CurrentDirectory!, PathFallback.NearestExisting(session.CurrentDirectory!)))
+            .ToList();
 
     public TerminalSession Require(string paneId) =>
         _sessions.TryGetValue(paneId, out var session) ? session : throw new InvalidOperationException($"Aucun terminal pour le pane {paneId}.");

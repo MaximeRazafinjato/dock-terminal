@@ -102,6 +102,7 @@ const isLeaderChord = (event: KeyboardEvent): boolean =>
 
 const isCloseWindow = (event: KeyboardEvent): boolean => event.altKey && event.key === 'F4'
 const isCopy = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && !event.altKey && letterOf(event) === 'c'
+const isPlainCtrlC = (event: KeyboardEvent): boolean => event.ctrlKey && !event.shiftKey && !event.altKey && letterOf(event) === 'c'
 const isPaste = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && !event.altKey && letterOf(event) === 'v'
 
 const directCommand = (event: KeyboardEvent): Command | undefined => {
@@ -230,6 +231,7 @@ export const isReservedShortcut = (event: KeyboardEvent): boolean =>
   isLeaderChord(event) || isCloseWindow(event) || isCopy(event) || isPaste(event) || directCommand(event) !== undefined
 
 export interface ShortcutActions {
+  hasSelection: () => boolean
   copySelection: () => void
   pasteClipboard: () => void
 }
@@ -261,7 +263,7 @@ const decide = (event: KeyboardEvent, actions: ShortcutActions): boolean => {
     enterLeader()
     return false
   }
-  if (isCopy(event)) {
+  if (isCopy(event) || (isPlainCtrlC(event) && actions.hasSelection())) {
     actions.copySelection()
     return false
   }

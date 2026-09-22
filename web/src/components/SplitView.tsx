@@ -16,21 +16,23 @@ interface SplitViewProps {
   onResize: SplitResizeHandler
   shells: ShellProfile[]
   onRestart: (paneId: string) => void
+  onRestartIn: (paneId: string, path: string) => void
   onChangeShell: (paneId: string, shellId: string) => void
+  onDismissState: (paneId: string) => void
 }
 
 const ROOT_PATH: SplitPath = []
 
-export function SplitView({ node, path = ROOT_PATH, activePaneId, onFocus, onClose, onSplit, onResize, shells, onRestart, onChangeShell }: SplitViewProps) {
+export function SplitView({ node, path = ROOT_PATH, activePaneId, onFocus, onClose, onSplit, onResize, shells, onRestart, onRestartIn, onChangeShell, onDismissState }: SplitViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   if (isLeaf(node)) {
-    return <PaneView pane={node.pane} active={node.pane.id === activePaneId} onFocus={onFocus} onClose={onClose} onSplit={onSplit} shells={shells} onRestart={onRestart} onChangeShell={onChangeShell} />
+    return <PaneView pane={node.pane} active={node.pane.id === activePaneId} onFocus={onFocus} onClose={onClose} onSplit={onSplit} shells={shells} onRestart={onRestart} onRestartIn={onRestartIn} onChangeShell={onChangeShell} onDismissState={onDismissState} />
   }
   const horizontal = node.axis === SplitAxis.Horizontal
   const handleResize = (ratio: number) => onResize(path, ratio)
   const child = (side: SplitSide, flex: number) => (
     <div className="min-h-0 min-w-0" style={{ flex, flexBasis: 0 }}>
-      <SplitView node={node[side]} path={[...path, side]} activePaneId={activePaneId} onFocus={onFocus} onClose={onClose} onSplit={onSplit} onResize={onResize} shells={shells} onRestart={onRestart} onChangeShell={onChangeShell} />
+      <SplitView node={node[side]} path={[...path, side]} activePaneId={activePaneId} onFocus={onFocus} onClose={onClose} onSplit={onSplit} onResize={onResize} shells={shells} onRestart={onRestart} onRestartIn={onRestartIn} onChangeShell={onChangeShell} onDismissState={onDismissState} />
     </div>
   )
   return (

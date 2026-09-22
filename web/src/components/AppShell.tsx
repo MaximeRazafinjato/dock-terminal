@@ -5,7 +5,7 @@ import type { PaletteItem } from '../palette/paletteItems'
 import { useHostStore, StatusLevel } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
-import { changePaneShell, restartPane } from '../terminal/paneLifecycle'
+import { changePaneShell, dismissPaneState, restartPane, restartPaneIn } from '../terminal/paneLifecycle'
 import { closePaneKeepingText, closeTabKeepingText, closeWorkspaceKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { terminalRegistry } from '../terminal/terminalRegistry'
 import { CommandPalette } from './CommandPalette'
@@ -135,7 +135,7 @@ export function AppShell({ session }: AppShellProps) {
           onMove={moveTab}
         />
         <div className="min-h-0 flex-1 border-t border-dock-line bg-dock-panel p-1">
-          <SplitView key={currentTab.id} node={currentTab.tree} activePaneId={currentTab.active} onFocus={selectPane} onClose={closePaneKeepingText} onSplit={handleSplit} onResize={handleResize} shells={availableShells} onRestart={restartPane} onChangeShell={changePaneShell} />
+          <SplitView key={currentTab.id} node={currentTab.tree} activePaneId={currentTab.active} onFocus={selectPane} onClose={closePaneKeepingText} onSplit={handleSplit} onResize={handleResize} shells={availableShells} onRestart={restartPane} onRestartIn={restartPaneIn} onChangeShell={changePaneShell} onDismissState={dismissPaneState} />
         </div>
       </>
     )

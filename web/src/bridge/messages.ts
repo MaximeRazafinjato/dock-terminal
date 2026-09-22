@@ -31,6 +31,7 @@ export type HostToWebMessage =
   | { type: 'terminal.output'; pane: string; data: string }
   | { type: 'terminal.cwd'; pane: string; path: string }
   | { type: 'terminal.exit'; pane: string; code: number }
+  | { type: 'terminal.pathMissing'; pane: string; path: string; fallback: string }
   | { type: 'projects.listed'; root: string; projects: Project[]; error?: string }
   | { type: 'context.result'; pane: string; path: string; git: GitContext }
   | { type: 'error'; pane?: string; message: string }

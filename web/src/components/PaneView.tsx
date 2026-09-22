@@ -15,7 +15,9 @@ interface PaneViewProps {
   onSplit: (paneId: string, axis: SplitAxis) => void
   shells: ShellProfile[]
   onRestart: (paneId: string) => void
+  onRestartIn: (paneId: string, path: string) => void
   onChangeShell: (paneId: string, shellId: string) => void
+  onDismissState: (paneId: string) => void
 }
 
 const HEADER_BUTTON = 'flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-dock-green-hover hover:text-dock-ink'
@@ -66,7 +68,7 @@ const CloseIcon = () => (
   </svg>
 )
 
-export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onChangeShell }: PaneViewProps) {
+export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onRestartIn, onChangeShell, onDismissState }: PaneViewProps) {
   const paneState = usePaneStore((state) => state.states[pane.id])
   const context = useHostStore((state) => state.contexts[pane.id])
 
@@ -76,6 +78,8 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
 
   const handleHeaderMouseDown = () => onFocus(pane.id)
   const handleRestart = () => onRestart(pane.id)
+  const handleRestartIn = (path: string) => onRestartIn(pane.id, path)
+  const handleDismissState = () => onDismissState(pane.id)
   const handleChangeShell = (shellId: string) => onChangeShell(pane.id, shellId)
   const handleCopyPath = () => copyPanePath(pane.id)
   const handleOpenEditor = () => openPaneFolder(pane.id, OpenTarget.Editor)
@@ -124,7 +128,7 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
       </header>
       <div className="relative min-h-0">
         <TerminalPane pane={pane} active={active} onFocus={onFocus} />
-        {paneState && <PaneOverlay state={paneState} shells={shells} onRestart={handleRestart} onChangeShell={handleChangeShell} onClose={handleClose} />}
+        {paneState && <PaneOverlay state={paneState} shells={shells} onRestart={handleRestart} onRestartIn={handleRestartIn} onChangeShell={handleChangeShell} onDismiss={handleDismissState} onClose={handleClose} />}
       </div>
     </section>
   )

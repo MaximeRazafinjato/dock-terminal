@@ -18,7 +18,7 @@ export default function App() {
   useEffect(() => {
     const { load, setPanePath } = useSessionStore.getState()
     const { setHello, setStatus, setProjects } = useHostStore.getState()
-    const { markFailed, markExited } = usePaneStore.getState()
+    const { markFailed, markExited, markPathMissing, clear } = usePaneStore.getState()
     const subscriptions = [
       bridge.on('app.hello', (message) => {
         setHello(message.shells, message.home)
@@ -28,7 +28,11 @@ export default function App() {
         })
       }),
       bridge.on('terminal.output', (message) => terminalRegistry.write(message.pane, message.data)),
-      bridge.on('terminal.cwd', (message) => setPanePath(message.pane, message.path)),
+      bridge.on('terminal.cwd', (message) => {
+        setPanePath(message.pane, message.path)
+        clear(message.pane)
+      }),
+      bridge.on('terminal.pathMissing', (message) => markPathMissing(message.pane, message.path, message.fallback)),
       bridge.on('projects.listed', (message) => setProjects(message.root, message.projects, message.error ?? null)),
       bridge.on('context.result', (message) => receiveContext(message.pane, message.path, message.git)),
       bridge.on('terminal.exit', (message) => {
