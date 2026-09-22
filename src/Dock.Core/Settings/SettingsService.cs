@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Dock.Core.Context;
 using Dock.Core.Projects;
 using Dock.Core.Session;
@@ -72,6 +73,55 @@ public sealed class SettingsService
         _persistence.Save(settings.Persistence);
         _projects.Save(new ProjectsSettingsModel(settings.ProjectsRoot));
         return result;
+    }
+
+    public void Export(SettingsModel settings, string filePath) =>
+        AtomicFile.Write(filePath, JsonSerializer.Serialize(PreferencesDocumentModel.From(settings), SessionRepository.JsonOptions));
+
+    public PreferencesImportResultModel Import(string filePath)
+    {
+        PreferencesDocumentModel? document;
+        try
+        {
+            document = JsonSerializer.Deserialize<PreferencesDocumentModel>(File.ReadAllText(filePath), SessionRepository.JsonOptions);
+        }
+        catch (JsonException exception)
+        {
+            return new PreferencesImportResultModel(null, $"Le fichier de préférences est illisible : {exception.Message}");
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new PreferencesImportResultModel(null, $"Impossible de lire {filePath} : {exception.Message}");
+        }
+
+        if (document is null)
+        {
+            return new PreferencesImportResultModel(null, "Le fichier de préférences est vide.");
+        }
+
+        if (document.Version != PreferencesDocumentModel.CurrentVersion)
+        {
+            var version = document.Version?.ToString() ?? "absente";
+            return new PreferencesImportResultModel(null, $"Version de préférences non prise en charge : {version} (attendue : {PreferencesDocumentModel.CurrentVersion}).");
+        }
+
+        var missing = document.MissingKey();
+        if (missing is not null)
+        {
+            return new PreferencesImportResultModel(null, $"Le fichier de préférences est incomplet : clé « {missing} » absente.");
+        }
+
+        var settings = new SettingsModel
+        {
+            Shells = document.Shells!,
+            Editor = document.Editor!,
+            Persistence = document.Persistence!.Clamped(),
+            ProjectsRoot = document.ProjectsRoot!
+        };
+        var validation = Validate(settings);
+        return validation.IsValid
+            ? new PreferencesImportResultModel(settings, null)
+            : new PreferencesImportResultModel(null, $"Préférences refusées : {validation.Error}");
     }
 
     public SettingsSnapshotModel Snapshot(SettingsModel settings)

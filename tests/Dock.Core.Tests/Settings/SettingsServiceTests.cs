@@ -85,6 +85,69 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(4, snapshot.Files.Count);
     }
 
+    [Fact]
+    public void Export_ThenImport_RoundTripsWithoutTouchingSettingsFiles()
+    {
+        var service = new SettingsService(_directory);
+        var settings = new SettingsModel
+        {
+            Shells = new Dictionary<string, string> { ["cmd"] = @"D:\outils\cmd.exe" },
+            Editor = "notepad.exe",
+            Persistence = new PersistenceSettingsModel(45, 2000, 64),
+            ProjectsRoot = _directory
+        };
+        var exportPath = Path.Combine(_directory, "export", "prefs.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(exportPath)!);
+
+        service.Export(settings, exportPath);
+        var result = service.Import(exportPath);
+
+        Assert.Null(result.Error);
+        Assert.Equal(settings.Shells, result.Settings!.Shells);
+        Assert.Equal("notepad.exe", result.Settings.Editor);
+        Assert.Equal(new PersistenceSettingsModel(45, 2000, 64), result.Settings.Persistence);
+        Assert.Equal(_directory, result.Settings.ProjectsRoot);
+        Assert.Empty(Directory.GetFiles(_directory, "*.json"));
+    }
+
+    [Fact]
+    public void Import_WhenVersionUnsupported_ThenRefuses()
+    {
+        var service = new SettingsService(_directory);
+        var path = Path.Combine(_directory, "prefs.json");
+        File.WriteAllText(path, "{ \"version\": 2, \"shells\": {}, \"editor\": \"code.cmd\", \"persistence\": { \"textIntervalSeconds\": 30, \"linesPerPane\": 1000, \"maxTextMebibytes\": 32 }, \"projectsRoot\": \"C:\\\\Projets\" }");
+
+        var result = service.Import(path);
+
+        Assert.Null(result.Settings);
+        Assert.Equal("Version de préférences non prise en charge : 2 (attendue : 1).", result.Error);
+    }
+
+    [Fact]
+    public void Import_WhenKeyMissing_ThenRefuses()
+    {
+        var service = new SettingsService(_directory);
+        var path = Path.Combine(_directory, "prefs.json");
+        File.WriteAllText(path, "{ \"version\": 1, \"shells\": {}, \"editor\": \"code.cmd\", \"projectsRoot\": \"C:\\\\Projets\" }");
+
+        var result = service.Import(path);
+
+        Assert.Equal("Le fichier de préférences est incomplet : clé « persistence » absente.", result.Error);
+    }
+
+    [Fact]
+    public void Import_WhenJsonInvalid_ThenRefuses()
+    {
+        var service = new SettingsService(_directory);
+        var path = Path.Combine(_directory, "prefs.json");
+        File.WriteAllText(path, "{ version: ");
+
+        var result = service.Import(path);
+
+        Assert.Null(result.Settings);
+        Assert.StartsWith("Le fichier de préférences est illisible", result.Error);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
