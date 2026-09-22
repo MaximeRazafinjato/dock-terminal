@@ -18,7 +18,8 @@ interface PaneViewProps {
   onChangeShell: (paneId: string, shellId: string) => void
 }
 
-const HEADER_BUTTON = 'flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-dock-green-hover hover:text-dock-ink disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-dock-muted'
+const HEADER_BUTTON = 'flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-dock-green-hover hover:text-dock-ink'
+const MUTED_BUTTON = 'opacity-40 hover:bg-transparent hover:text-dock-muted'
 const ICON_SIZE = 12
 const ICON_PROPS = { width: ICON_SIZE, height: ICON_SIZE, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
 
@@ -107,7 +108,7 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
         <button type="button" className={HEADER_BUTTON} data-tip="Ouvrir dans l’explorateur" aria-label="Ouvrir dans l’explorateur" onClick={handleOpenExplorer}>
           <FolderIcon />
         </button>
-        <button type="button" className={HEADER_BUTTON} data-tip={branchTitle} aria-label="Copier la branche Git" disabled={!context?.branch} onClick={handleCopyBranch}>
+        <button type="button" className={`${HEADER_BUTTON} ${context?.branch ? '' : MUTED_BUTTON}`} data-tip={branchTitle} aria-label="Copier la branche Git" aria-disabled={!context?.branch} onClick={handleCopyBranch}>
           <BranchIcon />
         </button>
         <span className="mx-1 h-3 w-px bg-dock-line" aria-hidden="true" />
