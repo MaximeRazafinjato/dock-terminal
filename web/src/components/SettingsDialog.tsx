@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
-import { PickTarget, type ImportedPreferences, type PersistenceSettings, type PickedPath, type Settings, type SettingsSnapshot } from '../bridge/messages'
+import { NotificationSound, PickTarget, type ImportedPreferences, type NotificationSettings, type PersistenceSettings, type PickedPath, type Settings, type SettingsSnapshot } from '../bridge/messages'
 
 interface SettingsDialogProps {
   snapshot: SettingsSnapshot | null
@@ -12,11 +12,16 @@ interface SettingsDialogProps {
   onImport: () => void
   onInstallHooks: () => void
   onRemoveHooks: () => void
+  onTestNotification: (notifications: NotificationSettings) => void
 }
 
 const SHELL_FIELD_PREFIX = 'shell:'
 const EDITOR_FIELD = 'editor'
 const PROJECTS_ROOT_FIELD = 'projectsRoot'
+const SOUND_FIELD = 'notificationSound'
+const CUSTOM_SOUND = 'custom'
+
+const isCustomSound = (sound: string): boolean => !Object.values<string>(NotificationSound).includes(sound)
 
 interface NumberField {
   key: keyof PersistenceSettings
@@ -32,6 +37,15 @@ const NUMBER_FIELDS: NumberField[] = [
   { key: 'maxTextMebibytes', label: 'Historique global maximal (Mio)', hint: 'Au-delà, les panes les plus récents ne sont plus sauvegardés.', min: 16, max: 2048 },
 ]
 
+const SOUND_LABELS: Record<NotificationSound, string> = {
+  [NotificationSound.None]: 'Aucun',
+  [NotificationSound.Default]: 'Notification par défaut',
+  [NotificationSound.InstantMessage]: 'Message instantané',
+  [NotificationSound.Mail]: 'Courrier',
+  [NotificationSound.Reminder]: 'Rappel',
+  [NotificationSound.Sms]: 'SMS',
+}
+
 const SECTION = 'text-[11px] font-semibold tracking-wide text-dock-muted uppercase'
 const LABEL = 'text-[12px] text-dock-ink'
 const HINT = 'text-[11px] text-dock-muted'
@@ -41,7 +55,7 @@ const PRIMARY = `${BUTTON} border-dock-green text-dock-green-deep hover:bg-dock-
 const SECONDARY = `${BUTTON} border-dock-line text-dock-ink hover:bg-dock-green-hover`
 const BROWSE = 'shrink-0 rounded border border-dock-line px-2 text-[12px] text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink'
 
-export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave, onPick, onExport, onImport, onInstallHooks, onRemoveHooks }: SettingsDialogProps) {
+export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave, onPick, onExport, onImport, onInstallHooks, onRemoveHooks, onTestNotification }: SettingsDialogProps) {
   const [draft, setDraft] = useState<Settings | null>(null)
   const [seenSnapshot, setSeenSnapshot] = useState<SettingsSnapshot | null>(null)
   const [seenPick, setSeenPick] = useState<PickedPath | null>(pickedPath)
@@ -103,6 +117,8 @@ export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave
         updateDraft({ editor: pickedPath.path })
       } else if (pickedPath.field === PROJECTS_ROOT_FIELD) {
         updateDraft({ projectsRoot: pickedPath.path })
+      } else if (pickedPath.field === SOUND_FIELD) {
+        updateDraft({ notifications: { ...draft.notifications, sound: pickedPath.path } })
       } else if (pickedPath.field.startsWith(SHELL_FIELD_PREFIX)) {
         updateDraft({ shells: { ...draft.shells, [pickedPath.field.slice(SHELL_FIELD_PREFIX.length)]: pickedPath.path } })
       }
@@ -117,6 +133,17 @@ export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave
   )
   const handleEditorChange = (event: ChangeEvent<HTMLInputElement>) => updateDraft({ editor: event.target.value })
   const handleProjectsRootChange = (event: ChangeEvent<HTMLInputElement>) => updateDraft({ projectsRoot: event.target.value })
+  const updateNotifications = (patch: Partial<NotificationSettings>) => setDraft((current) => (current ? { ...current, notifications: { ...current.notifications, ...patch } } : current))
+  const handleToastChange = (event: ChangeEvent<HTMLInputElement>) => updateNotifications({ windowsToast: event.target.checked })
+  const handleFlashChange = (event: ChangeEvent<HTMLInputElement>) => updateNotifications({ taskbarFlash: event.target.checked })
+  const handleSoundChange = (event: ChangeEvent<HTMLSelectElement>) => updateNotifications({ sound: event.target.value === CUSTOM_SOUND ? '' : event.target.value })
+  const handleSoundPathChange = (event: ChangeEvent<HTMLInputElement>) => updateNotifications({ sound: event.target.value })
+  const handlePickSound = () => onPick(SOUND_FIELD, PickTarget.Sound)
+  const handleTestNotification = () => {
+    if (draft) {
+      onTestNotification(draft.notifications)
+    }
+  }
 
   const renderBody = (settings: Settings, current: SettingsSnapshot) => (
     <>
@@ -188,6 +215,43 @@ export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave
           <span className={HINT}>Dossiers de premier niveau listés par le sélecteur de projets, hors « worktrees » et dossiers cachés.</span>
         </label>
         <p className={`${HINT} font-mono`}>{current.files.projects}</p>
+      </section>
+      <section className="flex flex-col gap-2">
+        <h3 className={SECTION}>Notifications</h3>
+        <p className={HINT}>Quand un agent a besoin de vous et que Dock n’est pas la fenêtre active. Les cartes dans Dock restent toujours affichées.</p>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={settings.notifications.windowsToast} disabled={!current.notifications.toastAvailable} onChange={handleToastChange} />
+          <span className={LABEL}>Notification Windows (cliquer rejoint le terminal)</span>
+        </label>
+        {!current.notifications.toastAvailable && <p className="text-[11px] text-dock-warning">{`Notification Windows indisponible dans cette version du Windows App SDK (bug connu des applications autonomes). Le son et le clignotement restent actifs. ${current.notifications.toastError ?? ''}`}</p>}
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={settings.notifications.taskbarFlash} onChange={handleFlashChange} />
+          <span className={LABEL}>Faire clignoter Dock dans la barre des tâches</span>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={LABEL}>Son joué à chaque nouvelle attente</span>
+          <span className="flex gap-2">
+            <select className={INPUT} value={isCustomSound(settings.notifications.sound) ? CUSTOM_SOUND : settings.notifications.sound} onChange={handleSoundChange}>
+              {Object.values(NotificationSound).map((sound) => (
+                <option key={sound} value={sound}>
+                  {SOUND_LABELS[sound]}
+                </option>
+              ))}
+              <option value={CUSTOM_SOUND}>Fichier .wav de mon ordinateur…</option>
+            </select>
+            <button type="button" className={SECONDARY} data-tip="Joue le son, fait clignoter la barre des tâches et affiche la notification Windows si elle est disponible, avec les réglages ci-dessus, sans enregistrer" onClick={handleTestNotification}>
+              Tester
+            </button>
+          </span>
+          {isCustomSound(settings.notifications.sound) && (
+            <span className="flex gap-1">
+              <input type="text" className={INPUT} value={settings.notifications.sound} placeholder="C:\Sons\attention.wav" spellCheck={false} onChange={handleSoundPathChange} />
+              {renderBrowse(handlePickSound, 'Choisir un fichier .wav')}
+            </span>
+          )}
+          {isCustomSound(settings.notifications.sound) && <span className={HINT}>Fichier .wav uniquement (chemin absolu). Un chemin invalide revient au son par défaut à l’enregistrement.</span>}
+        </label>
+        <p className={`${HINT} font-mono`}>{current.files.notifications}</p>
       </section>
       <section className="flex flex-col gap-2">
         <h3 className={SECTION}>Agents</h3>

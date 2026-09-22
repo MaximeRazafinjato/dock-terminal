@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Dock.Core.Agents;
 using Dock.Core.Context;
 using Dock.Core.Projects;
 using Dock.Core.Session;
@@ -12,6 +13,7 @@ public sealed class SettingsService
     private readonly EditorSettingsRepository _editor;
     private readonly PersistenceSettingsRepository _persistence;
     private readonly ProjectsSettingsRepository _projects;
+    private readonly NotificationSettingsRepository _notifications;
 
     public SettingsService(string directory)
     {
@@ -19,6 +21,7 @@ public sealed class SettingsService
         _editor = new EditorSettingsRepository(directory);
         _persistence = new PersistenceSettingsRepository(directory);
         _projects = new ProjectsSettingsRepository(directory);
+        _notifications = new NotificationSettingsRepository(directory);
     }
 
     public SettingsModel Load() => new()
@@ -26,7 +29,8 @@ public sealed class SettingsService
         Shells = _shells.Load().Executables.ToDictionary(pair => pair.Key, pair => pair.Value),
         Editor = _editor.Load().Command,
         Persistence = _persistence.Load(),
-        ProjectsRoot = _projects.Load().Root
+        ProjectsRoot = _projects.Load().Root,
+        Notifications = _notifications.Load()
     };
 
     public ValidationResultModel Validate(SettingsModel settings)
@@ -68,10 +72,12 @@ public sealed class SettingsService
         settings.Editor = settings.Editor.Trim();
         settings.Persistence = settings.Persistence.Clamped();
         settings.ProjectsRoot = settings.ProjectsRoot.Trim();
+        settings.Notifications = settings.Notifications.Normalized();
         _shells.Save(settings.Shells);
         _editor.Save(new EditorSettingsModel(settings.Editor));
         _persistence.Save(settings.Persistence);
         _projects.Save(new ProjectsSettingsModel(settings.ProjectsRoot));
+        _notifications.Save(settings.Notifications);
         return result;
     }
 
@@ -116,7 +122,8 @@ public sealed class SettingsService
             Shells = document.Shells!,
             Editor = document.Editor!,
             Persistence = document.Persistence!.Clamped(),
-            ProjectsRoot = document.ProjectsRoot!
+            ProjectsRoot = document.ProjectsRoot!,
+            Notifications = (document.Notifications ?? NotificationSettingsModel.Default).Normalized()
         };
         var validation = Validate(settings);
         return validation.IsValid
@@ -137,6 +144,11 @@ public sealed class SettingsService
             warnings.Add($"La commande de l’éditeur est introuvable : {settings.Editor}");
         }
 
+        if (settings.Notifications.UsesFile && !File.Exists(settings.Notifications.Sound))
+        {
+            warnings.Add($"Le fichier son est introuvable : {settings.Notifications.Sound}");
+        }
+
         if (!Directory.Exists(settings.ProjectsRoot))
         {
             warnings.Add($"Le dossier des projets est introuvable : {settings.ProjectsRoot}");
@@ -147,7 +159,8 @@ public sealed class SettingsService
             ["shells"] = _shells.FilePath,
             ["editor"] = _editor.FilePath,
             ["persistence"] = _persistence.FilePath,
-            ["projects"] = _projects.FilePath
+            ["projects"] = _projects.FilePath,
+            ["notifications"] = _notifications.FilePath
         };
         return new SettingsSnapshotModel(settings, shells, files, warnings);
     }

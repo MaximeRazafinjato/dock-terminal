@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using Dock.Core.Agents;
 using Dock.Core.Context;
 using Dock.Core.Projects;
 using Dock.Core.Session;
@@ -25,6 +26,7 @@ public sealed class HostBridge : IDisposable
     private readonly SettingsService _settingsService;
     private readonly TerminalManager _terminals;
     private readonly AgentStateFeed _agents;
+    private readonly AttentionNotifier _notifier;
     private SettingsModel _settings;
     private ShellPathsModel _shellPaths = ShellPathsModel.Empty;
     private PersistenceSettingsModel _persistence = PersistenceSettingsModel.Default;
@@ -47,6 +49,8 @@ public sealed class HostBridge : IDisposable
         _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextChars);
         _terminals = new TerminalManager();
         _agents = new AgentStateFeed(dispatcher, dataDirectory, _terminals, PostNow);
+        _notifier = new AttentionNotifier(dispatcher, windowHandle, paneId => PostNow(new { type = "agent.join", pane = paneId }));
+        _notifier.Register();
         ApplySettings(_settings);
         _terminals.OutputReceived += HandleOutput;
         _terminals.CurrentDirectoryChanged += HandleCurrentDirectoryChanged;
@@ -87,6 +91,8 @@ public sealed class HostBridge : IDisposable
             Post(new { type = "error", pane = command.Pane, message = exception.Message });
         }
     }
+
+    public void SetWindowActive(bool active) => _notifier.WindowActive = active;
 
     public bool RequestClose()
     {
@@ -136,6 +142,13 @@ public sealed class HostBridge : IDisposable
             case "settings.save":
                 SaveSettings(command);
                 break;
+            case "attention.raise":
+                Notify(RequirePane(command), command.Title ?? "Dock", command.Body ?? string.Empty, _settings.Notifications, false);
+                break;
+            case "attention.test":
+                var notifications = command.Notifications?.Deserialize<NotificationSettingsModel>(JsonOptions) ?? _settings.Notifications;
+                Notify(RequirePane(command), "Dock : test de notification", "Voici l’apparence d’une demande d’attention.", notifications.Normalized(), true);
+                break;
             case "agents.installHooks":
                 _agents.Hooks.Install();
                 PostSettings(false);
@@ -151,7 +164,7 @@ public sealed class HostBridge : IDisposable
                 _ = ImportPreferencesAsync();
                 break;
             case "dialog.pick":
-                _ = PickPathAsync(command.Field ?? throw new InvalidOperationException("Champ manquant."), command.Target == "folder");
+                _ = PickPathAsync(command.Field ?? throw new InvalidOperationException("Champ manquant."), command.Target);
                 break;
             case "terminal.create":
                 CreateTerminal(command);
@@ -198,6 +211,18 @@ public sealed class HostBridge : IDisposable
         }
     }
 
+    private void Notify(string paneId, string title, string body, NotificationSettingsModel settings, bool force)
+    {
+        try
+        {
+            _notifier.Notify(paneId, title, body, settings, force);
+        }
+        catch (Exception exception)
+        {
+            Post(new { type = "error", message = exception.Message });
+        }
+    }
+
     private void ApplySettings(SettingsModel settings)
     {
         _settings = settings;
@@ -220,6 +245,7 @@ public sealed class HostBridge : IDisposable
             shells = ShellCatalog.Profiles(_shellPaths),
             persistence = _persistence,
             agents = _agents.Describe(),
+            notifications = _notifier.Describe(),
             saved
         });
     }
@@ -407,11 +433,11 @@ public sealed class HostBridge : IDisposable
         }
     }
 
-    private async Task PickPathAsync(string field, bool folder)
+    private async Task PickPathAsync(string field, string? target)
     {
         try
         {
-            var path = await PathPicker.PickAsync(_windowHandle, folder);
+            var path = await PathPicker.PickAsync(_windowHandle, target);
             if (path is not null)
             {
                 PostNow(new { type = "dialog.picked", field, path });
@@ -451,6 +477,7 @@ public sealed class HostBridge : IDisposable
     public void Dispose()
     {
         _agents.Dispose();
+        _notifier.Dispose();
         foreach (var buffer in _buffers.Values)
         {
             buffer.Release();

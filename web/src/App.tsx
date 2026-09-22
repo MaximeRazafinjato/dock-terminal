@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { startAttentionNotifier } from './agents/attentionNotifier'
 import { bridge } from './bridge/bridge'
 import { AppShell } from './components/AppShell'
 import { allPanes } from './model/session'
@@ -23,6 +24,7 @@ export default function App() {
     const { load, setPanePath } = useSessionStore.getState()
     const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath, setImportedPreferences } = useHostStore.getState()
     let stopAutosave: (() => void) | undefined
+    const stopNotifier = startAttentionNotifier()
     const { markFailed, markExited, markPathMissing, clear } = usePaneStore.getState()
     const subscriptions = [
       bridge.on('app.hello', (message) => {
@@ -41,7 +43,7 @@ export default function App() {
         })
       }),
       bridge.on('settings.result', (message) => {
-        applySettings({ settings: message.settings, shellSettings: message.shellSettings, files: message.files, warnings: message.warnings, agents: message.agents }, message.shells, message.persistence)
+        applySettings({ settings: message.settings, shellSettings: message.shellSettings, files: message.files, warnings: message.warnings, agents: message.agents, notifications: message.notifications }, message.shells, message.persistence)
         if (!message.saved) {
           return
         }
@@ -61,6 +63,11 @@ export default function App() {
       bridge.on('app.closing', (message) => receiveApplicationClosing(message.activity)),
       bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
       bridge.on('agent.states', (message) => useAgentStore.getState().setAgents(message.panes)),
+      bridge.on('agent.join', (message) => {
+        useAgentStore.getState().acknowledge(message.pane)
+        useSessionStore.getState().selectPane(message.pane)
+        terminalRegistry.get(message.pane)?.terminal.focus()
+      }),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
         setUnsaved(true)
@@ -91,6 +98,7 @@ export default function App() {
       setStatus('Cette page doit être ouverte dans l’hôte Dock : aucun pont détecté.', StatusLevel.Error)
     }
     return () => {
+      stopNotifier()
       stopAutosave?.()
       subscriptions.forEach((unsubscribe) => unsubscribe())
     }

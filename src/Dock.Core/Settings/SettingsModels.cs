@@ -1,3 +1,4 @@
+using Dock.Core.Agents;
 using Dock.Core.Context;
 using Dock.Core.Projects;
 using Dock.Core.Session;
@@ -10,6 +11,7 @@ public sealed class SettingsModel
     public string Editor { get; set; } = EditorSettingsModel.DefaultCommand;
     public PersistenceSettingsModel Persistence { get; set; } = PersistenceSettingsModel.Default;
     public string ProjectsRoot { get; set; } = ProjectCatalog.DefaultRoot;
+    public NotificationSettingsModel Notifications { get; set; } = NotificationSettingsModel.Default;
 }
 
 public sealed record ShellSettingModel(string Id, string Name, string DefaultExecutable, string Configured, bool Available);

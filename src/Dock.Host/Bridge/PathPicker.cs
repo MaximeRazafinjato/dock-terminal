@@ -5,9 +5,18 @@ namespace Dock.Host.Bridge;
 
 public static class PathPicker
 {
-    public static async Task<string?> PickAsync(nint windowHandle, bool folder)
+    public static async Task<string?> PickAsync(nint windowHandle, string? target)
     {
-        if (folder)
+        if (target == "sound")
+        {
+            var soundPicker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.MusicLibrary };
+            soundPicker.FileTypeFilter.Add(".wav");
+            InitializeWithWindow.Initialize(soundPicker, windowHandle);
+            var sound = await soundPicker.PickSingleFileAsync();
+            return sound?.Path;
+        }
+
+        if (target == "folder")
         {
             var folderPicker = new FolderPicker { SuggestedStartLocation = PickerLocationId.ComputerFolder };
             folderPicker.FileTypeFilter.Add("*");
