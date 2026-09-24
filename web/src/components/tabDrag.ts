@@ -3,6 +3,7 @@ import { useUiStore, type TabDropTarget } from '../store/uiStore'
 
 const DRAG_THRESHOLD_PX = 4
 const PRIMARY_BUTTON = 0
+const SPRING_DELAY_MS = 600
 
 export type MoveTabHandler = (tabId: string, workspaceId: string, beforeTabId?: string) => void
 
@@ -13,6 +14,9 @@ const dropTargetAt = (x: number, y: number): TabDropTarget | null => {
   }
   return { workspaceId: element.dataset.dropWorkspace, beforeTabId: element.dataset.dropTab }
 }
+
+const springWorkspaceAt = (x: number, y: number): string | undefined =>
+  document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-spring-workspace]')?.dataset.springWorkspace
 
 export const isDropTarget = (target: TabDropTarget | null, workspaceId: string, beforeTabId?: string): boolean =>
   target !== null && target.workspaceId === workspaceId && target.beforeTabId === beforeTabId
@@ -27,7 +31,20 @@ export const beginTabDrag = (event: ReactPointerEvent<HTMLElement>, tabId: strin
   const source = event.currentTarget
   const { pointerId, clientX: startX, clientY: startY } = event
   let dragging = false
+  let springCandidate: string | undefined
+  let springTimer: ReturnType<typeof setTimeout> | undefined
 
+  const followSpringCandidate = (x: number, y: number) => {
+    const candidate = springWorkspaceAt(x, y)
+    if (candidate === springCandidate) {
+      return
+    }
+    springCandidate = candidate
+    clearTimeout(springTimer)
+    if (candidate) {
+      springTimer = setTimeout(() => useUiStore.getState().openSpringWorkspace(candidate), SPRING_DELAY_MS)
+    }
+  }
   const handleMove = (move: PointerEvent) => {
     if (!dragging) {
       if (Math.abs(move.clientX - startX) < DRAG_THRESHOLD_PX && Math.abs(move.clientY - startY) < DRAG_THRESHOLD_PX) {
@@ -43,11 +60,13 @@ export const beginTabDrag = (event: ReactPointerEvent<HTMLElement>, tabId: strin
     if (!sameDropTarget(tabDropTarget, target)) {
       setTabDropTarget(target)
     }
+    followSpringCandidate(move.clientX, move.clientY)
   }
   const handleEnd = () => {
     source.removeEventListener('pointermove', handleMove)
     source.removeEventListener('pointerup', handleEnd)
     source.removeEventListener('pointercancel', handleEnd)
+    clearTimeout(springTimer)
     if (!dragging) {
       return
     }

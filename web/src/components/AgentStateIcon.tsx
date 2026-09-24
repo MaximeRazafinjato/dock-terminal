@@ -20,7 +20,7 @@ const ICON_PROPS = { viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor',
 const renderShape = (state: AgentState) => {
   switch (state) {
     case AgentState.Working:
-      return <path className="origin-center animate-spin" d="M6 1.5a4.5 4.5 0 1 1-4.2 2.9" />
+      return <path className="origin-center animate-[spin_1.6s_linear_infinite] motion-reduce:animate-none" d="M6 1.5a4.5 4.5 0 1 1-4.2 2.9" />
     case AgentState.Waiting:
       return (
         <>

@@ -5,6 +5,7 @@ import { PickTarget, type NotificationSettings, type Project, type Settings } fr
 import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
 import { waitingPanes } from '../agents/agentSummary'
+import { Command, runCommand } from '../keyboard/shortcuts'
 import { agentKey, useAgentStore } from '../store/agentStore'
 import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
@@ -25,6 +26,7 @@ import { SplitView } from './SplitView'
 import { StatusBar } from './StatusBar'
 import { TabBar } from './TabBar'
 import { Tooltip } from './Tooltip'
+import type { WorkspacePanelActions } from './workspacePanel'
 import { WorkspaceTree } from './WorkspaceTree'
 
 interface AppShellProps {
@@ -51,9 +53,9 @@ const finishRename = (): void => {
 }
 
 const handleCommitRename = (name: string): void => {
-  const workspace = currentWorkspace()
-  if (workspace) {
-    useSessionStore.getState().renameWorkspace(workspace.id, name)
+  const { renamingWorkspaceId } = useUiStore.getState()
+  if (renamingWorkspaceId) {
+    useSessionStore.getState().renameWorkspace(renamingWorkspaceId, name)
   }
   finishRename()
 }
@@ -90,12 +92,49 @@ const handleSplit = (paneId: string, axis: SplitAxis): void => {
   splitPane(axis)
 }
 
+const handleJoinPane = (paneId: string): void => {
+  useAgentStore.getState().acknowledge(paneId)
+  useSessionStore.getState().selectPane(paneId)
+  focusPane(paneId)
+}
+
+const handleNewWorkspace = (): void => {
+  const { session, newWorkspace } = useSessionStore.getState()
+  const workspaceId = newWorkspace(`Workspace ${(session?.workspaces.length ?? 0) + 1}`, useHostStore.getState().home, DEFAULT_SHELL)
+  useUiStore.getState().startRenamingWorkspace(workspaceId, RenameOrigin.Panel)
+}
+
+const handleNewTabIn = (workspaceId: string): void => {
+  const { selectWorkspace, newTab } = useSessionStore.getState()
+  selectWorkspace(workspaceId)
+  newTab(DEFAULT_SHELL)
+}
+
+const panelActions: WorkspacePanelActions = {
+  selectWorkspace: (workspaceId) => useSessionStore.getState().selectWorkspace(workspaceId),
+  toggleWorkspace: (workspaceId) => useSessionStore.getState().toggleWorkspace(workspaceId),
+  startRenameWorkspace: handleStartRenameFromPanel,
+  commitRenameWorkspace: handleCommitRename,
+  cancelRenameWorkspace: finishRename,
+  closeWorkspace: closeWorkspaceKeepingText,
+  newTabIn: handleNewTabIn,
+  collapseOthers: (workspaceId) => useSessionStore.getState().collapseOtherWorkspaces(workspaceId),
+  selectTab: handleSelectTab,
+  startRenameTab: (tabId) => useUiStore.getState().startRenamingTab(tabId, RenameOrigin.Panel),
+  commitRenameTab: handleCommitTabRename,
+  cancelRenameTab: finishTabRename,
+  closeTab: closeTabKeepingText,
+  moveTab: (tabId, workspaceId, beforeTabId) => useSessionStore.getState().moveTab(tabId, workspaceId, beforeTabId),
+  joinPane: handleJoinPane,
+  newWorkspace: handleNewWorkspace,
+  openProjects: () => runCommand(Command.Projects),
+}
+
 export function AppShell({ session }: AppShellProps) {
-  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, newTab, moveTab, setSplitRatio, toggleFavorite } = useSessionStore.getState()
-  const { leaderActive, home, shells, projects, projectsRoot, projectsError, settingsSnapshot, pickedPath, importedPreferences } = useHostStore(
+  const { selectTab, selectPane, toggleSidebar, setSidebarWidth, newWorkspace, newTab, moveTab, setSplitRatio, toggleFavorite } = useSessionStore.getState()
+  const { leaderActive, shells, projects, projectsRoot, projectsError, settingsSnapshot, pickedPath, importedPreferences } = useHostStore(
     useShallow((state) => ({
       leaderActive: state.leaderActive,
-      home: state.home,
       shells: state.shells,
       projects: state.projects,
       projectsRoot: state.projectsRoot,
@@ -105,11 +144,12 @@ export function AppShell({ session }: AppShellProps) {
       importedPreferences: state.importedPreferences,
     })),
   )
-  const { renamingWorkspaceId, renameOrigin, renamingTabId, paletteOpen, projectPickerOpen, settingsOpen, closeConfirmation } = useUiStore(
+  const { renamingWorkspaceId, renameOrigin, renamingTabId, tabRenameOrigin, paletteOpen, projectPickerOpen, settingsOpen, closeConfirmation } = useUiStore(
     useShallow((state) => ({
       renamingWorkspaceId: state.renamingWorkspaceId,
       renameOrigin: state.renameOrigin,
       renamingTabId: state.renamingTabId,
+      tabRenameOrigin: state.tabRenameOrigin,
       paletteOpen: state.paletteOpen,
       projectPickerOpen: state.projectPickerOpen,
       settingsOpen: state.settingsOpen,
@@ -171,11 +211,6 @@ export function AppShell({ session }: AppShellProps) {
     closeProjectPicker()
     newWorkspace(project.name, project.path, DEFAULT_SHELL)
   }
-  const handleJoinPane = (paneId: string) => {
-    useAgentStore.getState().acknowledge(paneId)
-    selectPane(paneId)
-    focusPane(paneId)
-  }
   const handleDismissAttention = (paneId: string) => useAgentStore.getState().acknowledge(paneId)
   const handleToggleSidebar = () => {
     if (!session.sidebarCollapsed && document.activeElement?.closest('aside')) {
@@ -183,7 +218,6 @@ export function AppShell({ session }: AppShellProps) {
     }
     toggleSidebar()
   }
-  const handleNewWorkspace = () => startRenamingWorkspace(newWorkspace(`Workspace ${session.workspaces.length + 1}`, home, DEFAULT_SHELL), RenameOrigin.Panel)
   const handleStartRename = () => {
     if (workspace) {
       startRenamingWorkspace(workspace.id, RenameOrigin.Header)
@@ -198,7 +232,7 @@ export function AppShell({ session }: AppShellProps) {
         <TabBar
           workspace={current}
           shells={availableShells}
-          renamingTabId={renamingTabId}
+          renamingTabId={tabRenameOrigin === RenameOrigin.TabBar ? renamingTabId : null}
           onSelect={selectTab}
           onStartRename={startRenamingTab}
           onCommitRename={handleCommitTabRename}
@@ -233,16 +267,8 @@ export function AppShell({ session }: AppShellProps) {
             <WorkspaceTree
               session={session}
               renamingWorkspaceId={renameOrigin === RenameOrigin.Panel ? renamingWorkspaceId : null}
-              onSelectWorkspace={selectWorkspace}
-              onStartRename={handleStartRenameFromPanel}
-              onCommitRename={handleCommitRename}
-              onCancelRename={finishRename}
-              onSelectTab={handleSelectTab}
-              onToggle={toggleWorkspace}
-              onNewWorkspace={handleNewWorkspace}
-              onMoveTab={moveTab}
-              onCloseTab={closeTabKeepingText}
-              onCloseWorkspace={closeWorkspaceKeepingText}
+              renamingTabId={tabRenameOrigin === RenameOrigin.Panel ? renamingTabId : null}
+              actions={panelActions}
             />
             <SidebarResizer width={session.sidebar} onResize={setSidebarWidth} />
           </>

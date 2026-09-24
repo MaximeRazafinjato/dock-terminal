@@ -67,7 +67,38 @@ export const workspaceStateCounts = (workspace: Workspace, agents: AgentMap): St
     agents,
   )
 
-export const stateCountLabel = (state: AgentState, count: number): string => (count === 1 ? STATE_LABELS[state] : `${count} × ${STATE_LABELS[state]}`)
+export interface StateAlert {
+  state: AgentState
+  count: number
+}
+
+export interface WorkspaceSummary {
+  alerts: StateAlert[]
+  activity: AgentState | undefined
+}
+
+const ALERT_STATES: AgentState[] = [AgentState.Waiting, AgentState.Error]
+
+const ACTIVITY_STATES: AgentState[] = [AgentState.Working, AgentState.Done]
+
+export const workspaceSummary = (counts: StateCounts): WorkspaceSummary => ({
+  alerts: ALERT_STATES.filter((state) => (counts[state] ?? 0) > 0).map((state) => ({ state, count: counts[state] ?? 0 })),
+  activity: ACTIVITY_STATES.find((state) => (counts[state] ?? 0) > 0),
+})
+
+export const stateBreakdown = (counts: StateCounts): string =>
+  STATE_PRIORITY.filter((state) => (counts[state] ?? 0) > 0)
+    .map((state) => `${STATE_LABELS[state]} : ${counts[state]}`)
+    .join(' · ')
+
+export const nextPaneInState = (tabs: Tab[], agents: AgentMap, state: AgentState, currentPaneId?: string): string | undefined => {
+  const candidates = tabs
+    .flatMap((tab) => panesOf(tab.tree))
+    .filter((pane) => agents[pane.id]?.state === state)
+    .map((pane) => pane.id)
+  const index = currentPaneId === undefined ? -1 : candidates.indexOf(currentPaneId)
+  return candidates[(index + 1) % candidates.length]
+}
 
 export const workspaceWaitingCount = (workspace: Workspace, agents: AgentMap): number =>
   workspace.tabs.reduce((count, tab) => count + tabWaitingCount(tab, agents), 0)
