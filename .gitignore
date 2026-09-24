@@ -36,3 +36,5 @@ tests/**/obj/
 web/node_modules/
 web/dist/
 publish/
+installer/output/
+installer/MicrosoftEdgeWebview2Setup.exe
