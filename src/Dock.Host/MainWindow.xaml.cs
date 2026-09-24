@@ -27,6 +27,7 @@ public sealed partial class MainWindow : Window
             presenter.Maximize();
         }
 
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Dock.ico"));
         ApplyDarkTitleBar();
         _bridge = new HostBridge(DispatcherQueue, App.DataDirectory, WinRT.Interop.WindowNative.GetWindowHandle(this), ForceClose);
         Closed += HandleClosed;
