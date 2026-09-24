@@ -11,6 +11,7 @@ public sealed class BridgeCommandModel
     public string? Cwd { get; init; }
     public string? Path { get; init; }
     public string? Target { get; init; }
+    public string? Url { get; init; }
     public string? Field { get; init; }
     public string? Title { get; init; }
     public string? Body { get; init; }

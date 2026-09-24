@@ -162,6 +162,7 @@ export type WebToHostMessage =
   | { type: 'projects.list' }
   | { type: 'context.query'; pane: string; path: string }
   | { type: 'context.open'; pane: string; path: string; target: OpenTarget }
+  | { type: 'link.open'; url: string }
   | { type: 'window.close' }
   | { type: 'window.closeCancel' }
 
