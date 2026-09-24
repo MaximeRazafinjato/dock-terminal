@@ -70,6 +70,13 @@ const mutateWorkspace = (session: Session | null, mutate: (workspace: Workspace,
 const mutateTab = (session: Session | null, mutate: (tab: Tab, workspace: Workspace, draft: Session) => void): Session | null =>
   mutateWorkspace(session, (workspace, draft) => mutate(activeTab(workspace), workspace, draft))
 
+const tabNameFor = (tab: Tab, paneId: string, path: string): string => (!tab.manual && tab.active === paneId ? folderName(path) || tab.name : tab.name)
+
+const pathChanges = (session: Session | null, paneId: string, path: string): boolean =>
+  (session?.workspaces ?? []).some((workspace) =>
+    workspace.tabs.some((tab) => panesOf(tab.tree).some((pane) => pane.id === paneId && (pane.path !== path || tabNameFor(tab, paneId, path) !== tab.name))),
+  )
+
 export const useSessionStore = create<SessionState>()((set, get) => ({
   session: null,
 
@@ -303,16 +310,18 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     })),
 
   setPanePath: (paneId, path) =>
-    set((state) => ({
-      session: mutateSession(state.session, (draft) => {
-        for (const workspace of draft.workspaces) {
-          for (const tab of workspace.tabs) {
-            tab.tree = updatePane(tab.tree, paneId, { path })
-            if (!tab.manual && tab.active === paneId) {
-              tab.name = folderName(path) || tab.name
-            }
+    set((state) =>
+      pathChanges(state.session, paneId, path)
+        ? {
+            session: mutateSession(state.session, (draft) => {
+              for (const workspace of draft.workspaces) {
+                for (const tab of workspace.tabs) {
+                  tab.tree = updatePane(tab.tree, paneId, { path })
+                  tab.name = tabNameFor(tab, paneId, path)
+                }
+              }
+            }),
           }
-        }
-      }),
-    })),
+        : state,
+    ),
 }))

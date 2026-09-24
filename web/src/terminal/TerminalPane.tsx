@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { Pane } from '../model/session'
 import { handleTerminalKey } from '../keyboard/shortcuts'
 import { useUiStore } from '../store/uiStore'
@@ -12,13 +12,18 @@ interface TerminalPaneProps {
 
 export function TerminalPane({ pane, active, onFocus }: TerminalPaneProps) {
   const hostRef = useRef<HTMLDivElement>(null)
+  const paneRef = useRef(pane)
+
+  useLayoutEffect(() => {
+    paneRef.current = pane
+  }, [pane])
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) {
       return
     }
-    const handle = terminalRegistry.attach(pane, host)
+    const handle = terminalRegistry.attach(paneRef.current, host)
     handle.keyHandler = (event) =>
       handleTerminalKey(event, {
         hasSelection: () => handle.terminal.hasSelection(),
@@ -35,7 +40,7 @@ export function TerminalPane({ pane, active, onFocus }: TerminalPaneProps) {
     const observer = new ResizeObserver(() => handle.fit.fit())
     observer.observe(host)
     return () => observer.disconnect()
-  }, [pane])
+  }, [pane.id])
 
   useEffect(() => {
     const { renamingWorkspaceId, renamingTabId, paletteOpen, projectPickerOpen, settingsOpen, closeConfirmation } = useUiStore.getState()
