@@ -17,6 +17,9 @@ const dropTargetAt = (x: number, y: number): TabDropTarget | null => {
 export const isDropTarget = (target: TabDropTarget | null, workspaceId: string, beforeTabId?: string): boolean =>
   target !== null && target.workspaceId === workspaceId && target.beforeTabId === beforeTabId
 
+const sameDropTarget = (left: TabDropTarget | null, right: TabDropTarget | null): boolean =>
+  left === right || (left !== null && right !== null && isDropTarget(left, right.workspaceId, right.beforeTabId))
+
 export const beginTabDrag = (event: ReactPointerEvent<HTMLElement>, tabId: string, onMove: MoveTabHandler): void => {
   if (event.button !== PRIMARY_BUTTON) {
     return
@@ -35,7 +38,11 @@ export const beginTabDrag = (event: ReactPointerEvent<HTMLElement>, tabId: strin
       document.body.style.cursor = 'grabbing'
       useUiStore.getState().startDraggingTab(tabId)
     }
-    useUiStore.getState().setTabDropTarget(dropTargetAt(move.clientX, move.clientY))
+    const target = dropTargetAt(move.clientX, move.clientY)
+    const { tabDropTarget, setTabDropTarget } = useUiStore.getState()
+    if (!sameDropTarget(tabDropTarget, target)) {
+      setTabDropTarget(target)
+    }
   }
   const handleEnd = () => {
     source.removeEventListener('pointermove', handleMove)

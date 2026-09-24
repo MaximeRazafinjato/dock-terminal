@@ -29,6 +29,9 @@ importers:
       '@xterm/xterm':
         specifier: 5.5.0
         version: 5.5.0
+      immer:
+        specifier: ^11.1.18
+        version: 11.1.18
       react:
         specifier: ^19.2.8
         version: 19.3.0
@@ -37,7 +40,7 @@ importers:
         version: 19.3.0(react@19.3.0)
       zustand:
         specifier: ^5.0.15
-        version: 5.0.15(@types/react@19.3.0)(react@19.3.0)
+        version: 5.0.15(@types/react@19.3.0)(immer@11.1.18)(react@19.3.0)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.3
@@ -493,6 +496,9 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  immer@11.1.18:
+    resolution: {integrity: sha512-EQyQtLiYW029lyoczMl/Hh4Xu7cDecSc58JRYpHyL4tIAu3eqd1yJzQX04d2BZHDkzFFvm6qJEJWOtfDSWAXbQ==}
 
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
@@ -1044,6 +1050,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  immer@11.1.18: {}
+
   jiti@2.7.0: {}
 
   js-base64@3.9.4: {}
@@ -1243,7 +1251,8 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
 
-  zustand@5.0.15(@types/react@19.3.0)(react@19.3.0):
+  zustand@5.0.15(@types/react@19.3.0)(immer@11.1.18)(react@19.3.0):
     optionalDependencies:
       '@types/react': 19.3.0
+      immer: 11.1.18
       react: 19.3.0

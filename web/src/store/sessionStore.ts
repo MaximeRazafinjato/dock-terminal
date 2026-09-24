@@ -1,3 +1,4 @@
+import { produce } from 'immer'
 import { create } from 'zustand'
 import {
   activePane,
@@ -50,14 +51,7 @@ interface SessionState {
   toggleFavorite: (commandId: string) => void
 }
 
-const mutateSession = (session: Session | null, mutate: (draft: Session) => void): Session | null => {
-  if (!session) {
-    return session
-  }
-  const draft = structuredClone(session)
-  mutate(draft)
-  return draft
-}
+const mutateSession = (session: Session | null, mutate: (draft: Session) => void): Session | null => (session ? produce(session, mutate) : session)
 
 const mutateWorkspace = (session: Session | null, mutate: (workspace: Workspace, draft: Session) => void): Session | null =>
   mutateSession(session, (draft) => {

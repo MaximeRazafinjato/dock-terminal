@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { bridge } from '../bridge/bridge'
 import { PickTarget, type NotificationSettings, type Project, type Settings } from '../bridge/messages'
 import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
 import { waitingPanes } from '../agents/agentSummary'
 import { agentKey, useAgentStore } from '../store/agentStore'
-import { useHostStore, StatusLevel } from '../store/hostStore'
+import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { cancelClose, confirmClose } from '../terminal/closeGuard'
@@ -21,15 +22,10 @@ import { ProjectPicker } from './ProjectPicker'
 import { SettingsDialog } from './SettingsDialog'
 import { SidebarResizer } from './SidebarResizer'
 import { SplitView } from './SplitView'
+import { StatusBar } from './StatusBar'
 import { TabBar } from './TabBar'
 import { Tooltip } from './Tooltip'
 import { WorkspaceTree } from './WorkspaceTree'
-
-const STATUS_CLASSES: Record<StatusLevel, string> = {
-  [StatusLevel.Info]: 'text-dock-muted',
-  [StatusLevel.Warning]: 'text-dock-warning',
-  [StatusLevel.Error]: 'text-dock-error',
-}
 
 interface AppShellProps {
   session: Session
@@ -37,22 +33,96 @@ interface AppShellProps {
 
 const focusPane = (paneId: string) => terminalRegistry.get(paneId)?.terminal.focus()
 
+const currentWorkspace = (): Workspace | undefined => {
+  const { session } = useSessionStore.getState()
+  return session ? activeWorkspace(session) : undefined
+}
+
+const focusActivePane = (): void => {
+  const workspace = currentWorkspace()
+  if (workspace) {
+    focusPane(activeTab(workspace).active)
+  }
+}
+
+const finishRename = (): void => {
+  useUiStore.getState().stopRenamingWorkspace()
+  focusActivePane()
+}
+
+const handleCommitRename = (name: string): void => {
+  const workspace = currentWorkspace()
+  if (workspace) {
+    useSessionStore.getState().renameWorkspace(workspace.id, name)
+  }
+  finishRename()
+}
+
+const handleStartRenameFromPanel = (workspaceId: string): void => useUiStore.getState().startRenamingWorkspace(workspaceId, RenameOrigin.Panel)
+
+const finishTabRename = (): void => {
+  useUiStore.getState().stopRenamingTab()
+  focusActivePane()
+}
+
+const handleCommitTabRename = (name: string): void => {
+  const { renamingTabId } = useUiStore.getState()
+  if (renamingTabId) {
+    useSessionStore.getState().renameTab(renamingTabId, name)
+  }
+  finishTabRename()
+}
+
+const handleSelectTab = (workspaceId: string, tabId: string): void => {
+  const { selectWorkspace, selectTab } = useSessionStore.getState()
+  selectWorkspace(workspaceId)
+  selectTab(tabId)
+  const { session } = useSessionStore.getState()
+  const target = session ? findWorkspace(session, workspaceId)?.tabs.find((candidate) => candidate.id === tabId) : undefined
+  if (target) {
+    focusPane(target.active)
+  }
+}
+
+const handleSplit = (paneId: string, axis: SplitAxis): void => {
+  const { selectPane, splitPane } = useSessionStore.getState()
+  selectPane(paneId)
+  splitPane(axis)
+}
+
 export function AppShell({ session }: AppShellProps) {
-  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, renameWorkspace, newTab, renameTab, moveTab, splitPane, setSplitRatio, toggleFavorite } = useSessionStore()
-  const { status, leaderActive, home, shells, projects, projectsRoot, projectsError, unsaved, settingsSnapshot, pickedPath, importedPreferences } = useHostStore()
-  const { renamingWorkspaceId, renameOrigin, startRenamingWorkspace, stopRenamingWorkspace, renamingTabId, startRenamingTab, stopRenamingTab, paletteOpen, openPalette, closePalette, projectPickerOpen, closeProjectPicker, settingsOpen, openSettings, closeSettings, closeConfirmation } = useUiStore()
+  const { selectWorkspace, selectTab, selectPane, toggleWorkspace, toggleSidebar, setSidebarWidth, newWorkspace, newTab, moveTab, setSplitRatio, toggleFavorite } = useSessionStore.getState()
+  const { leaderActive, home, shells, projects, projectsRoot, projectsError, settingsSnapshot, pickedPath, importedPreferences } = useHostStore(
+    useShallow((state) => ({
+      leaderActive: state.leaderActive,
+      home: state.home,
+      shells: state.shells,
+      projects: state.projects,
+      projectsRoot: state.projectsRoot,
+      projectsError: state.projectsError,
+      settingsSnapshot: state.settingsSnapshot,
+      pickedPath: state.pickedPath,
+      importedPreferences: state.importedPreferences,
+    })),
+  )
+  const { renamingWorkspaceId, renameOrigin, renamingTabId, paletteOpen, projectPickerOpen, settingsOpen, closeConfirmation } = useUiStore(
+    useShallow((state) => ({
+      renamingWorkspaceId: state.renamingWorkspaceId,
+      renameOrigin: state.renameOrigin,
+      renamingTabId: state.renamingTabId,
+      paletteOpen: state.paletteOpen,
+      projectPickerOpen: state.projectPickerOpen,
+      settingsOpen: state.settingsOpen,
+      closeConfirmation: state.closeConfirmation,
+    })),
+  )
+  const { startRenamingWorkspace, startRenamingTab, openPalette, closePalette, closeProjectPicker, openSettings, closeSettings } = useUiStore.getState()
   const agents = useAgentStore((state) => state.agents)
   const acknowledged = useAgentStore((state) => state.acknowledged)
   const waiting = waitingPanes(session, agents).filter((pane) => acknowledged[pane.paneId] !== agentKey(agents[pane.paneId]))
   const workspace = activeWorkspace(session)
   const tab = workspace ? activeTab(workspace) : undefined
-  const availableShells = shells.filter((shell) => shell.available)
-
-  const focusActivePane = () => {
-    if (tab) {
-      focusPane(tab.active)
-    }
-  }
+  const availableShells = useMemo(() => shells.filter((shell) => shell.available), [shells])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -107,14 +177,6 @@ export function AppShell({ session }: AppShellProps) {
     focusPane(paneId)
   }
   const handleDismissAttention = (paneId: string) => useAgentStore.getState().acknowledge(paneId)
-  const handleSelectTab = (workspaceId: string, tabId: string) => {
-    selectWorkspace(workspaceId)
-    selectTab(tabId)
-    const target = findWorkspace(session, workspaceId)?.tabs.find((candidate) => candidate.id === tabId)
-    if (target) {
-      focusPane(target.active)
-    }
-  }
   const handleToggleSidebar = () => {
     if (!session.sidebarCollapsed && document.activeElement?.closest('aside')) {
       focusActivePane()
@@ -126,31 +188,6 @@ export function AppShell({ session }: AppShellProps) {
     if (workspace) {
       startRenamingWorkspace(workspace.id, RenameOrigin.Header)
     }
-  }
-  const handleStartRenameFromPanel = (workspaceId: string) => startRenamingWorkspace(workspaceId, RenameOrigin.Panel)
-  const finishRename = () => {
-    stopRenamingWorkspace()
-    focusActivePane()
-  }
-  const handleCommitRename = (name: string) => {
-    if (workspace) {
-      renameWorkspace(workspace.id, name)
-    }
-    finishRename()
-  }
-  const finishTabRename = () => {
-    stopRenamingTab()
-    focusActivePane()
-  }
-  const handleCommitTabRename = (name: string) => {
-    if (renamingTabId) {
-      renameTab(renamingTabId, name)
-    }
-    finishTabRename()
-  }
-  const handleSplit = (paneId: string, axis: SplitAxis) => {
-    selectPane(paneId)
-    splitPane(axis)
   }
 
   const renderMain = (current: Workspace) => {
@@ -220,14 +257,7 @@ export function AppShell({ session }: AppShellProps) {
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
       {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <Tooltip />
-      <footer className={`flex h-[24px] shrink-0 items-center border-t border-dock-line bg-dock-paper px-3 font-mono text-[11px] ${STATUS_CLASSES[status.level]}`}>
-        <span className="truncate">{status.text}</span>
-        {unsaved && (
-          <span className="ml-auto shrink-0 pl-3 text-dock-error" data-tip="La dernière sauvegarde a échoué : la session restera en l’état d’avant tant qu’une écriture ne réussit pas.">
-            Non enregistré
-          </span>
-        )}
-      </footer>
+      <StatusBar />
     </div>
   )
 }
