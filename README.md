@@ -10,6 +10,7 @@ Les spécifications et le prototype HTML sont disponibles. **Le POC simule les t
 dotnet build Dock.slnx
 dotnet test Dock.slnx
 dotnet run --project src/Dock.Host
+scripts/build-installer.cmd          # installeur Windows (Inno Setup 6 requis) dans installer/output/
 ```
 
 ## Documents
