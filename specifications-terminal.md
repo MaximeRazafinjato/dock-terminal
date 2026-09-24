@@ -162,6 +162,10 @@ Les splits imbriqués du POC servent de référence. L’action de fermeture d�
 
 **Décision prise.** Le profil contenant `wtr` et `rmwt` est `%USERPROFILE%\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1`. WezTerm utilise actuellement `powershell.exe -NoLogo`. PowerShell 7 est installé mais son profil utilisateur correspondant n’a pas été trouvé dans `Documents\\PowerShell`; il reste une alternative à configurer explicitement. Les chemins de CMD et Git Bash doivent rester configurables. Le dossier courant est obtenu par une intégration shell propre à Dock (variable d’environnement dédiée et séquence OSC émise par le prompt), décrite en section 15 ; aucune variable WezTerm n’est simulée.
 
+**Retenu.** Un lien affiché dans un terminal s’ouvre par Ctrl + clic ; le clic simple reste réservé à la sélection de texte et au placement du curseur, sans jamais ouvrir de lien.
+
+**Conventions proposées.** Reconnaître les URL présentes dans le texte ainsi que les hyperliens explicites émis par les programmes (séquence OSC 8). Ouvrir le lien dans le navigateur par défaut de Windows, jamais dans la fenêtre de Dock. N’ouvrir que les liens `http` et `https` ; un autre schéma est ignoré et signalé dans la barre de statut. Souligner le lien au survol pour montrer qu’il est actif.
+
 ## 9. Palette et clavier
 
 ### Palette de commandes
@@ -374,6 +378,7 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | R25 | Tester noms longs, espaces, accents, IME, mise à l’échelle Windows. | Interface lisible, saisie fiable, chemins correctement traités. |
 | R26 | Inspecter onglets, workspaces et palette. | Pas de bordures de sélection colorées ; fond et focus restent lisibles. |
 | R27 | Exécuter le spike T01 : deux panes xterm.js dans une WebView2 unique, PowerShell 5.1 réel, raccourcis, dossier courant, Job Object, flux soutenu, installeur sur machine vierge. | Aucune perte ni doublon de frappe, dossier courant exact, aucun processus survivant, débit mesuré, installation fonctionnelle ; sinon la pile est rejetée. |
+| R28 | Dans un terminal, Ctrl + clic sur une URL puis sur un hyperlien OSC 8, clic simple sur un lien, puis Ctrl + clic sur un lien `file:` ou d’un autre schéma. | Les liens `http` et `https` s’ouvrent dans le navigateur par défaut avec Ctrl + clic uniquement ; le clic simple sélectionne sans rien ouvrir ; un autre schéma n’est jamais ouvert et un message l’explique. |
 
 ## 18. État du POC et écarts à combler
 
