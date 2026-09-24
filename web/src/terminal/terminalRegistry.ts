@@ -5,6 +5,7 @@ import { CanvasAddon } from '@xterm/addon-canvas'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { ClipboardAddon } from '@xterm/addon-clipboard'
 import { SerializeAddon } from '@xterm/addon-serialize'
+import { WebLinksAddon } from '@xterm/addon-web-links'
 import { bridge } from '../bridge/bridge'
 import type { Pane } from '../model/session'
 
@@ -180,6 +181,12 @@ const snapshotOf = (handle: TerminalHandle): string => {
   return [...handle.chunks.map((chunk) => chunk.text), tail].join(CHUNK_SEPARATOR)
 }
 
+const openLinkOnCtrlClick = (event: MouseEvent, url: string): void => {
+  if (event.ctrlKey) {
+    bridge.send({ type: 'link.open', url })
+  }
+}
+
 const createHandle = (pane: Pane): TerminalHandle => {
   const terminal = new Terminal({
     allowProposedApi: true,
@@ -188,6 +195,7 @@ const createHandle = (pane: Pane): TerminalHandle => {
     fontSize: 14,
     scrollback: scrollbackLines,
     theme: { background: '#121416', foreground: '#cdd1cd', cursor: '#8fb39f', selectionBackground: '#7a9f8b40' },
+    linkHandler: { activate: openLinkOnCtrlClick, allowNonHttpProtocols: true },
   })
   const fit = new FitAddon()
   const serializer = new SerializeAddon()
@@ -195,6 +203,7 @@ const createHandle = (pane: Pane): TerminalHandle => {
   terminal.loadAddon(serializer)
   terminal.loadAddon(new Unicode11Addon())
   terminal.loadAddon(new ClipboardAddon())
+  terminal.loadAddon(new WebLinksAddon(openLinkOnCtrlClick))
   terminal.unicode.activeVersion = '11'
   const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, shownAt: 0, started: false, unackedChars: 0, dirty: true, chunks: [] }
   terminal.onData((data) => bridge.send({ type: 'terminal.input', pane: pane.id, data }))

@@ -215,6 +215,9 @@ public sealed class HostBridge : IDisposable
             case "context.open":
                 OpenFolder(RequirePath(command), command.Target);
                 break;
+            case "link.open":
+                LocalActions.OpenLink(command.Url ?? throw new InvalidOperationException("Lien manquant."));
+                break;
             case "window.close":
                 _closeWindow();
                 break;

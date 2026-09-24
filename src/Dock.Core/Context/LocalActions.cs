@@ -30,6 +30,24 @@ public static class LocalActions
         }
     }
 
+    public static void OpenLink(string url) =>
+        Process.Start(new ProcessStartInfo(RequireWebLink(url).AbsoluteUri) { UseShellExecute = true });
+
+    public static Uri RequireWebLink(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException($"Lien non ouvert, adresse invalide : {url}");
+        }
+
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        {
+            throw new InvalidOperationException($"Lien non ouvert : seuls les liens http et https sont autorisés ({uri.Scheme}:).");
+        }
+
+        return uri;
+    }
+
     private static void RequireDirectory(string path)
     {
         if (!Directory.Exists(path))
