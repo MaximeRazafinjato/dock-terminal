@@ -16,6 +16,7 @@ namespace Dock.Host.Bridge;
 public sealed class HostBridge : IDisposable
 {
     private const int MaxCharsPerMessage = 512 * 1024;
+    private const string TextSavePrefix = """{"type":"text.save",""";
     private static readonly TimeSpan WriteDrainTimeout = TimeSpan.FromSeconds(10);
     private static readonly JsonSerializerOptions JsonOptions = SessionRepository.JsonOptions;
 
@@ -65,8 +66,20 @@ public sealed class HostBridge : IDisposable
     public void Attach(CoreWebView2 core)
     {
         _core = core;
-        core.WebMessageReceived += (_, args) => Handle(args.WebMessageAsJson);
+        core.WebMessageReceived += (_, args) => Receive(args.WebMessageAsJson);
         _agents.Start();
+    }
+
+    private void Receive(string json)
+    {
+        if (json.StartsWith(TextSavePrefix, StringComparison.Ordinal))
+        {
+            _writes.Enqueue(() => Handle(json));
+        }
+        else
+        {
+            Handle(json);
+        }
     }
 
     private void Handle(string json)

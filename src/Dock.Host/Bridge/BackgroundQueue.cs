@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Dock.Host.Bridge;
 
 public sealed class BackgroundQueue
@@ -18,13 +20,29 @@ public sealed class BackgroundQueue
 
     public bool Drain(TimeSpan timeout)
     {
-        Task tail;
-        lock (_sync)
+        var clock = Stopwatch.StartNew();
+        while (true)
         {
-            tail = _tail;
-        }
+            Task tail;
+            lock (_sync)
+            {
+                tail = _tail;
+            }
 
-        return tail.Wait(timeout);
+            var remaining = timeout - clock.Elapsed;
+            if (remaining <= TimeSpan.Zero || !tail.Wait(remaining))
+            {
+                return false;
+            }
+
+            lock (_sync)
+            {
+                if (ReferenceEquals(tail, _tail))
+                {
+                    return true;
+                }
+            }
+        }
     }
 
     private void Run(Action work)
