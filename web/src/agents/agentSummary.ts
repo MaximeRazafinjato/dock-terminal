@@ -86,6 +86,20 @@ export const workspaceSummary = (counts: StateCounts): WorkspaceSummary => ({
   activity: ACTIVITY_STATES.find((state) => (counts[state] ?? 0) > 0),
 })
 
+export const alertStateCounts = (workspaces: Workspace[], agents: AgentMap): StateCounts => {
+  const counts = countStates(
+    workspaces.flatMap((workspace) => workspace.tabs.flatMap((tab) => panesOf(tab.tree))),
+    agents,
+  )
+  const alerts: StateCounts = {}
+  for (const state of ALERT_STATES) {
+    if (counts[state]) {
+      alerts[state] = counts[state]
+    }
+  }
+  return alerts
+}
+
 export const stateBreakdown = (counts: StateCounts): string =>
   STATE_PRIORITY.filter((state) => (counts[state] ?? 0) > 0)
     .map((state) => `${STATE_LABELS[state]} : ${counts[state]}`)

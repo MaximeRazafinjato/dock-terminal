@@ -3,6 +3,7 @@ import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
 export interface ActionMenuItem {
   id: string
   label: string
+  detail?: ReactNode
   disabled?: boolean
   run: () => void
 }
@@ -53,7 +54,7 @@ export function ActionMenu({ label, items, emptyMessage, header, align = 'left',
       ref={menuRef}
       role="menu"
       aria-label={label}
-      className={`absolute top-full z-20 mt-1 min-w-[190px] rounded-md border border-dock-line bg-dock-panel p-1 shadow-lg ${align === 'right' ? 'right-0' : 'left-0'}`}
+      className={`absolute top-full z-20 mt-1 w-max max-w-[360px] min-w-[190px] rounded-md border border-dock-line bg-dock-panel p-1 shadow-lg ${align === 'right' ? 'right-0' : 'left-0'}`}
       onKeyDown={handleKeyDown}
     >
       {header}
@@ -65,10 +66,11 @@ export function ActionMenu({ label, items, emptyMessage, header, align = 'left',
           role="menuitem"
           tabIndex={-1}
           disabled={item.disabled}
-          className="block w-full cursor-pointer rounded px-3 py-2 text-left text-xs text-dock-ink hover:bg-dock-green-hover focus:bg-dock-green-soft focus:text-dock-green-deep focus:outline-none disabled:cursor-default disabled:text-dock-muted disabled:opacity-60 disabled:hover:bg-transparent"
+          className="flex w-full cursor-pointer items-center gap-3 rounded px-3 py-2 text-left text-xs text-dock-ink hover:bg-dock-green-hover focus:bg-dock-green-soft focus:text-dock-green-deep focus:outline-none disabled:cursor-default disabled:text-dock-muted disabled:opacity-60 disabled:hover:bg-transparent"
           onClick={item.run}
         >
-          {item.label}
+          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+          {item.detail}
         </button>
       ))}
     </div>
