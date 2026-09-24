@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import { OpenTarget, type ShellProfile } from '../bridge/messages'
 import { SplitAxis, type Pane } from '../model/session'
 import { useAgentStore } from '../store/agentStore'
@@ -70,7 +70,7 @@ const CloseIcon = () => (
   </svg>
 )
 
-export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onRestartIn, onChangeShell, onDismissState }: PaneViewProps) {
+export const PaneView = memo(function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRestart, onRestartIn, onChangeShell, onDismissState }: PaneViewProps) {
   const paneState = usePaneStore((state) => state.states[pane.id])
   const context = useHostStore((state) => state.contexts[pane.id])
   const agent = useAgentStore((state) => state.agents[pane.id])
@@ -136,4 +136,4 @@ export function PaneView({ pane, active, onFocus, onClose, onSplit, shells, onRe
       </div>
     </section>
   )
-}
+})

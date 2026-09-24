@@ -50,7 +50,6 @@ export interface ClosedTab {
   workspaceName: string
   index: number
   tab: Tab
-  text: Record<string, string>
 }
 
 export interface Session {
@@ -103,7 +102,9 @@ export const replaceNode = (node: SplitNode, paneId: string, replacement: (leaf:
   if (isLeaf(node)) {
     return node.pane.id === paneId ? replacement(node) : node
   }
-  return { ...node, a: replaceNode(node.a, paneId, replacement), b: replaceNode(node.b, paneId, replacement) }
+  const a = replaceNode(node.a, paneId, replacement)
+  const b = replaceNode(node.b, paneId, replacement)
+  return a === node.a && b === node.b ? node : { ...node, a, b }
 }
 
 export const pruneNode = (node: SplitNode, paneId: string): SplitNode | null => {

@@ -47,5 +47,5 @@ export const usePaneStore = create<PaneStoreState>()((set) => ({
       }
       return { states: without(state.states, paneId) }
     }),
-  clear: (paneId) => set((state) => ({ states: without(state.states, paneId) })),
+  clear: (paneId) => set((state) => (state.states[paneId] ? { states: without(state.states, paneId) } : state)),
 }))

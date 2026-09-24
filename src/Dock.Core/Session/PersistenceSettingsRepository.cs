@@ -15,7 +15,7 @@ public sealed record PersistenceSettingsModel(int TextIntervalSeconds, int Lines
     public static readonly PersistenceSettingsModel Default = new(30, 10_000, 256);
 
     [JsonIgnore]
-    public long MaxTextChars => (long)MaxTextMebibytes * 1024 * 1024;
+    public long MaxTextBytes => (long)MaxTextMebibytes * 1024 * 1024;
 
     public PersistenceSettingsModel Clamped() => new(
         Math.Clamp(TextIntervalSeconds, MinTextIntervalSeconds, MaxTextIntervalSeconds),

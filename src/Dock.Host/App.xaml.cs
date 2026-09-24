@@ -6,8 +6,9 @@ namespace Dock.Host;
 public partial class App : Application
 {
     private const string RemoveClaudeHooksArgument = "--remove-claude-hooks";
+    private const string DataDirectoryVariable = "DOCK_DATA_DIR";
 
-    public static string DataDirectory { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Dock");
+    public static string DataDirectory { get; } = ResolveDataDirectory();
 
     private Window? _window;
 
@@ -28,6 +29,14 @@ public partial class App : Application
 
         _window = new MainWindow();
         _window.Activate();
+    }
+
+    private static string ResolveDataDirectory()
+    {
+        var overridden = Environment.GetEnvironmentVariable(DataDirectoryVariable);
+        return string.IsNullOrWhiteSpace(overridden)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Dock")
+            : Path.GetFullPath(overridden);
     }
 
     private static void RemoveClaudeHooks()

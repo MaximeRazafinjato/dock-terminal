@@ -143,7 +143,7 @@ export type HostToWebMessage =
 export type WebToHostMessage =
   | { type: 'app.ready' }
   | { type: 'session.save'; session: Session }
-  | { type: 'text.save'; text: Record<string, string> }
+  | { type: 'text.save'; text: Record<string, string>; keep: string[] }
   | { type: 'settings.get' }
   | { type: 'settings.save'; settings: Settings }
   | { type: 'settings.export' }

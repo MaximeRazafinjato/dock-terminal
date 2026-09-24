@@ -15,6 +15,7 @@ public sealed class BridgeCommandModel
     public string? Title { get; init; }
     public string? Body { get; init; }
     public string[]? Panes { get; init; }
+    public string[]? Keep { get; init; }
     public int Cols { get; init; }
     public int Rows { get; init; }
     public int Chars { get; init; }

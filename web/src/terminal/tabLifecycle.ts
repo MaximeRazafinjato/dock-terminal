@@ -3,6 +3,7 @@ import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { requestClose } from './closeGuard'
 import { terminalRegistry } from './terminalRegistry'
+import { keepClosedTabText, takeClosedTabText } from './textPersistence'
 
 const tabOf = (tabId: string) =>
   useSessionStore
@@ -17,7 +18,9 @@ const closeTabNow = (tabId: string): void => {
   if (!tab) {
     return
   }
-  useSessionStore.getState().closeTab(tabId, terminalRegistry.snapshot(paneIdsOf(tab)))
+  const text = terminalRegistry.snapshot(paneIdsOf(tab))
+  useSessionStore.getState().closeTab(tabId)
+  keepClosedTabText(text)
   useHostStore.getState().setStatus('Onglet fermé. Ctrl + Maj + Z le rouvre avec un nouveau terminal.')
 }
 
@@ -34,9 +37,11 @@ const closeWorkspaceNow = (workspaceId: string): void => {
   if (!workspace) {
     return
   }
+  const text = terminalRegistry.snapshot(workspace.tabs.flatMap(paneIdsOf))
   for (const tab of workspace.tabs) {
-    closeTab(tab.id, terminalRegistry.snapshot(paneIdsOf(tab)))
+    closeTab(tab.id)
   }
+  keepClosedTabText(text)
   useHostStore.getState().setStatus(`Workspace « ${workspace.name} » fermé. Ctrl + Maj + Z rouvre ses derniers onglets un par un.`)
 }
 
@@ -67,7 +72,7 @@ export const restoreClosedTab = (): void => {
     useHostStore.getState().setStatus('Aucun onglet fermé à rouvrir.')
     return
   }
-  for (const [paneId, text] of Object.entries(restored.text)) {
+  for (const [paneId, text] of Object.entries(takeClosedTabText(restored.paneIds))) {
     terminalRegistry.prime(paneId, text)
   }
   useHostStore.getState().setStatus(`Onglet « ${restored.tab.name} » rouvert avec de nouveaux terminaux.`)

@@ -56,7 +56,7 @@ public static class SessionValidator
 
         foreach (var closed in session.Closed)
         {
-            if (string.IsNullOrEmpty(closed.WorkspaceId) || closed.WorkspaceName is null || closed.Index < 0 || closed.Text.Values.Any(text => text is null || text.Length > SessionLimits.MaxClosedTextChars))
+            if (string.IsNullOrEmpty(closed.WorkspaceId) || closed.WorkspaceName is null || closed.Index < 0 || (closed.Text is not null && closed.Text.Values.Any(text => text is null || text.Length > SessionLimits.MaxClosedTextChars)))
             {
                 return ValidationResultModel.Fail("Onglet fermé invalide.");
             }

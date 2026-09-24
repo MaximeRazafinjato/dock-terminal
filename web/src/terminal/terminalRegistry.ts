@@ -1,4 +1,4 @@
-import { Terminal } from '@xterm/xterm'
+import { Terminal, type IMarker } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { CanvasAddon } from '@xterm/addon-canvas'
@@ -9,6 +9,9 @@ import { bridge } from '../bridge/bridge'
 import type { Pane } from '../model/session'
 
 const ACK_THRESHOLD = 256 * 1024
+const MAX_WEBGL_CONTEXTS = 14
+const STABLE_CHUNK_LINES = 1000
+const CHUNK_SEPARATOR = '\x1b[0m\r\n'
 const SNAPSHOT_SCROLLBACK_LINES = 2000
 const DEFAULT_SCROLLBACK_LINES = 10000
 const NEWLINE = String.fromCharCode(13, 10)
@@ -30,49 +33,145 @@ export enum Renderer {
   Dom = 'dom',
 }
 
+interface TextChunk {
+  end: IMarker
+  text: string
+}
+
 export interface TerminalHandle {
   paneId: string
   terminal: Terminal
   fit: FitAddon
   serializer: SerializeAddon
   renderer: Renderer
+  rendererAddon?: WebglAddon | CanvasAddon
+  shownAt: number
   started: boolean
   unackedChars: number
   dirty: boolean
-  lastSnapshot?: string
+  chunks: TextChunk[]
   keyHandler?: (event: KeyboardEvent) => boolean
 }
 
 const handles = new Map<string, TerminalHandle>()
 const primedText = new Map<string, { text: string; kind: RestoreKind }>()
 let scrollbackLines = DEFAULT_SCROLLBACK_LINES
+let webglUnavailable = false
 
 const start = (handle: TerminalHandle, pane: Pane): void => {
   handle.started = true
   bridge.send({ type: 'terminal.create', pane: pane.id, shell: pane.shell, cwd: pane.path, cols: handle.terminal.cols, rows: handle.terminal.rows })
 }
 
-const loadCanvas = (terminal: Terminal): Renderer => {
+const isShown = (handle: TerminalHandle): boolean => handle.terminal.element?.isConnected === true
+
+const releaseRenderer = (handle: TerminalHandle): void => {
+  handle.rendererAddon?.dispose()
+  handle.rendererAddon = undefined
+  handle.renderer = Renderer.Dom
+}
+
+const loadCanvas = (handle: TerminalHandle): void => {
   try {
-    terminal.loadAddon(new CanvasAddon())
-    return Renderer.Canvas
+    const canvas = new CanvasAddon()
+    handle.terminal.loadAddon(canvas)
+    handle.rendererAddon = canvas
+    handle.renderer = Renderer.Canvas
   } catch {
-    return Renderer.Dom
+    handle.renderer = Renderer.Dom
   }
 }
 
-const selectRenderer = (handle: TerminalHandle): Renderer => {
+const loadWebgl = (handle: TerminalHandle): void => {
+  releaseRenderer(handle)
   try {
     const webgl = new WebglAddon()
     webgl.onContextLoss(() => {
-      webgl.dispose()
-      handle.renderer = loadCanvas(handle.terminal)
+      if (handle.rendererAddon === webgl) {
+        releaseRenderer(handle)
+        if (isShown(handle)) {
+          loadCanvas(handle)
+        }
+      }
     })
     handle.terminal.loadAddon(webgl)
-    return Renderer.WebGl
+    handle.rendererAddon = webgl
+    handle.renderer = Renderer.WebGl
   } catch {
-    return loadCanvas(handle.terminal)
+    webglUnavailable = true
+    loadCanvas(handle)
   }
+}
+
+const releaseLeastRecentlyShownWebgl = (): void => {
+  const withWebgl = [...handles.values()].filter((handle) => handle.renderer === Renderer.WebGl)
+  const excess = withWebgl.length - MAX_WEBGL_CONTEXTS
+  if (excess > 0) {
+    withWebgl
+      .filter((handle) => !isShown(handle))
+      .sort((left, right) => left.shownAt - right.shownAt)
+      .slice(0, excess)
+      .forEach(releaseRenderer)
+  }
+}
+
+const showWithGpu = (handle: TerminalHandle): void => {
+  handle.shownAt = performance.now()
+  if (handle.renderer !== Renderer.WebGl) {
+    if (webglUnavailable) {
+      if (handle.renderer === Renderer.Dom) {
+        loadCanvas(handle)
+      }
+    } else {
+      loadWebgl(handle)
+      releaseLeastRecentlyShownWebgl()
+    }
+  }
+}
+
+const forgetChunks = (handle: TerminalHandle): void => {
+  handle.chunks.forEach((chunk) => chunk.end.dispose())
+  handle.chunks = []
+}
+
+const firstUncachedLine = (handle: TerminalHandle): number => {
+  const { terminal } = handle
+  handle.chunks = handle.chunks.filter((chunk) => !chunk.end.isDisposed)
+  const last = handle.chunks.at(-1)
+  return last ? last.end.line + 1 : Math.max(0, terminal.buffer.normal.length - terminal.rows - scrollbackLines)
+}
+
+const cacheStableLines = (handle: TerminalHandle, maxLines: number): boolean => {
+  const { terminal } = handle
+  const buffer = terminal.buffer.normal
+  if (terminal.buffer.active !== buffer) {
+    return false
+  }
+  const start = firstUncachedLine(handle)
+  const stableEnd = buffer.baseY - 1
+  let end = Math.min(stableEnd, start + maxLines - 1)
+  while (end >= start && buffer.getLine(end + 1)?.isWrapped) {
+    end--
+  }
+  if (end < start) {
+    return false
+  }
+  const marker = terminal.registerMarker(end - buffer.baseY - buffer.cursorY)
+  if (!marker) {
+    return false
+  }
+  handle.chunks.push({ end: marker, text: handle.serializer.serialize({ range: { start, end }, excludeAltBuffer: true, excludeModes: true }) })
+  return end < stableEnd
+}
+
+const snapshotOf = (handle: TerminalHandle): string => {
+  const { terminal, serializer } = handle
+  if (terminal.buffer.active !== terminal.buffer.normal) {
+    return serializer.serialize({ scrollback: scrollbackLines })
+  }
+  cacheStableLines(handle, Number.MAX_SAFE_INTEGER)
+  const tail = serializer.serialize({ range: { start: firstUncachedLine(handle), end: terminal.buffer.normal.length - 1 }, excludeAltBuffer: true })
+  return [...handle.chunks.map((chunk) => chunk.text), tail].join(CHUNK_SEPARATOR)
 }
 
 const createHandle = (pane: Pane): TerminalHandle => {
@@ -91,9 +190,11 @@ const createHandle = (pane: Pane): TerminalHandle => {
   terminal.loadAddon(new Unicode11Addon())
   terminal.loadAddon(new ClipboardAddon())
   terminal.unicode.activeVersion = '11'
-  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, started: false, unackedChars: 0, dirty: true }
+  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, shownAt: 0, started: false, unackedChars: 0, dirty: true, chunks: [] }
   terminal.onData((data) => bridge.send({ type: 'terminal.input', pane: pane.id, data }))
+  terminal.buffer.onBufferChange(() => forgetChunks(handle))
   terminal.onResize(({ cols, rows }) => {
+    forgetChunks(handle)
     if (handle.started) {
       bridge.send({ type: 'terminal.resize', pane: pane.id, cols, rows })
     }
@@ -119,10 +220,10 @@ export const terminalRegistry = {
     }
     if (!handle.terminal.element) {
       handle.terminal.open(element)
-      handle.renderer = selectRenderer(handle)
     } else if (handle.terminal.element.parentElement !== element) {
       element.appendChild(handle.terminal.element)
     }
+    showWithGpu(handle)
     handle.fit.fit()
     if (!handle.started) {
       handle.started = true
@@ -170,19 +271,32 @@ export const terminalRegistry = {
     return text
   },
 
-  snapshotLive(): Record<string, string> {
-    const text: Record<string, string> = {}
+  dirtyPaneIds(): string[] {
+    return [...handles.values()].filter((handle) => handle.dirty).map((handle) => handle.paneId)
+  },
+
+  cacheStableText(paneId: string): boolean {
+    const handle = handles.get(paneId)
+    return handle ? cacheStableLines(handle, STABLE_CHUNK_LINES) : false
+  },
+
+  takeSnapshot(paneId: string): string | undefined {
+    const handle = handles.get(paneId)
+    if (!handle) {
+      return undefined
+    }
+    handle.dirty = false
+    return snapshotOf(handle)
+  },
+
+  markAllDirty(): void {
     for (const handle of handles.values()) {
-      if (handle.dirty || handle.lastSnapshot === undefined) {
-        handle.lastSnapshot = handle.serializer.serialize({ scrollback: scrollbackLines })
-        handle.dirty = false
-      }
-      text[handle.paneId] = handle.lastSnapshot
+      handle.dirty = true
     }
-    for (const [paneId, primed] of primedText) {
-      text[paneId] = primed.text
-    }
-    return text
+  },
+
+  unsavedPrimedText(): Record<string, string> {
+    return Object.fromEntries([...primedText].filter(([, primed]) => primed.kind === RestoreKind.Tab).map(([paneId, primed]) => [paneId, primed.text]))
   },
 
   prime(paneId: string, text: string, kind: RestoreKind = RestoreKind.Tab): void {

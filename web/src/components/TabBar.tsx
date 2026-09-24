@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type { ShellProfile } from '../bridge/messages'
 import { tabAgents } from '../agents/agentSummary'
 import { DEFAULT_SHELL, type Workspace } from '../model/session'
@@ -29,7 +30,7 @@ const isMenuKey = (event: KeyboardEvent): boolean => (event.shiftKey && event.ke
 export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew, onMove }: TabBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const addButtonRef = useRef<HTMLButtonElement>(null)
-  const { draggingTabId, tabDropTarget } = useUiStore()
+  const { draggingTabId, tabDropTarget } = useUiStore(useShallow((state) => ({ draggingTabId: state.draggingTabId, tabDropTarget: state.tabDropTarget })))
   const agents = useAgentStore((state) => state.agents)
 
   const handleNewDefault = () => onNew(DEFAULT_SHELL)

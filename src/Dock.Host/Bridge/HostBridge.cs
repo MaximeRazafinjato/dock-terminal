@@ -16,6 +16,8 @@ namespace Dock.Host.Bridge;
 public sealed class HostBridge : IDisposable
 {
     private const int MaxCharsPerMessage = 512 * 1024;
+    private const string TextSavePrefix = """{"type":"text.save",""";
+    private static readonly TimeSpan WriteDrainTimeout = TimeSpan.FromSeconds(10);
     private static readonly JsonSerializerOptions JsonOptions = SessionRepository.JsonOptions;
 
     private readonly DispatcherQueue _dispatcher;
@@ -32,6 +34,8 @@ public sealed class HostBridge : IDisposable
     private PersistenceSettingsModel _persistence = PersistenceSettingsModel.Default;
     private PaneTextRepository _texts;
     private readonly ConcurrentDictionary<string, PaneOutputBuffer> _buffers = new();
+    private readonly BackgroundQueue _writes;
+    private readonly BackgroundQueue _queries;
     private CoreWebView2? _core;
     private int _flushScheduled;
     private bool _closing;
@@ -46,9 +50,11 @@ public sealed class HostBridge : IDisposable
         _sessions = new SessionRepository(dataDirectory);
         _settingsService = new SettingsService(dataDirectory);
         _settings = _settingsService.Load();
-        _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextChars);
+        _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextBytes);
         _terminals = new TerminalManager();
-        _agents = new AgentStateFeed(dispatcher, dataDirectory, _terminals, PostNow);
+        _writes = new BackgroundQueue(PostBackgroundError);
+        _queries = new BackgroundQueue(PostBackgroundError);
+        _agents = new AgentStateFeed(dataDirectory, _terminals, Post);
         _notifier = new AttentionNotifier(dispatcher, windowHandle, paneId => PostNow(new { type = "agent.join", pane = paneId }));
         _notifier.Register();
         ApplySettings(_settings);
@@ -60,8 +66,20 @@ public sealed class HostBridge : IDisposable
     public void Attach(CoreWebView2 core)
     {
         _core = core;
-        core.WebMessageReceived += (_, args) => Handle(args.WebMessageAsJson);
+        core.WebMessageReceived += (_, args) => Receive(args.WebMessageAsJson);
         _agents.Start();
+    }
+
+    private void Receive(string json)
+    {
+        if (json.StartsWith(TextSavePrefix, StringComparison.Ordinal))
+        {
+            _writes.Enqueue(() => Handle(json));
+        }
+        else
+        {
+            Handle(json);
+        }
     }
 
     private void Handle(string json)
@@ -189,12 +207,10 @@ public sealed class HostBridge : IDisposable
                 Post(new { type = "terminal.activityResult", panes = _terminals.Activity(command.Panes ?? []) });
                 break;
             case "projects.list":
-                var projects = ProjectCatalog.List(_settings.ProjectsRoot);
-                Post(new { type = "projects.listed", root = projects.Root, projects = projects.Projects, error = projects.Error });
+                ListProjects(_settings.ProjectsRoot);
                 break;
             case "context.query":
-                var path = RequirePath(command);
-                Post(new { type = "context.result", pane = RequirePane(command), path, git = GitContext.Resolve(path) });
+                QueryContext(RequirePane(command), RequirePath(command));
                 break;
             case "context.open":
                 OpenFolder(RequirePath(command), command.Target);
@@ -228,7 +244,7 @@ public sealed class HostBridge : IDisposable
         _settings = settings;
         _shellPaths = SettingsService.ShellPaths(settings);
         _persistence = settings.Persistence;
-        _texts = new PaneTextRepository(_dataDirectory, _persistence.MaxTextChars);
+        _texts = new PaneTextRepository(_dataDirectory, _persistence.MaxTextBytes);
         _terminals.UpdatePaths(_shellPaths);
     }
 
@@ -266,12 +282,14 @@ public sealed class HostBridge : IDisposable
     private void SendHello()
     {
         var loaded = _sessions.Load();
+        var session = loaded.Session ?? SessionFactory.Initial();
+        _texts.MoveClosedTabText(session);
         var text = _texts.Load();
         var recovery = string.Join(" ", new[] { loaded.Error, text.Error }.Where(error => error is not null));
         Post(new
         {
             type = "app.hello",
-            session = loaded.Session ?? SessionFactory.Initial(),
+            session,
             shells = ShellCatalog.Profiles(_shellPaths),
             home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             text = text.Text,
@@ -282,23 +300,45 @@ public sealed class HostBridge : IDisposable
 
     private void SaveSession(BridgeCommandModel command)
     {
-        var session = command.Session?.Deserialize<SessionModel>(JsonOptions) ?? throw new InvalidOperationException("Session manquante.");
-        Persist(_sessions.FilePath, () =>
+        var element = command.Session ?? throw new InvalidOperationException("Session manquante.");
+        _writes.Enqueue(() =>
         {
-            var result = _sessions.Save(session);
-            return result.IsValid ? null : $"Session refusée : {result.Error}";
+            var session = element.Deserialize<SessionModel>(JsonOptions) ?? throw new InvalidOperationException("Session manquante.");
+            Persist(_sessions.FilePath, () =>
+            {
+                var result = _sessions.Save(session);
+                return result.IsValid ? null : $"Session refusée : {result.Error}";
+            });
         });
     }
 
     private void SaveText(BridgeCommandModel command)
     {
-        var text = command.Text?.Deserialize<Dictionary<string, string>>(JsonOptions) ?? throw new InvalidOperationException("Texte des terminaux manquant.");
-        Persist(_texts.FilePath, () =>
+        var element = command.Text ?? throw new InvalidOperationException("Texte des terminaux manquant.");
+        var keep = command.Keep ?? throw new InvalidOperationException("Liste des panes à conserver manquante.");
+        var texts = _texts;
+        _writes.Enqueue(() =>
         {
-            _texts.Save(text);
-            return null;
+            var text = element.Deserialize<Dictionary<string, string>>(JsonOptions) ?? throw new InvalidOperationException("Texte des terminaux manquant.");
+            Persist(texts.DirectoryPath, () =>
+            {
+                texts.Save(text, keep);
+                return null;
+            });
         });
     }
+
+    private void ListProjects(string root) =>
+        _queries.Enqueue(() =>
+        {
+            var projects = ProjectCatalog.List(root);
+            Post(new { type = "projects.listed", root = projects.Root, projects = projects.Projects, error = projects.Error });
+        });
+
+    private void QueryContext(string paneId, string path) =>
+        _queries.Enqueue(() => Post(new { type = "context.result", pane = paneId, path, git = GitContext.Resolve(path) }));
+
+    private void PostBackgroundError(Exception exception) => Post(new { type = "error", message = exception.Message });
 
     private void Persist(string filePath, Func<string?> write)
     {
@@ -476,6 +516,7 @@ public sealed class HostBridge : IDisposable
 
     public void Dispose()
     {
+        _writes.Drain(WriteDrainTimeout);
         _agents.Dispose();
         _notifier.Dispose();
         foreach (var buffer in _buffers.Values)

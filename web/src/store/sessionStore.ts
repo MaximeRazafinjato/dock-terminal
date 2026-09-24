@@ -1,3 +1,4 @@
+import { produce } from 'immer'
 import { create } from 'zustand'
 import {
   activePane,
@@ -40,8 +41,8 @@ interface SessionState {
   renameTab: (tabId: string, name: string) => void
   moveTab: (tabId: string, targetWorkspaceId: string, beforeTabId?: string) => void
   moveActiveTab: (offset: number) => void
-  closeTab: (tabId: string, text?: Record<string, string>) => void
-  restoreTab: () => { tab: Tab; text: Record<string, string> } | null
+  closeTab: (tabId: string) => void
+  restoreTab: () => { tab: Tab; paneIds: Record<string, string> } | null
   splitPane: (axis: SplitAxis) => void
   setSplitRatio: (tabId: string, path: SplitPath, ratio: number) => void
   closePane: (paneId: string) => void
@@ -50,14 +51,7 @@ interface SessionState {
   toggleFavorite: (commandId: string) => void
 }
 
-const mutateSession = (session: Session | null, mutate: (draft: Session) => void): Session | null => {
-  if (!session) {
-    return session
-  }
-  const draft = structuredClone(session)
-  mutate(draft)
-  return draft
-}
+const mutateSession = (session: Session | null, mutate: (draft: Session) => void): Session | null => (session ? produce(session, mutate) : session)
 
 const mutateWorkspace = (session: Session | null, mutate: (workspace: Workspace, draft: Session) => void): Session | null =>
   mutateSession(session, (draft) => {
@@ -69,6 +63,13 @@ const mutateWorkspace = (session: Session | null, mutate: (workspace: Workspace,
 
 const mutateTab = (session: Session | null, mutate: (tab: Tab, workspace: Workspace, draft: Session) => void): Session | null =>
   mutateWorkspace(session, (workspace, draft) => mutate(activeTab(workspace), workspace, draft))
+
+const tabNameFor = (tab: Tab, paneId: string, path: string): string => (!tab.manual && tab.active === paneId ? folderName(path) || tab.name : tab.name)
+
+const pathChanges = (session: Session | null, paneId: string, path: string): boolean =>
+  (session?.workspaces ?? []).some((workspace) =>
+    workspace.tabs.some((tab) => panesOf(tab.tree).some((pane) => pane.id === paneId && (pane.path !== path || tabNameFor(tab, paneId, path) !== tab.name))),
+  )
 
 export const useSessionStore = create<SessionState>()((set, get) => ({
   session: null,
@@ -191,7 +192,7 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
       }),
     })),
 
-  closeTab: (tabId, text = {}) =>
+  closeTab: (tabId) =>
     set((state) => ({
       session: mutateSession(state.session, (draft) => {
         const workspace = draft.workspaces.find((candidate) => candidate.tabs.some((tab) => tab.id === tabId))
@@ -200,7 +201,7 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         }
         const index = workspace.tabs.findIndex((tab) => tab.id === tabId)
         const [tab] = workspace.tabs.splice(index, 1)
-        const closed: ClosedTab = { workspaceId: workspace.id, workspaceName: workspace.name, index, tab, text }
+        const closed: ClosedTab = { workspaceId: workspace.id, workspaceName: workspace.name, index, tab }
         draft.closed = [...draft.closed, closed].slice(-CLOSED_TABS_MAX)
         if (workspace.tabs.length === 0) {
           draft.workspaces = draft.workspaces.filter((candidate) => candidate.id !== workspace.id)
@@ -221,7 +222,6 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
       return null
     }
     const { tab, paneIds } = cloneTabWithNewIds(entry.tab)
-    const text = Object.fromEntries(Object.entries(entry.text).flatMap(([paneId, content]) => (paneIds[paneId] ? [[paneIds[paneId], content]] : [])))
     set((state) => ({
       session: mutateSession(state.session, (draft) => {
         draft.closed = draft.closed.slice(0, -1)
@@ -235,7 +235,7 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         draft.active = workspace.id
       }),
     }))
-    return { tab, text }
+    return { tab, paneIds }
   },
 
   splitPane: (axis) =>
@@ -303,16 +303,18 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     })),
 
   setPanePath: (paneId, path) =>
-    set((state) => ({
-      session: mutateSession(state.session, (draft) => {
-        for (const workspace of draft.workspaces) {
-          for (const tab of workspace.tabs) {
-            tab.tree = updatePane(tab.tree, paneId, { path })
-            if (!tab.manual && tab.active === paneId) {
-              tab.name = folderName(path) || tab.name
-            }
+    set((state) =>
+      pathChanges(state.session, paneId, path)
+        ? {
+            session: mutateSession(state.session, (draft) => {
+              for (const workspace of draft.workspaces) {
+                for (const tab of workspace.tabs) {
+                  tab.tree = updatePane(tab.tree, paneId, { path })
+                  tab.name = tabNameFor(tab, paneId, path)
+                }
+              }
+            }),
           }
-        }
-      }),
-    })),
+        : state,
+    ),
 }))

@@ -4,7 +4,8 @@ if ([string]::IsNullOrWhiteSpace($paneId)) { exit 0 }
 $raw = [Console]::In.ReadToEnd()
 try { $hook = $raw | ConvertFrom-Json } catch { exit 0 }
 
-$directory = Join-Path $env:LOCALAPPDATA 'Dock\agents'
+$dataDirectory = if ([string]::IsNullOrWhiteSpace($env:DOCK_DATA_DIR)) { Join-Path $env:LOCALAPPDATA 'Dock' } else { $env:DOCK_DATA_DIR }
+$directory = Join-Path $dataDirectory 'agents'
 $file = Join-Path $directory "$paneId.json"
 $eventName = [string]$hook.hook_event_name
 
