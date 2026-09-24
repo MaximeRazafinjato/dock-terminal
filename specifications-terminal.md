@@ -19,7 +19,7 @@ L’approbation de la version visuelle actuelle valide la direction Dock vert et
 
 **Retenu.** Créer un véritable terminal Windows, organisé en workspaces libres, avec une interface légère permettant de naviguer rapidement entre plusieurs activités. L’utilisateur garde la liberté d’exécuter ses commandes, scripts et outils interactifs habituels.
 
-Le panneau de droite présente les workspaces et leurs onglets. Les états d’agents fournissent des indications d’attention dans cette organisation. L’application ne distribue pas de tâches aux agents.
+Le panneau de gauche présente les workspaces et leurs onglets. Les états d’agents fournissent des indications d’attention dans cette organisation. L’application ne distribue pas de tâches aux agents.
 
 ### Hors périmètre actuel
 
@@ -50,7 +50,7 @@ Exemple : « Perso » peut contenir un terminal dans Documents, un autre dans un
 
 ## 4. Direction visuelle et disposition
 
-**Retenu.** Dock vert en thème sombre (décision du 21 septembre 2026, remplaçant l’interface claire du POC) : fonds gris anthracite, accent vert sauge désaturé, terminaux sombres, en-tête compact, panneau droit en arborescence. Maximiser l’espace disponible pour les terminaux.
+**Retenu.** Dock vert en thème sombre (décision du 21 septembre 2026, remplaçant l’interface claire du POC) : fonds gris anthracite, accent vert sauge désaturé, terminaux sombres, en-tête compact, panneau gauche en arborescence. Maximiser l’espace disponible pour les terminaux.
 
 | Zone | Contenu attendu |
 | --- | --- |
@@ -58,7 +58,7 @@ Exemple : « Perso » peut contenir un terminal dans Documents, un autre dans un
 | Barre d’onglets | Onglets du workspace actif, bouton « + », actions compactes de split et actions du dossier. |
 | Zone de travail | Panes et séparateurs, occupant la hauteur restante. |
 | En-tête d’un pane | Shell, dossier courant et action de fermeture ; chemin tronqué si nécessaire et consultable intégralement. |
-| Panneau droit | Workspaces, chevrons de dépliage, onglets enfants, accès aux projets et indications d’attention. |
+| Panneau gauche | Workspaces, chevrons de dépliage, onglets enfants, accès aux projets et indications d’attention. |
 
 ### Règles de présentation
 
@@ -89,7 +89,7 @@ Ces valeurs sont des références de réalisation, pas des contraintes de taille
 | WS-01 | Créer plusieurs workspaces et naviguer entre eux sans association obligatoire à un projet. |
 | WS-02 | Disposer d’un workspace par défaut ; aucun terminal autonome hors workspace. |
 | WS-03 | Renommer le workspace directement dans le titre de l’en-tête, sans popup. |
-| WS-04 | Afficher les workspaces à droite et leurs onglets sous forme d’arborescence. |
+| WS-04 | Afficher les workspaces à gauche et leurs onglets sous forme d’arborescence. |
 | WS-05 | Chaque chevron déplie ou replie les onglets de son workspace, indépendamment des autres. |
 | WS-06 | Cliquer sur un onglet de l’arborescence active son workspace et cet onglet. |
 | WS-07 | Mémoriser les états déplié/replié, la largeur et la visibilité du panneau. |

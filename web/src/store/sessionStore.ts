@@ -33,6 +33,7 @@ interface SessionState {
   selectTab: (tabId: string) => void
   selectPane: (paneId: string) => void
   toggleWorkspace: (workspaceId: string) => void
+  collapseOtherWorkspaces: (workspaceId: string) => void
   toggleSidebar: () => void
   setSidebarWidth: (width: number) => void
   newWorkspace: (name: string, path: string, shell: string) => string
@@ -103,6 +104,17 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         const workspace = draft.workspaces.find((candidate) => candidate.id === workspaceId)
         if (workspace) {
           workspace.expanded = !(workspace.expanded ?? workspace.id === draft.active)
+        }
+      }),
+    })),
+
+  collapseOtherWorkspaces: (workspaceId) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        for (const workspace of draft.workspaces) {
+          if (workspace.id !== workspaceId && (workspace.expanded ?? workspace.id === draft.active)) {
+            workspace.expanded = false
+          }
         }
       }),
     })),
