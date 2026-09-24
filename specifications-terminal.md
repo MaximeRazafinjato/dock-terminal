@@ -76,6 +76,12 @@ Ces valeurs sont des références de réalisation, pas des contraintes de taille
 
 **À décider.** Personnalisation de la police terminal, taille du texte, zoom et comportement aux très petites dimensions. La cible principale reste une fenêtre d’application de bureau.
 
+### Explorateur de fichiers
+
+**Retenu.** Un explorateur de fichiers intégré s’affiche dans un panneau à droite de la zone de travail, du côté opposé à l’arborescence des workspaces. Il est fermé par défaut et s’ouvre ou se ferme par un bouton. Son état ouvert ou fermé est mémorisé par onglet. Il affiche le dossier courant du pane actif et le suit : un changement de dossier dans le shell ou un changement de pane met l’explorateur à jour. Un fichier s’ouvre dans l’éditeur configuré ; l’explorateur permet de créer, renommer et supprimer des fichiers et des dossiers.
+
+**Conventions proposées.** Placer le bouton dans la barre d’onglets, à côté des actions de split, et proposer la même commande dans la palette. Ouvrir un fichier par double-clic ; déplier un dossier par simple clic ou par le chevron. Supprimer vers la corbeille de Windows après confirmation. Panneau redimensionnable par glisser, largeur mémorisée. Navigation clavier ↑ / ↓ / ← / → / Entrée / F2 / Suppr. La recherche dans le contenu des fichiers reste hors périmètre.
+
 ## 5. Workspaces et panneau en arborescence
 
 | ID | Exigence retenue |
@@ -379,6 +385,7 @@ Ces scénarios définissent les vérifications à effectuer sur l’application 
 | R26 | Inspecter onglets, workspaces et palette. | Pas de bordures de sélection colorées ; fond et focus restent lisibles. |
 | R27 | Exécuter le spike T01 : deux panes xterm.js dans une WebView2 unique, PowerShell 5.1 réel, raccourcis, dossier courant, Job Object, flux soutenu, installeur sur machine vierge. | Aucune perte ni doublon de frappe, dossier courant exact, aucun processus survivant, débit mesuré, installation fonctionnelle ; sinon la pile est rejetée. |
 | R28 | Dans un terminal, Ctrl + clic sur une URL puis sur un hyperlien OSC 8, clic simple sur un lien, puis Ctrl + clic sur un lien `file:` ou d’un autre schéma. | Les liens `http` et `https` s’ouvrent dans le navigateur par défaut avec Ctrl + clic uniquement ; le clic simple sélectionne sans rien ouvrir ; un autre schéma n’est jamais ouvert et un message l’explique. |
+| R29 | Ouvrir l’explorateur par son bouton dans un onglet, changer d’onglet puis revenir, faire `cd` dans le shell, changer de pane, double-cliquer un fichier, créer, renommer puis supprimer un fichier. | Fermé par défaut, l’état est propre à chaque onglet ; l’explorateur suit le dossier du pane actif ; le fichier s’ouvre dans l’éditeur ; les opérations sur les fichiers sont visibles immédiatement et la suppression passe par une confirmation. |
 
 ## 18. État du POC et écarts à combler
 

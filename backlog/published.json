@@ -121,9 +121,15 @@
   },
   {
     "id": "F22",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/57",
     "number": 57,
-    "title": "[F22] Ouvrir les liens des terminaux par Ctrl + clic"
+    "title": "[F22] Ouvrir les liens des terminaux par Ctrl + clic",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/57"
+  },
+  {
+    "id": "F23",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/62",
+    "number": 62,
+    "title": "[F23] Explorer les fichiers du pane actif dans un panneau à droite"
   },
   {
     "id": "T01",

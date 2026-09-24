@@ -175,6 +175,15 @@
     "body": "## Besoin utilisateur\n\nOuvrir une adresse affichée par un programme sans avoir à la copier.\n\n## Critères d’acceptation\n\n- [ ] Reconnaître les URL `http` et `https` présentes dans le texte des terminaux.\n- [ ] Reconnaître les hyperliens explicites émis par les programmes (séquence OSC 8).\n- [ ] Ouvrir un lien par Ctrl + clic uniquement ; le clic simple reste réservé à la sélection et au placement du curseur.\n- [ ] Ouvrir le lien dans le navigateur par défaut de Windows, jamais dans la fenêtre de Dock.\n- [ ] Ne jamais ouvrir un autre schéma que `http` et `https` et le signaler dans la barre de statut.\n- [ ] Souligner le lien au survol pour montrer qu’il est actif.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 8.\n- Recette : R28.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF11\n\n## Points à préciser\n\nCtrl + clic est retenu par l’utilisateur. La détection des URL et des hyperliens OSC 8, l’ouverture dans le navigateur par défaut et la restriction à `http` / `https` sont des conventions proposées.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
   },
   {
+    "id": "F23",
+    "title": "[F23] Explorer les fichiers du pane actif dans un panneau à droite",
+    "dependencies": [
+      "F11",
+      "F15"
+    ],
+    "body": "## Besoin utilisateur\n\nParcourir et gérer les fichiers du dossier courant sans quitter Dock.\n\n## Critères d’acceptation\n\n- [ ] Afficher un panneau explorateur à droite de la zone de travail, fermé par défaut.\n- [ ] Ouvrir et fermer l’explorateur par un bouton ; mémoriser son état par onglet.\n- [ ] Afficher le dossier courant du pane actif et le suivre lors d’un `cd` ou d’un changement de pane.\n- [ ] Ouvrir un fichier dans l’éditeur configuré.\n- [ ] Créer, renommer et supprimer des fichiers et des dossiers ; supprimer vers la corbeille après confirmation.\n- [ ] Rendre le panneau redimensionnable et navigable au clavier.\n\n## Références\n\n- [Spécifications complètes](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md), sections 4.\n- Recette : R29.\n- [POC de référence](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/poc/README.md) : les terminaux sont simulés.\n\n## Dépendances fonctionnelles\n\nF11, F15\n\n## Points à préciser\n\nLe panneau à droite, fermé par défaut, l’état par onglet, le suivi du pane actif, l’ouverture dans l’éditeur et la gestion des fichiers sont retenus par l’utilisateur. L’emplacement du bouton, le double-clic, la corbeille, le redimensionnement et les touches sont des conventions proposées.\n\nAucune priorité ni échéance attribuée. Cette issue vise l’application finale, pas uniquement la démonstration HTML.\n"
+  },
+  {
     "id": "T01",
     "title": "[T01] Valider la pile Windows et le pipeline de terminal",
     "dependencies": [],
