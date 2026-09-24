@@ -19,7 +19,7 @@ public sealed class ClosedTabModel
     public string WorkspaceName { get; set; } = string.Empty;
     public int Index { get; set; }
     public TabModel Tab { get; set; } = new();
-    public Dictionary<string, string> Text { get; set; } = new();
+    public Dictionary<string, string>? Text { get; set; }
 }
 
 public sealed class WorkspaceModel

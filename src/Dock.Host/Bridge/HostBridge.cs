@@ -49,7 +49,7 @@ public sealed class HostBridge : IDisposable
         _sessions = new SessionRepository(dataDirectory);
         _settingsService = new SettingsService(dataDirectory);
         _settings = _settingsService.Load();
-        _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextChars);
+        _texts = new PaneTextRepository(dataDirectory, _persistence.MaxTextBytes);
         _terminals = new TerminalManager();
         _writes = new BackgroundQueue(PostBackgroundError);
         _queries = new BackgroundQueue(PostBackgroundError);
@@ -231,7 +231,7 @@ public sealed class HostBridge : IDisposable
         _settings = settings;
         _shellPaths = SettingsService.ShellPaths(settings);
         _persistence = settings.Persistence;
-        _texts = new PaneTextRepository(_dataDirectory, _persistence.MaxTextChars);
+        _texts = new PaneTextRepository(_dataDirectory, _persistence.MaxTextBytes);
         _terminals.UpdatePaths(_shellPaths);
     }
 
@@ -269,12 +269,14 @@ public sealed class HostBridge : IDisposable
     private void SendHello()
     {
         var loaded = _sessions.Load();
+        var session = loaded.Session ?? SessionFactory.Initial();
+        _texts.MoveClosedTabText(session);
         var text = _texts.Load();
         var recovery = string.Join(" ", new[] { loaded.Error, text.Error }.Where(error => error is not null));
         Post(new
         {
             type = "app.hello",
-            session = loaded.Session ?? SessionFactory.Initial(),
+            session,
             shells = ShellCatalog.Profiles(_shellPaths),
             home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             text = text.Text,
@@ -300,13 +302,14 @@ public sealed class HostBridge : IDisposable
     private void SaveText(BridgeCommandModel command)
     {
         var element = command.Text ?? throw new InvalidOperationException("Texte des terminaux manquant.");
+        var keep = command.Keep ?? throw new InvalidOperationException("Liste des panes à conserver manquante.");
         var texts = _texts;
         _writes.Enqueue(() =>
         {
             var text = element.Deserialize<Dictionary<string, string>>(JsonOptions) ?? throw new InvalidOperationException("Texte des terminaux manquant.");
-            Persist(texts.FilePath, () =>
+            Persist(texts.DirectoryPath, () =>
             {
-                texts.Save(text);
+                texts.Save(text, keep);
                 return null;
             });
         });

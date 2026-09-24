@@ -39,7 +39,6 @@ export interface TerminalHandle {
   started: boolean
   unackedChars: number
   dirty: boolean
-  lastSnapshot?: string
   keyHandler?: (event: KeyboardEvent) => boolean
 }
 
@@ -170,19 +169,27 @@ export const terminalRegistry = {
     return text
   },
 
-  snapshotLive(): Record<string, string> {
-    const text: Record<string, string> = {}
+  dirtyPaneIds(): string[] {
+    return [...handles.values()].filter((handle) => handle.dirty).map((handle) => handle.paneId)
+  },
+
+  takeSnapshot(paneId: string): string | undefined {
+    const handle = handles.get(paneId)
+    if (!handle) {
+      return undefined
+    }
+    handle.dirty = false
+    return handle.serializer.serialize({ scrollback: scrollbackLines })
+  },
+
+  markAllDirty(): void {
     for (const handle of handles.values()) {
-      if (handle.dirty || handle.lastSnapshot === undefined) {
-        handle.lastSnapshot = handle.serializer.serialize({ scrollback: scrollbackLines })
-        handle.dirty = false
-      }
-      text[handle.paneId] = handle.lastSnapshot
+      handle.dirty = true
     }
-    for (const [paneId, primed] of primedText) {
-      text[paneId] = primed.text
-    }
-    return text
+  },
+
+  unsavedPrimedText(): Record<string, string> {
+    return Object.fromEntries([...primedText].filter(([, primed]) => primed.kind === RestoreKind.Tab).map(([paneId, primed]) => [paneId, primed.text]))
   },
 
   prime(paneId: string, text: string, kind: RestoreKind = RestoreKind.Tab): void {

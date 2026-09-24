@@ -40,8 +40,8 @@ interface SessionState {
   renameTab: (tabId: string, name: string) => void
   moveTab: (tabId: string, targetWorkspaceId: string, beforeTabId?: string) => void
   moveActiveTab: (offset: number) => void
-  closeTab: (tabId: string, text?: Record<string, string>) => void
-  restoreTab: () => { tab: Tab; text: Record<string, string> } | null
+  closeTab: (tabId: string) => void
+  restoreTab: () => { tab: Tab; paneIds: Record<string, string> } | null
   splitPane: (axis: SplitAxis) => void
   setSplitRatio: (tabId: string, path: SplitPath, ratio: number) => void
   closePane: (paneId: string) => void
@@ -198,7 +198,7 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
       }),
     })),
 
-  closeTab: (tabId, text = {}) =>
+  closeTab: (tabId) =>
     set((state) => ({
       session: mutateSession(state.session, (draft) => {
         const workspace = draft.workspaces.find((candidate) => candidate.tabs.some((tab) => tab.id === tabId))
@@ -207,7 +207,7 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         }
         const index = workspace.tabs.findIndex((tab) => tab.id === tabId)
         const [tab] = workspace.tabs.splice(index, 1)
-        const closed: ClosedTab = { workspaceId: workspace.id, workspaceName: workspace.name, index, tab, text }
+        const closed: ClosedTab = { workspaceId: workspace.id, workspaceName: workspace.name, index, tab }
         draft.closed = [...draft.closed, closed].slice(-CLOSED_TABS_MAX)
         if (workspace.tabs.length === 0) {
           draft.workspaces = draft.workspaces.filter((candidate) => candidate.id !== workspace.id)
@@ -228,7 +228,6 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
       return null
     }
     const { tab, paneIds } = cloneTabWithNewIds(entry.tab)
-    const text = Object.fromEntries(Object.entries(entry.text).flatMap(([paneId, content]) => (paneIds[paneId] ? [[paneIds[paneId], content]] : [])))
     set((state) => ({
       session: mutateSession(state.session, (draft) => {
         draft.closed = draft.closed.slice(0, -1)
@@ -242,7 +241,7 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
         draft.active = workspace.id
       }),
     }))
-    return { tab, text }
+    return { tab, paneIds }
   },
 
   splitPane: (axis) =>

@@ -11,7 +11,7 @@ import { useUiStore } from './store/uiStore'
 import { receiveActivity, receiveApplicationClosing } from './terminal/closeGuard'
 import { receiveContext } from './terminal/contextActions'
 import { terminalRegistry } from './terminal/terminalRegistry'
-import { primeSessionText, saveTextNow, startTextAutosave } from './terminal/textPersistence'
+import { forgetRemovedText, markTextSaveFailed, primeSessionText, startTextAutosave } from './terminal/textPersistence'
 
 const SAVE_DEBOUNCE_MS = 500
 
@@ -71,6 +71,7 @@ export default function App() {
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
         setUnsaved(true)
+        markTextSaveFailed()
         setStatus(`${message.message} Les changements ne sont pas enregistrés.`, StatusLevel.Error)
       }),
       bridge.on('terminal.output', (message) => terminalRegistry.write(message.pane, message.data)),
@@ -115,7 +116,7 @@ export default function App() {
       timer = setTimeout(() => {
         bridge.send({ type: 'session.save', session: state.session! })
         if (removed) {
-          saveTextNow()
+          forgetRemovedText()
         }
       }, SAVE_DEBOUNCE_MS)
     })

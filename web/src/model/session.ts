@@ -50,7 +50,6 @@ export interface ClosedTab {
   workspaceName: string
   index: number
   tab: Tab
-  text: Record<string, string>
 }
 
 export interface Session {
