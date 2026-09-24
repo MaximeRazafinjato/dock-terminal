@@ -107,7 +107,7 @@ const isLeaderChord = (event: KeyboardEvent): boolean =>
 const isCloseWindow = (event: KeyboardEvent): boolean => event.altKey && event.key === 'F4'
 const isCopy = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && !event.altKey && letterOf(event) === 'c'
 const isPlainCtrlC = (event: KeyboardEvent): boolean => event.ctrlKey && !event.shiftKey && !event.altKey && letterOf(event) === 'c'
-const isPaste = (event: KeyboardEvent): boolean => event.ctrlKey && event.shiftKey && !event.altKey && letterOf(event) === 'v'
+const isPaste = (event: KeyboardEvent): boolean => event.ctrlKey && !event.altKey && letterOf(event) === 'v'
 
 const directCommand = (event: KeyboardEvent): Command | undefined => {
   if (event.ctrlKey && !event.altKey && letterOf(event) === 'p') {
