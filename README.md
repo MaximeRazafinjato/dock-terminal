@@ -11,6 +11,7 @@ dotnet build Dock.slnx
 dotnet test Dock.slnx
 dotnet run --project src/Dock.Host
 scripts/build-installer.cmd          # installeur Windows (Inno Setup 6 requis) dans installer/output/
+node scripts/generate-icon.js        # régénère src/Dock.Host/Assets/Dock.ico et Dock.png
 ```
 
 ## Documents
