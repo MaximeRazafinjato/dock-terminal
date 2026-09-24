@@ -88,10 +88,13 @@ const saveTextGradually = async (): Promise<void> => {
   gradualSaveRunning = true
   try {
     for (const paneId of terminalRegistry.dirtyPaneIds()) {
-      await nextIdleSlice()
+      do {
+        await nextIdleSlice()
+      } while (terminalRegistry.cacheStableText(paneId))
       collectSnapshot(paneId)
+      sendTextSave()
     }
-    if (Object.keys(pendingText).length > 0 || resendClosedText) {
+    if (resendClosedText) {
       sendTextSave()
     }
   } finally {

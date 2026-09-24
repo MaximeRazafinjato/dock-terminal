@@ -1,4 +1,4 @@
-import { Terminal } from '@xterm/xterm'
+import { Terminal, type IMarker } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { CanvasAddon } from '@xterm/addon-canvas'
@@ -10,6 +10,8 @@ import type { Pane } from '../model/session'
 
 const ACK_THRESHOLD = 256 * 1024
 const MAX_WEBGL_CONTEXTS = 14
+const STABLE_CHUNK_LINES = 1000
+const CHUNK_SEPARATOR = '\x1b[0m\r\n'
 const SNAPSHOT_SCROLLBACK_LINES = 2000
 const DEFAULT_SCROLLBACK_LINES = 10000
 const NEWLINE = String.fromCharCode(13, 10)
@@ -31,6 +33,11 @@ export enum Renderer {
   Dom = 'dom',
 }
 
+interface TextChunk {
+  end: IMarker
+  text: string
+}
+
 export interface TerminalHandle {
   paneId: string
   terminal: Terminal
@@ -42,6 +49,7 @@ export interface TerminalHandle {
   started: boolean
   unackedChars: number
   dirty: boolean
+  chunks: TextChunk[]
   keyHandler?: (event: KeyboardEvent) => boolean
 }
 
@@ -121,6 +129,51 @@ const showWithGpu = (handle: TerminalHandle): void => {
   }
 }
 
+const forgetChunks = (handle: TerminalHandle): void => {
+  handle.chunks.forEach((chunk) => chunk.end.dispose())
+  handle.chunks = []
+}
+
+const firstUncachedLine = (handle: TerminalHandle): number => {
+  const { terminal } = handle
+  handle.chunks = handle.chunks.filter((chunk) => !chunk.end.isDisposed)
+  const last = handle.chunks.at(-1)
+  return last ? last.end.line + 1 : Math.max(0, terminal.buffer.normal.length - terminal.rows - scrollbackLines)
+}
+
+const cacheStableLines = (handle: TerminalHandle, maxLines: number): boolean => {
+  const { terminal } = handle
+  const buffer = terminal.buffer.normal
+  if (terminal.buffer.active !== buffer) {
+    return false
+  }
+  const start = firstUncachedLine(handle)
+  const stableEnd = buffer.baseY - 1
+  let end = Math.min(stableEnd, start + maxLines - 1)
+  while (end >= start && buffer.getLine(end + 1)?.isWrapped) {
+    end--
+  }
+  if (end < start) {
+    return false
+  }
+  const marker = terminal.registerMarker(end - buffer.baseY - buffer.cursorY)
+  if (!marker) {
+    return false
+  }
+  handle.chunks.push({ end: marker, text: handle.serializer.serialize({ range: { start, end }, excludeAltBuffer: true, excludeModes: true }) })
+  return end < stableEnd
+}
+
+const snapshotOf = (handle: TerminalHandle): string => {
+  const { terminal, serializer } = handle
+  if (terminal.buffer.active !== terminal.buffer.normal) {
+    return serializer.serialize({ scrollback: scrollbackLines })
+  }
+  cacheStableLines(handle, Number.MAX_SAFE_INTEGER)
+  const tail = serializer.serialize({ range: { start: firstUncachedLine(handle), end: terminal.buffer.normal.length - 1 }, excludeAltBuffer: true })
+  return [...handle.chunks.map((chunk) => chunk.text), tail].join(CHUNK_SEPARATOR)
+}
+
 const createHandle = (pane: Pane): TerminalHandle => {
   const terminal = new Terminal({
     allowProposedApi: true,
@@ -137,9 +190,11 @@ const createHandle = (pane: Pane): TerminalHandle => {
   terminal.loadAddon(new Unicode11Addon())
   terminal.loadAddon(new ClipboardAddon())
   terminal.unicode.activeVersion = '11'
-  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, shownAt: 0, started: false, unackedChars: 0, dirty: true }
+  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, shownAt: 0, started: false, unackedChars: 0, dirty: true, chunks: [] }
   terminal.onData((data) => bridge.send({ type: 'terminal.input', pane: pane.id, data }))
+  terminal.buffer.onBufferChange(() => forgetChunks(handle))
   terminal.onResize(({ cols, rows }) => {
+    forgetChunks(handle)
     if (handle.started) {
       bridge.send({ type: 'terminal.resize', pane: pane.id, cols, rows })
     }
@@ -220,13 +275,18 @@ export const terminalRegistry = {
     return [...handles.values()].filter((handle) => handle.dirty).map((handle) => handle.paneId)
   },
 
+  cacheStableText(paneId: string): boolean {
+    const handle = handles.get(paneId)
+    return handle ? cacheStableLines(handle, STABLE_CHUNK_LINES) : false
+  },
+
   takeSnapshot(paneId: string): string | undefined {
     const handle = handles.get(paneId)
     if (!handle) {
       return undefined
     }
     handle.dirty = false
-    return handle.serializer.serialize({ scrollback: scrollbackLines })
+    return snapshotOf(handle)
   },
 
   markAllDirty(): void {
