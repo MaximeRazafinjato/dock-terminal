@@ -83,6 +83,30 @@ public sealed class ClaudeHooksInstallerTests : IDisposable
     }
 
     [Fact]
+    public void RemoveIfPresent_WhenNoDockHooks_ThenLeavesFileUntouched()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_file)!);
+        const string content = "{ // réglages\n  \"model\": \"opus\" }";
+        File.WriteAllText(_file, content);
+
+        var removed = _installer.RemoveIfPresent();
+
+        Assert.False(removed);
+        Assert.Equal(content, File.ReadAllText(_file));
+    }
+
+    [Fact]
+    public void RemoveIfPresent_WhenDockHooksInstalled_ThenRemovesThem()
+    {
+        _installer.Install();
+
+        var removed = _installer.RemoveIfPresent();
+
+        Assert.True(removed);
+        Assert.Null(JsonNode.Parse(File.ReadAllText(_file))!["hooks"]);
+    }
+
+    [Fact]
     public void Install_WhenFileInvalid_ThenThrowsFrenchMessage()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_file)!);

@@ -60,6 +60,18 @@ public sealed class ClaudeHooksInstaller
         return new ClaudeHooksStatusModel(SettingsFile, true);
     }
 
+    public bool RemoveIfPresent()
+    {
+        var root = Read();
+        var present = root["hooks"] is JsonObject hooks && hooks.Select(pair => pair.Key).ToList().Any(eventName => GroupsOf(hooks, eventName).Any(IsDockGroup));
+        if (present)
+        {
+            Remove();
+        }
+
+        return present;
+    }
+
     public ClaudeHooksStatusModel Remove()
     {
         var root = Read();
