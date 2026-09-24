@@ -7,6 +7,7 @@ namespace Dock.Core.Terminal;
 public sealed class JobObject : IDisposable
 {
     private const int MaxListedProcesses = 1024;
+    private readonly object _sync = new();
     private IntPtr _handle;
 
     public JobObject()
@@ -45,6 +46,14 @@ public sealed class JobObject : IDisposable
 
     public IReadOnlyList<int> ProcessIds()
     {
+        lock (_sync)
+        {
+            return _handle == IntPtr.Zero ? [] : QueryProcessIds();
+        }
+    }
+
+    private List<int> QueryProcessIds()
+    {
         var size = sizeof(uint) * 2 + IntPtr.Size * MaxListedProcesses;
         var buffer = Marshal.AllocHGlobal(size);
         try
@@ -71,20 +80,26 @@ public sealed class JobObject : IDisposable
 
     public void Terminate()
     {
-        if (_handle != IntPtr.Zero)
+        lock (_sync)
         {
-            JobObjectApi.TerminateJobObject(_handle, 1);
+            if (_handle != IntPtr.Zero)
+            {
+                JobObjectApi.TerminateJobObject(_handle, 1);
+            }
         }
     }
 
     public void Dispose()
     {
-        if (_handle == IntPtr.Zero)
+        lock (_sync)
         {
-            return;
-        }
+            if (_handle == IntPtr.Zero)
+            {
+                return;
+            }
 
-        ProcessApi.CloseHandle(_handle);
-        _handle = IntPtr.Zero;
+            ProcessApi.CloseHandle(_handle);
+            _handle = IntPtr.Zero;
+        }
     }
 }

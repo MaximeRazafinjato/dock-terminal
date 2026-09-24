@@ -1,27 +1,29 @@
+using System.ComponentModel;
 using System.Text.Json;
 using Dock.Core.Agents;
 using Dock.Core.Session;
 using Dock.Core.Terminal;
-using Microsoft.UI.Dispatching;
 
 namespace Dock.Host.Bridge;
 
 public sealed class AgentStateFeed : IDisposable
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan ChangeDelay = TimeSpan.FromMilliseconds(150);
 
-    private readonly DispatcherQueue _dispatcher;
     private readonly TerminalManager _terminals;
     private readonly Action<object> _post;
     private readonly AgentStateRepository _states;
     private readonly AgentMonitor _monitor;
     private readonly FileSystemWatcher _watcher;
-    private DispatcherQueueTimer? _timer;
+    private readonly object _refreshLock = new();
+    private Timer? _timer;
+    private int _changePending;
+    private bool _disposed;
     private string _lastPosted = string.Empty;
 
-    public AgentStateFeed(DispatcherQueue dispatcher, string dataDirectory, TerminalManager terminals, Action<object> post)
+    public AgentStateFeed(string dataDirectory, TerminalManager terminals, Action<object> post)
     {
-        _dispatcher = dispatcher;
         _terminals = terminals;
         _post = post;
         _states = new AgentStateRepository(dataDirectory);
@@ -48,41 +50,62 @@ public sealed class AgentStateFeed : IDisposable
         return new { script = ScriptPath, stateDirectory = StateDirectory, settingsFile = status.SettingsFile, hooksInstalled = status.Installed };
     }
 
-    public void Start()
-    {
-        _timer = _dispatcher.CreateTimer();
-        _timer.Interval = PollInterval;
-        _timer.IsRepeating = true;
-        _timer.Tick += (_, _) => Refresh();
-        _timer.Start();
-    }
+    public void Start() => _timer = new Timer(_ => Refresh(), null, PollInterval, PollInterval);
 
     public void Forget(string paneId) => _states.Delete(paneId);
 
-    private void HandleFileChanged(object sender, FileSystemEventArgs args) => _dispatcher.TryEnqueue(Refresh);
+    private void HandleFileChanged(object sender, FileSystemEventArgs args) => ScheduleSoon();
+
+    private void ScheduleSoon()
+    {
+        if (Interlocked.Exchange(ref _changePending, 1) == 0)
+        {
+            _timer?.Change(ChangeDelay, PollInterval);
+        }
+    }
 
     private void Refresh()
     {
-        if (_timer is null)
+        if (!Monitor.TryEnter(_refreshLock))
         {
+            ScheduleSoon();
             return;
         }
 
-        var agents = _monitor.Resolve(_terminals.Probes());
-        var json = JsonSerializer.Serialize(agents, SessionRepository.JsonOptions);
-        if (json == _lastPosted)
+        try
         {
-            return;
-        }
+            Interlocked.Exchange(ref _changePending, 0);
+            if (_disposed)
+            {
+                return;
+            }
 
-        _lastPosted = json;
-        _post(new { type = "agent.states", panes = agents });
+            var agents = _monitor.Resolve(_terminals.Probes());
+            var json = JsonSerializer.Serialize(agents, SessionRepository.JsonOptions);
+            if (json == _lastPosted)
+            {
+                return;
+            }
+
+            _lastPosted = json;
+            _post(new { type = "agent.states", panes = agents });
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+        }
+        finally
+        {
+            Monitor.Exit(_refreshLock);
+        }
     }
 
     public void Dispose()
     {
-        _timer?.Stop();
-        _timer = null;
         _watcher.Dispose();
+        _timer?.Dispose();
+        lock (_refreshLock)
+        {
+            _disposed = true;
+        }
     }
 }
