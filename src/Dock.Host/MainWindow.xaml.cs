@@ -1,4 +1,5 @@
 using Dock.Host.Bridge;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.Web.WebView2.Core;
 using Windows.Graphics;
@@ -21,6 +22,11 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         AppWindow.Resize(new SizeInt32(1480, 900));
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.Maximize();
+        }
+
         ApplyDarkTitleBar();
         _bridge = new HostBridge(DispatcherQueue, App.DataDirectory, WinRT.Interop.WindowNative.GetWindowHandle(this), ForceClose);
         Closed += HandleClosed;
