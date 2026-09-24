@@ -1,6 +1,6 @@
 # Backlog fonctionnel
 
-22 issues : 20 fonctionnalités, une tâche technique et une clarification. F13 est retirée du périmètre. Aucune priorité ni échéance. Les dépendances sont fonctionnelles, pas un planning.
+23 issues : 21 fonctionnalités, une tâche technique et une clarification. F13 est retirée du périmètre. Aucune priorité ni échéance. Les dépendances sont fonctionnelles, pas un planning.
 
 | ID | Issue | Dépendances |
 | --- | --- | --- |
@@ -24,5 +24,6 @@
 | F19 | [[F19] Sauvegarder, exporter et importer les préférences](https://github.com/MaximeRazafinjato/dock-terminal/issues/19) | [F17](https://github.com/MaximeRazafinjato/dock-terminal/issues/17) |
 | F20 | [[F20] Afficher les états de Claude Code et Codex CLI dans les workspaces](https://github.com/MaximeRazafinjato/dock-terminal/issues/20) | [F03](https://github.com/MaximeRazafinjato/dock-terminal/issues/3), [F11](https://github.com/MaximeRazafinjato/dock-terminal/issues/11) |
 | F21 | [[F21] Notifier les demandes d’attention sans interrompre le travail](https://github.com/MaximeRazafinjato/dock-terminal/issues/21) | [F20](https://github.com/MaximeRazafinjato/dock-terminal/issues/20) |
+| F22 | [[F22] Ouvrir les liens des terminaux par Ctrl + clic](https://github.com/MaximeRazafinjato/dock-terminal/issues/57) | [F11](https://github.com/MaximeRazafinjato/dock-terminal/issues/11) |
 | T01 | [[T01] Valider la pile Windows et le pipeline de terminal](https://github.com/MaximeRazafinjato/dock-terminal/issues/23) | — |
 | D01 | [[D01] Trancher les comportements fonctionnels encore ouverts](https://github.com/MaximeRazafinjato/dock-terminal/issues/22) | — |

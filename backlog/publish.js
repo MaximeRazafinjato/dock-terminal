@@ -21,5 +21,5 @@ for(const task of tasks){
   fs.writeFileSync(`backlog/${task.id}.md`,body);
   gh(['issue','edit',String(issue.number),'--body-file',`backlog/${task.id}.md`]);
 }
-fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+tasks.length+' issues : 20 fonctionnalités, une tâche technique et une clarification. F13 est retirée du périmètre. Aucune priorité ni échéance. Les dépendances sont fonctionnelles, pas un planning.\n\n| ID | Issue | Dépendances |\n| --- | --- | --- |\n'+tasks.map(t=>{const p=published.find(i=>i.id===t.id);return `| ${t.id} | [${t.title}](${p.url}) | ${t.dependencies.map(id=>{const d=published.find(i=>i.id===id);return `[${id}](${d.url})`}).join(', ')||'—'} |`}).join('\n')+'\n');
+fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+tasks.length+' issues : 21 fonctionnalités, une tâche technique et une clarification. F13 est retirée du périmètre. Aucune priorité ni échéance. Les dépendances sont fonctionnelles, pas un planning.\n\n| ID | Issue | Dépendances |\n| --- | --- | --- |\n'+tasks.map(t=>{const p=published.find(i=>i.id===t.id);return `| ${t.id} | [${t.title}](${p.url}) | ${t.dependencies.map(id=>{const d=published.find(i=>i.id===id);return `[${id}](${d.url})`}).join(', ')||'—'} |`}).join('\n')+'\n');
 console.log('Issue bodies and backlog links synchronized.');

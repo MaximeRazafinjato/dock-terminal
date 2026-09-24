@@ -146,7 +146,15 @@ const tasks=[
 'Permettre de rejoindre précisément le pane concerné.',
 'Définir le choix de destination lorsque plusieurs panes attendent.',
 'Définir un comportement utile lorsque le panneau est replié.'
-],['F20'],'Les canaux et événements seront définis avec les adaptateurs réels ; afficher « état inconnu » lorsque la source ne permet pas de conclure.',true]
+],['F20'],'Les canaux et événements seront définis avec les adaptateurs réels ; afficher « état inconnu » lorsque la source ne permet pas de conclure.',true],
+['F22','Ouvrir les liens des terminaux par Ctrl + clic','8','R28','Ouvrir une adresse affichée par un programme sans avoir à la copier.',[
+'Reconnaître les URL `http` et `https` présentes dans le texte des terminaux.',
+'Reconnaître les hyperliens explicites émis par les programmes (séquence OSC 8).',
+'Ouvrir un lien par Ctrl + clic uniquement ; le clic simple reste réservé à la sélection et au placement du curseur.',
+'Ouvrir le lien dans le navigateur par défaut de Windows, jamais dans la fenêtre de Dock.',
+'Ne jamais ouvrir un autre schéma que `http` et `https` et le signaler dans la barre de statut.',
+'Souligner le lien au survol pour montrer qu’il est actif.'
+],['F11'],'Ctrl + clic est retenu par l’utilisateur. La détection des URL et des hyperliens OSC 8, l’ouverture dans le navigateur par défaut et la restriction à `http` / `https` sont des conventions proposées.',false]
 ,
 ['T01','Valider la pile Windows et le pipeline de terminal','8, 15','R27','Valider la pile retenue avant l’implémentation complète : hôte C# .NET 10 (WinUI 3), une seule WebView2 portant toute l’interface avec xterm.js, ConPTY et Job Objects côté hôte.',[
 'Créer un spike C# .NET 10 LTS avec une fenêtre WinUI 3 (Windows App SDK) hébergeant une WebView2 unique ; l’hôte ne définit aucun KeyboardAccelerator.',
@@ -166,5 +174,5 @@ const manifest=tasks.map(([id,title,sections,tests,goal,checks,deps,open,done])=
 manifest.push({id:'D01',title:'[D01] Trancher les comportements fonctionnels encore ouverts',dependencies:[],body:`## Objectif\n\nDocumenter les décisions restantes sans transformer les conventions du POC en exigences validées.\n\n## Décisions à consigner\n\n- [x] Dernier onglet/pane et fermeture ou suppression des workspaces.\n- [x] Noms automatiques et priorité aux noms manuels.\n- [x] Navigation spatiale et raccourcis Leader : Ctrl + Espace, 5 secondes, personnalisables.\n- [x] Dossier Projets : C:\\Files\\Projects, premier niveau, sans détection de projet déjà ouvert.\n- [x] Limites de conservation du texte, sauvegarde et réouverture d’onglets.\n- [x] Arrêt forcé des processus et confirmations ciblées si une activité est détectée.\n- [x] Recherche dans les terminaux retirée du périmètre.\n- [x] Extensibilité Claude Code/Codex CLI ; intégration réelle reportée à une évolution dédiée.\n- [x] JSON, séparation préférences/session/historique et import par remplacement.\n\n## Critère de fin\n\nChaque décision est reportée dans les spécifications et les issues concernées. Les points nécessitant l’inspection du profil et de WezTerm sont documentés.\n\nRéférence : sections 18 et 19 des [spécifications](https://github.com/MaximeRazafinjato/dock-terminal/blob/main/specifications-terminal.md). Le spike technique T01 est réalisé et la pile est confirmée (voir spike/README.md).\n`});
 fs.writeFileSync('backlog/issues.json',JSON.stringify(manifest,null,2)+'\n');
 for(const issue of manifest)fs.writeFileSync(`backlog/${issue.id}.md`,issue.body);
-fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+manifest.length+' tâches sans ordre de priorité : 20 fonctionnalités, une tâche technique et une tâche de clarification. F13 est retirée du périmètre. Les dépendances expriment des relations fonctionnelles, pas un planning.\n\n| ID | Tâche | Dépendances |\n| --- | --- | --- |\n'+manifest.map(i=>`| ${i.id} | [${i.title}](backlog/${i.id}.md) | ${i.dependencies.join(', ')||'—'} |`).join('\n')+'\n\nLes liens vers les issues GitHub seront ajoutés après publication.\n');
+fs.writeFileSync('BACKLOG.md','# Backlog fonctionnel\n\n'+manifest.length+' tâches sans ordre de priorité : 21 fonctionnalités, une tâche technique et une tâche de clarification. F13 est retirée du périmètre. Les dépendances expriment des relations fonctionnelles, pas un planning.\n\n| ID | Tâche | Dépendances |\n| --- | --- | --- |\n'+manifest.map(i=>`| ${i.id} | [${i.title}](backlog/${i.id}.md) | ${i.dependencies.join(', ')||'—'} |`).join('\n')+'\n\nLes liens vers les issues GitHub seront ajoutés après publication.\n');
 console.log(`${manifest.length} issue drafts generated.`);
