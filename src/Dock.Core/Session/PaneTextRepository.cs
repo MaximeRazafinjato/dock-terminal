@@ -85,7 +85,7 @@ public sealed class PaneTextRepository
         {
             try
             {
-                ImportMissing(closed.Text!);
+                Import(closed.Text!);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -105,7 +105,7 @@ public sealed class PaneTextRepository
         try
         {
             var legacy = JsonSerializer.Deserialize<Dictionary<string, string?>>(File.ReadAllText(_legacyFilePath), SessionRepository.JsonOptions) ?? throw new JsonException();
-            ImportMissing(legacy.Where(pair => pair.Value is not null).ToDictionary(pair => pair.Key, pair => pair.Value!));
+            Import(legacy.Where(pair => pair.Value is not null).ToDictionary(pair => pair.Key, pair => pair.Value!));
             File.Delete(_legacyFilePath);
             return null;
         }
@@ -120,9 +120,9 @@ public sealed class PaneTextRepository
         }
     }
 
-    private void ImportMissing(IReadOnlyDictionary<string, string> text)
+    private void Import(IReadOnlyDictionary<string, string> text)
     {
-        foreach (var (paneId, content) in text.Where(pair => IsValidPaneId(pair.Key) && !File.Exists(PathFor(pair.Key))))
+        foreach (var (paneId, content) in text.Where(pair => IsValidPaneId(pair.Key)))
         {
             AtomicFile.Write(PathFor(paneId), content);
         }

@@ -91,6 +91,18 @@ public sealed class PaneTextRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void Load_WhenLegacyFileWrittenAfterPaneFiles_ThenLegacyTextWins()
+    {
+        var repository = new PaneTextRepository(_directory, 1000);
+        repository.Save(new Dictionary<string, string> { ["p1"] = "texte périmé" }, []);
+        File.WriteAllText(Path.Combine(_directory, PaneTextRepository.LegacyFileName), """{ "p1": "écrit par une version antérieure" }""");
+
+        var loaded = repository.Load();
+
+        Assert.Equal("écrit par une version antérieure", loaded.Text["p1"]);
+    }
+
+    [Fact]
     public void Load_WhenLegacyFileCorrupted_ThenQuarantinesAndReturnsEmpty()
     {
         Directory.CreateDirectory(_directory);
@@ -120,16 +132,16 @@ public sealed class PaneTextRepositoryTests : IDisposable
     }
 
     [Fact]
-    public void MoveClosedTabText_WhenPaneTextAlreadyStored_ThenKeepsTheStoredText()
+    public void MoveClosedTabText_WhenPaneTextAlreadyStored_ThenSessionTextWins()
     {
         var repository = new PaneTextRepository(_directory, 1000);
-        repository.Save(new Dictionary<string, string> { ["p9"] = "déjà migré" }, []);
+        repository.Save(new Dictionary<string, string> { ["p9"] = "texte périmé" }, []);
         var session = SessionFactory.Initial();
-        session.Closed.Add(new ClosedTabModel { WorkspaceId = session.Active, WorkspaceName = "Général", Tab = SessionFactory.Tab("C:\\", "powershell"), Text = new() { ["p9"] = "copie ancienne" } });
+        session.Closed.Add(new ClosedTabModel { WorkspaceId = session.Active, WorkspaceName = "Général", Tab = SessionFactory.Tab("C:\\", "powershell"), Text = new() { ["p9"] = "écrit par une version antérieure" } });
 
         repository.MoveClosedTabText(session);
 
-        Assert.Equal("déjà migré", repository.Load().Text["p9"]);
+        Assert.Equal("écrit par une version antérieure", repository.Load().Text["p9"]);
     }
 
     public void Dispose()
