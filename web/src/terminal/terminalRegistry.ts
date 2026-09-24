@@ -129,6 +129,12 @@ const showWithGpu = (handle: TerminalHandle): void => {
   }
 }
 
+const resyncViewportScroll = (terminal: Terminal): void => {
+  const line = terminal.buffer.active.viewportY
+  terminal.scrollToTop()
+  terminal.scrollToLine(line)
+}
+
 const forgetChunks = (handle: TerminalHandle): void => {
   handle.chunks.forEach((chunk) => chunk.end.dispose())
   handle.chunks = []
@@ -222,6 +228,7 @@ export const terminalRegistry = {
       handle.terminal.open(element)
     } else if (handle.terminal.element.parentElement !== element) {
       element.appendChild(handle.terminal.element)
+      resyncViewportScroll(handle.terminal)
     }
     showWithGpu(handle)
     handle.fit.fit()
