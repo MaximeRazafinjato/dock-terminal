@@ -22,11 +22,13 @@ const dividersOf = (node: SplitNode, left: number, top: number, width: number, h
 }
 
 export function TabLayoutGlyph({ tree }: TabLayoutGlyphProps) {
-  const single = isLeaf(tree)
+  if (isLeaf(tree)) {
+    return null
+  }
   return (
-    <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} fill="none" stroke="currentColor" strokeWidth={1} className={single ? 'opacity-60' : undefined} aria-hidden="true">
+    <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} fill="none" stroke="currentColor" strokeWidth={1} aria-hidden="true">
       <rect x={HALF_PIXEL} y={HALF_PIXEL} width={WIDTH - 1} height={HEIGHT - 1} rx={2} />
-      {!single && <path d={dividersOf(tree, INSET, INSET, WIDTH - 2 * INSET, HEIGHT - 2 * INSET).join('')} />}
+      <path d={dividersOf(tree, INSET, INSET, WIDTH - 2 * INSET, HEIGHT - 2 * INSET).join('')} />
     </svg>
   )
 }
