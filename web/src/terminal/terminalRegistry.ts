@@ -9,6 +9,7 @@ import { bridge } from '../bridge/bridge'
 import type { Pane } from '../model/session'
 
 const ACK_THRESHOLD = 256 * 1024
+const MAX_WEBGL_CONTEXTS = 14
 const SNAPSHOT_SCROLLBACK_LINES = 2000
 const DEFAULT_SCROLLBACK_LINES = 10000
 const NEWLINE = String.fromCharCode(13, 10)
@@ -36,6 +37,8 @@ export interface TerminalHandle {
   fit: FitAddon
   serializer: SerializeAddon
   renderer: Renderer
+  rendererAddon?: WebglAddon | CanvasAddon
+  shownAt: number
   started: boolean
   unackedChars: number
   dirty: boolean
@@ -45,32 +48,76 @@ export interface TerminalHandle {
 const handles = new Map<string, TerminalHandle>()
 const primedText = new Map<string, { text: string; kind: RestoreKind }>()
 let scrollbackLines = DEFAULT_SCROLLBACK_LINES
+let webglUnavailable = false
 
 const start = (handle: TerminalHandle, pane: Pane): void => {
   handle.started = true
   bridge.send({ type: 'terminal.create', pane: pane.id, shell: pane.shell, cwd: pane.path, cols: handle.terminal.cols, rows: handle.terminal.rows })
 }
 
-const loadCanvas = (terminal: Terminal): Renderer => {
+const isShown = (handle: TerminalHandle): boolean => handle.terminal.element?.isConnected === true
+
+const releaseRenderer = (handle: TerminalHandle): void => {
+  handle.rendererAddon?.dispose()
+  handle.rendererAddon = undefined
+  handle.renderer = Renderer.Dom
+}
+
+const loadCanvas = (handle: TerminalHandle): void => {
   try {
-    terminal.loadAddon(new CanvasAddon())
-    return Renderer.Canvas
+    const canvas = new CanvasAddon()
+    handle.terminal.loadAddon(canvas)
+    handle.rendererAddon = canvas
+    handle.renderer = Renderer.Canvas
   } catch {
-    return Renderer.Dom
+    handle.renderer = Renderer.Dom
   }
 }
 
-const selectRenderer = (handle: TerminalHandle): Renderer => {
+const loadWebgl = (handle: TerminalHandle): void => {
+  releaseRenderer(handle)
   try {
     const webgl = new WebglAddon()
     webgl.onContextLoss(() => {
-      webgl.dispose()
-      handle.renderer = loadCanvas(handle.terminal)
+      if (handle.rendererAddon === webgl) {
+        releaseRenderer(handle)
+        if (isShown(handle)) {
+          loadCanvas(handle)
+        }
+      }
     })
     handle.terminal.loadAddon(webgl)
-    return Renderer.WebGl
+    handle.rendererAddon = webgl
+    handle.renderer = Renderer.WebGl
   } catch {
-    return loadCanvas(handle.terminal)
+    webglUnavailable = true
+    loadCanvas(handle)
+  }
+}
+
+const releaseLeastRecentlyShownWebgl = (): void => {
+  const withWebgl = [...handles.values()].filter((handle) => handle.renderer === Renderer.WebGl)
+  const excess = withWebgl.length - MAX_WEBGL_CONTEXTS
+  if (excess > 0) {
+    withWebgl
+      .filter((handle) => !isShown(handle))
+      .sort((left, right) => left.shownAt - right.shownAt)
+      .slice(0, excess)
+      .forEach(releaseRenderer)
+  }
+}
+
+const showWithGpu = (handle: TerminalHandle): void => {
+  handle.shownAt = performance.now()
+  if (handle.renderer !== Renderer.WebGl) {
+    if (webglUnavailable) {
+      if (handle.renderer === Renderer.Dom) {
+        loadCanvas(handle)
+      }
+    } else {
+      loadWebgl(handle)
+      releaseLeastRecentlyShownWebgl()
+    }
   }
 }
 
@@ -90,7 +137,7 @@ const createHandle = (pane: Pane): TerminalHandle => {
   terminal.loadAddon(new Unicode11Addon())
   terminal.loadAddon(new ClipboardAddon())
   terminal.unicode.activeVersion = '11'
-  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, started: false, unackedChars: 0, dirty: true }
+  const handle: TerminalHandle = { paneId: pane.id, terminal, fit, serializer, renderer: Renderer.Dom, shownAt: 0, started: false, unackedChars: 0, dirty: true }
   terminal.onData((data) => bridge.send({ type: 'terminal.input', pane: pane.id, data }))
   terminal.onResize(({ cols, rows }) => {
     if (handle.started) {
@@ -118,10 +165,10 @@ export const terminalRegistry = {
     }
     if (!handle.terminal.element) {
       handle.terminal.open(element)
-      handle.renderer = selectRenderer(handle)
     } else if (handle.terminal.element.parentElement !== element) {
       element.appendChild(handle.terminal.element)
     }
+    showWithGpu(handle)
     handle.fit.fit()
     if (!handle.started) {
       handle.started = true
