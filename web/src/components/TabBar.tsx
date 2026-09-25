@@ -6,6 +6,8 @@ import { DEFAULT_SHELL, type Workspace } from '../model/session'
 import { useAgentStore } from '../store/agentStore'
 import { useUiStore } from '../store/uiStore'
 import { AgentStateIcon } from './AgentStateIcon'
+import { Icon } from './Icon'
+import { IconName } from './iconName'
 import { InlineNameEditor } from './InlineNameEditor'
 import { ShellMenu } from './ShellMenu'
 import { beginTabDrag, isDropTarget, type MoveTabHandler } from './tabDrag'
@@ -14,6 +16,8 @@ interface TabBarProps {
   workspace: Workspace
   shells: ShellProfile[]
   renamingTabId: string | null
+  explorerOpen: boolean
+  onToggleExplorer: () => void
   onSelect: (tabId: string) => void
   onStartRename: (tabId: string) => void
   onCommitRename: (name: string) => void
@@ -27,7 +31,7 @@ const MIDDLE_BUTTON = 1
 
 const isMenuKey = (event: KeyboardEvent): boolean => (event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu'
 
-export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew, onMove }: TabBarProps) {
+export function TabBar({ workspace, shells, renamingTabId, explorerOpen, onToggleExplorer, onSelect, onStartRename, onCommitRename, onCancelRename, onClose, onNew, onMove }: TabBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const addButtonRef = useRef<HTMLButtonElement>(null)
   const { draggingTabId, tabDropTarget } = useUiStore(useShallow((state) => ({ draggingTabId: state.draggingTabId, tabDropTarget: state.tabDropTarget })))
@@ -124,6 +128,16 @@ export function TabBar({ workspace, shells, renamingTabId, onSelect, onStartRena
         </button>
         {menuOpen && <ShellMenu shells={shells} onSelect={handleSelectShell} onClose={handleCloseMenu} />}
       </div>
+      <button
+        type="button"
+        aria-pressed={explorerOpen}
+        aria-label={explorerOpen ? 'Masquer les fichiers' : 'Afficher les fichiers'}
+        className={`ml-auto flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-dock-green-hover hover:text-dock-ink ${explorerOpen ? 'text-dock-green-deep' : 'text-dock-muted'}`}
+        data-tip={`${explorerOpen ? 'Masquer' : 'Afficher'} les fichiers du dossier courant (Ctrl + Maj + E)`}
+        onClick={onToggleExplorer}
+      >
+        <Icon name={IconName.Explorer} size={14} />
+      </button>
     </div>
   )
 }

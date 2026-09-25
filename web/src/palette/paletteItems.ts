@@ -42,6 +42,7 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
     command('close-pane', 'Fermer le pane actif', () => runCommand(Command.ClosePane), 'Ctrl + Maj + X'),
     command('new-workspace', 'Nouveau workspace', () => runCommand(Command.NewWorkspace), 'Ctrl + Maj + W'),
     command('projects', 'Ouvrir un projet', () => runCommand(Command.Projects), 'Leader puis F'),
+    command('toggle-explorer', 'Afficher / masquer les fichiers', () => runCommand(Command.ToggleExplorer), 'Ctrl + Maj + E'),
     command('settings', 'Paramètres', () => runCommand(Command.Settings), 'Leader puis ,'),
     command('settings-export', 'Exporter les préférences…', () => {
       runCommand(Command.Settings)

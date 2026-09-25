@@ -15,6 +15,21 @@ public static class LocalActions
     public static void OpenInEditor(string path, string editorCommand)
     {
         RequireDirectory(path);
+        LaunchEditor(path, editorCommand);
+    }
+
+    public static void OpenFileInEditor(string path, string editorCommand)
+    {
+        if (!File.Exists(path))
+        {
+            throw new InvalidOperationException($"Le fichier n’existe plus : {path}");
+        }
+
+        LaunchEditor(path, editorCommand);
+    }
+
+    private static void LaunchEditor(string path, string editorCommand)
+    {
         if (string.IsNullOrWhiteSpace(editorCommand))
         {
             throw new InvalidOperationException("Aucun éditeur configuré.");

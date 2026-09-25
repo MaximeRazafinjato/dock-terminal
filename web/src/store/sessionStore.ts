@@ -9,6 +9,9 @@ import {
   createPane,
   createTab,
   createWorkspace,
+  EXPLORER_DEFAULT,
+  EXPLORER_MAX,
+  EXPLORER_MIN,
   findWorkspace,
   folderName,
   panesOf,
@@ -36,9 +39,12 @@ interface SessionState {
   collapseOtherWorkspaces: (workspaceId: string) => void
   toggleSidebar: () => void
   setSidebarWidth: (width: number) => void
+  toggleExplorer: () => boolean
+  setExplorerWidth: (width: number) => void
   newWorkspace: (name: string, path: string, shell: string) => string
   renameWorkspace: (workspaceId: string, name: string) => void
   newTab: (shell: string) => void
+  newTabAt: (path: string, shell: string) => void
   renameTab: (tabId: string, name: string) => void
   moveTab: (tabId: string, targetWorkspaceId: string, beforeTabId?: string) => void
   moveActiveTab: (offset: number) => void
@@ -75,7 +81,7 @@ const pathChanges = (session: Session | null, paneId: string, path: string): boo
 export const useSessionStore = create<SessionState>()((set, get) => ({
   session: null,
 
-  load: (session) => set({ session: { ...session, closed: session.closed ?? [], favorites: session.favorites ?? [] } }),
+  load: (session) => set({ session: { ...session, closed: session.closed ?? [], favorites: session.favorites ?? [], explorerWidth: session.explorerWidth ?? EXPLORER_DEFAULT } }),
 
   selectWorkspace: (workspaceId) =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.active = workspaceId }) })),
@@ -127,6 +133,18 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
       session: mutateSession(state.session, (draft) => { draft.sidebar = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(width))) }),
     })),
 
+  toggleExplorer: () => {
+    set((state) => ({ session: mutateTab(state.session, (tab) => { tab.explorer = !tab.explorer }) }))
+    const { session } = get()
+    const workspace = session ? activeWorkspace(session) : undefined
+    return Boolean(workspace && activeTab(workspace).explorer)
+  },
+
+  setExplorerWidth: (width) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => { draft.explorerWidth = Math.min(EXPLORER_MAX, Math.max(EXPLORER_MIN, Math.round(width))) }),
+    })),
+
   newWorkspace: (name, path, shell) => {
     const workspace = createWorkspace(name, path, shell)
     set((state) => ({
@@ -153,6 +171,15 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
     set((state) => ({
       session: mutateWorkspace(state.session, (workspace) => {
         const tab = createTab(activePane(activeTab(workspace)).path, shell)
+        workspace.tabs.push(tab)
+        workspace.active = tab.id
+      }),
+    })),
+
+  newTabAt: (path, shell) =>
+    set((state) => ({
+      session: mutateWorkspace(state.session, (workspace) => {
+        const tab = createTab(path, shell)
         workspace.tabs.push(tab)
         workspace.active = tab.id
       }),

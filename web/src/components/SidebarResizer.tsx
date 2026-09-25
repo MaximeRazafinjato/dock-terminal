@@ -1,15 +1,19 @@
 import { useRef, type KeyboardEvent, type PointerEvent } from 'react'
-import { SIDEBAR_MAX, SIDEBAR_MIN } from '../model/session'
 
 const KEYBOARD_STEP = 15
 
 interface SidebarResizerProps {
   width: number
+  min: number
+  max: number
+  label: string
+  reversed?: boolean
   onResize: (width: number) => void
 }
 
-export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
+export function SidebarResizer({ width, min, max, label, reversed = false, onResize }: SidebarResizerProps) {
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
+  const direction = reversed ? -1 : 1
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -19,7 +23,7 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
   }
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (dragRef.current) {
-      onResize(dragRef.current.startWidth + event.clientX - dragRef.current.startX)
+      onResize(dragRef.current.startWidth + direction * (event.clientX - dragRef.current.startX))
     }
   }
   const handlePointerUp = () => {
@@ -29,7 +33,7 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault()
-      onResize(width + (event.key === 'ArrowRight' ? KEYBOARD_STEP : -KEYBOARD_STEP))
+      onResize(width + direction * (event.key === 'ArrowRight' ? KEYBOARD_STEP : -KEYBOARD_STEP))
     }
   }
 
@@ -37,9 +41,9 @@ export function SidebarResizer({ width, onResize }: SidebarResizerProps) {
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="Largeur du panneau des workspaces"
-      aria-valuemin={SIDEBAR_MIN}
-      aria-valuemax={SIDEBAR_MAX}
+      aria-label={label}
+      aria-valuemin={min}
+      aria-valuemax={max}
       aria-valuenow={width}
       tabIndex={0}
       className="group flex w-2 shrink-0 cursor-ew-resize justify-center focus-visible:outline-none"

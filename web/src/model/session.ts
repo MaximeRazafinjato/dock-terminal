@@ -35,6 +35,7 @@ export interface Tab {
   manual: boolean
   active: string
   tree: SplitNode
+  explorer?: boolean
 }
 
 export interface Workspace {
@@ -58,6 +59,7 @@ export interface Session {
   active: string
   sidebar: number
   sidebarCollapsed: boolean
+  explorerWidth: number
   closed: ClosedTab[]
   favorites: string[]
 }
@@ -66,6 +68,9 @@ export const SESSION_VERSION = 2
 export const SIDEBAR_MIN = 220
 export const SIDEBAR_MAX = 450
 export const SIDEBAR_DEFAULT = 292
+export const EXPLORER_MIN = 200
+export const EXPLORER_MAX = 600
+export const EXPLORER_DEFAULT = 280
 export const DEFAULT_SHELL = 'powershell'
 export const CLOSED_TABS_MAX = 5
 export const SPLIT_RATIO_MIN = 0.15
