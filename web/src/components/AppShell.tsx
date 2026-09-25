@@ -19,6 +19,7 @@ import { CloseConfirmDialog } from './CloseConfirmDialog'
 import { CommandPalette } from './CommandPalette'
 import { EmptyState } from './EmptyState'
 import { Header } from './Header'
+import { HeaderWorkspaces } from './HeaderWorkspaces'
 import { ProjectPicker } from './ProjectPicker'
 import { SettingsDialog } from './SettingsDialog'
 import { SidebarResizer } from './SidebarResizer'
@@ -27,6 +28,7 @@ import { StatusBar } from './StatusBar'
 import { TabBar } from './TabBar'
 import { Tooltip } from './Tooltip'
 import type { WorkspacePanelActions } from './workspacePanel'
+import type { HeaderWorkspaceActions } from './workspaceStrip'
 import { WorkspaceTree } from './WorkspaceTree'
 
 interface AppShellProps {
@@ -96,6 +98,19 @@ const handleJoinPane = (paneId: string): void => {
   useAgentStore.getState().acknowledge(paneId)
   useSessionStore.getState().selectPane(paneId)
   focusPane(paneId)
+}
+
+const handleSelectWorkspace = (workspaceId: string): void => {
+  useSessionStore.getState().selectWorkspace(workspaceId)
+  focusActivePane()
+}
+
+const headerActions: HeaderWorkspaceActions = {
+  select: handleSelectWorkspace,
+  joinPane: handleJoinPane,
+  startRename: (workspaceId) => useUiStore.getState().startRenamingWorkspace(workspaceId, RenameOrigin.Header),
+  commitRename: handleCommitRename,
+  cancelRename: finishRename,
 }
 
 const handleNewWorkspace = (): void => {
@@ -255,6 +270,11 @@ export function AppShell({ session }: AppShellProps) {
         renaming={workspace !== undefined && renamingWorkspaceId === workspace.id && renameOrigin === RenameOrigin.Header}
         sidebarCollapsed={session.sidebarCollapsed}
         leaderActive={leaderActive}
+        navigation={
+          session.sidebarCollapsed && workspace ? (
+            <HeaderWorkspaces workspaces={session.workspaces} activeId={session.active} renamingId={renameOrigin === RenameOrigin.Header ? renamingWorkspaceId : null} actions={headerActions} />
+          ) : null
+        }
         onToggleSidebar={handleToggleSidebar}
         onOpenSettings={handleOpenSettings}
         onStartRename={handleStartRename}
