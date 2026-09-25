@@ -1,4 +1,5 @@
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
+import { refIndent } from '../git/gitBranchTree'
 import { beginRefDrag, sameRef } from '../git/gitDrag'
 import { useGitStore, type GitRefHandle } from '../store/gitStore'
 import { Icon } from './Icon'
@@ -14,7 +15,7 @@ interface GitRefRowProps {
   metaTip?: string
   tip?: string
   current?: boolean
-  indent?: boolean
+  depth?: number
   focusable: boolean
   handle?: GitRefHandle
   onFocus: (key: string) => void
@@ -23,7 +24,7 @@ interface GitRefRowProps {
   onMenu: (x: number, y: number) => void
 }
 
-export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = false, indent = false, focusable, handle, onFocus, onActivate, onSelect, onMenu }: GitRefRowProps) {
+export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = false, depth = 0, focusable, handle, onFocus, onActivate, onSelect, onMenu }: GitRefRowProps) {
   const dropTarget = useGitStore((store) => handle !== undefined && sameRef(store.drag?.target, handle))
   const handleClick = () => {
     onFocus(rowKey)
@@ -67,7 +68,8 @@ export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = fa
       data-git-drop-name={handle?.name}
       tabIndex={focusable ? 0 : -1}
       data-tip={tip}
-      className={`group flex h-[24px] cursor-pointer items-center gap-[6px] pr-[4px] text-[12px] select-none hover:bg-dock-green-hover ${indent ? 'pl-[26px]' : 'pl-[12px]'} ${current ? 'text-dock-green-deep' : 'text-dock-ink-soft hover:text-dock-ink'} ${dropTarget ? 'outline-2 -outline-offset-2 outline-dock-focus' : ''}`}
+      style={{ paddingLeft: refIndent(depth) }}
+      className={`group flex h-[24px] cursor-pointer items-center gap-[6px] pr-[4px] text-[12px] select-none hover:bg-dock-green-hover ${current ? 'text-dock-green-deep' : 'text-dock-ink-soft hover:text-dock-ink'} ${dropTarget ? 'outline-2 -outline-offset-2 outline-dock-focus' : ''}`}
       onClick={handleClick}
       onDoubleClick={onActivate}
       onContextMenu={handleContextMenu}
