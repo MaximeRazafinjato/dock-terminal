@@ -160,4 +160,15 @@ public sealed class SessionValidatorTests
 
         Assert.Equal(SessionLimits.MinSidebarWidth, session.Sidebar);
     }
+
+    [Fact]
+    public void Validate_WhenExplorerWidthOutOfRange_ThenClampsIt()
+    {
+        var session = SessionFactory.Initial();
+        session.ExplorerWidth = 5000;
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal(SessionLimits.MaxExplorerWidth, session.ExplorerWidth);
+    }
 }

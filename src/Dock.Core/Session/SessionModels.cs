@@ -9,6 +9,7 @@ public sealed class SessionModel
     public string Active { get; set; } = string.Empty;
     public int Sidebar { get; set; } = SessionLimits.DefaultSidebarWidth;
     public bool SidebarCollapsed { get; set; }
+    public int ExplorerWidth { get; set; } = SessionLimits.DefaultExplorerWidth;
     public List<ClosedTabModel> Closed { get; set; } = new();
     public List<string> Favorites { get; set; } = new();
 }
@@ -37,6 +38,7 @@ public sealed class TabModel
     public string Name { get; set; } = string.Empty;
     public bool Manual { get; set; }
     public string Active { get; set; } = string.Empty;
+    public bool Explorer { get; set; }
     public SplitNodeModel Tree { get; set; } = new();
 }
 
@@ -69,6 +71,9 @@ public static class SessionLimits
     public const int MinSidebarWidth = 220;
     public const int MaxSidebarWidth = 450;
     public const int DefaultSidebarWidth = 292;
+    public const int MinExplorerWidth = 200;
+    public const int MaxExplorerWidth = 600;
+    public const int DefaultExplorerWidth = 280;
     public const int MaxClosedTabs = 5;
     public const int MaxClosedTextChars = 2_000_000;
     public const int MaxFavorites = 50;

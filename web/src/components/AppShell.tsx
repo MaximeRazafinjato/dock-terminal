@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { bridge } from '../bridge/bridge'
 import { PickTarget, type NotificationSettings, type Project, type Settings } from '../bridge/messages'
-import { activeTab, activeWorkspace, DEFAULT_SHELL, findWorkspace, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
+import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, EXPLORER_MAX, EXPLORER_MIN, findWorkspace, SIDEBAR_MAX, SIDEBAR_MIN, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import type { PaletteItem } from '../palette/paletteItems'
 import { waitingPanes } from '../agents/agentSummary'
 import { Command, runCommand } from '../keyboard/shortcuts'
@@ -11,13 +11,17 @@ import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 import { cancelClose, confirmClose } from '../terminal/closeGuard'
+import { confirmDelete, focusFileTree, toggleExplorer } from '../explorer/fileExplorerActions'
+import { useExplorerStore } from '../store/explorerStore'
 import { changePaneShell, dismissPaneState, restartPane, restartPaneIn } from '../terminal/paneLifecycle'
 import { closePaneKeepingText, closeTabKeepingText, closeWorkspaceKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
 import { terminalRegistry } from '../terminal/terminalRegistry'
 import { AttentionToasts } from './AttentionToasts'
 import { CloseConfirmDialog } from './CloseConfirmDialog'
 import { CommandPalette } from './CommandPalette'
+import { DeleteConfirmDialog } from './DeleteConfirmDialog'
 import { EmptyState } from './EmptyState'
+import { FileExplorer } from './FileExplorer'
 import { Header } from './Header'
 import { HeaderWorkspaces } from './HeaderWorkspaces'
 import { ProjectPicker } from './ProjectPicker'
@@ -125,6 +129,19 @@ const handleNewTabIn = (workspaceId: string): void => {
   newTab(DEFAULT_SHELL)
 }
 
+const handleToggleExplorer = (): void => toggleExplorer(false)
+
+const handleOpenTerminalAt = (path: string): void => {
+  const { session, newTabAt } = useSessionStore.getState()
+  const workspace = session ? activeWorkspace(session) : undefined
+  newTabAt(path, workspace ? activePane(activeTab(workspace)).shell : DEFAULT_SHELL)
+}
+
+const handleCancelDelete = (): void => {
+  useExplorerStore.getState().cancelDelete()
+  focusFileTree()
+}
+
 const panelActions: WorkspacePanelActions = {
   selectWorkspace: (workspaceId) => useSessionStore.getState().selectWorkspace(workspaceId),
   toggleWorkspace: (workspaceId) => useSessionStore.getState().toggleWorkspace(workspaceId),
@@ -146,7 +163,7 @@ const panelActions: WorkspacePanelActions = {
 }
 
 export function AppShell({ session }: AppShellProps) {
-  const { selectTab, selectPane, toggleSidebar, setSidebarWidth, newWorkspace, newTab, moveTab, setSplitRatio, toggleFavorite } = useSessionStore.getState()
+  const { selectTab, selectPane, toggleSidebar, setSidebarWidth, setExplorerWidth, newWorkspace, newTab, moveTab, setSplitRatio, toggleFavorite } = useSessionStore.getState()
   const { leaderActive, shells, projects, projectsRoot, projectsError, settingsSnapshot, pickedPath, importedPreferences } = useHostStore(
     useShallow((state) => ({
       leaderActive: state.leaderActive,
@@ -172,6 +189,7 @@ export function AppShell({ session }: AppShellProps) {
     })),
   )
   const { startRenamingWorkspace, startRenamingTab, openPalette, closePalette, closeProjectPicker, openSettings, closeSettings } = useUiStore.getState()
+  const deleteRequest = useExplorerStore((state) => state.deleteRequest)
   const agents = useAgentStore((state) => state.agents)
   const acknowledged = useAgentStore((state) => state.acknowledged)
   const waiting = waitingPanes(session, agents).filter((pane) => acknowledged[pane.paneId] !== agentKey(agents[pane.paneId]))
@@ -248,6 +266,8 @@ export function AppShell({ session }: AppShellProps) {
           workspace={current}
           shells={availableShells}
           renamingTabId={tabRenameOrigin === RenameOrigin.TabBar ? renamingTabId : null}
+          explorerOpen={Boolean(currentTab.explorer)}
+          onToggleExplorer={handleToggleExplorer}
           onSelect={selectTab}
           onStartRename={startRenamingTab}
           onCommitRename={handleCommitTabRename}
@@ -290,17 +310,24 @@ export function AppShell({ session }: AppShellProps) {
               renamingTabId={tabRenameOrigin === RenameOrigin.Panel ? renamingTabId : null}
               actions={panelActions}
             />
-            <SidebarResizer width={session.sidebar} onResize={setSidebarWidth} />
+            <SidebarResizer width={session.sidebar} min={SIDEBAR_MIN} max={SIDEBAR_MAX} label="Largeur du panneau des workspaces" onResize={setSidebarWidth} />
           </>
         )}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {workspace ? renderMain(workspace) : <EmptyState canRestore={session.closed.length > 0} onNewWorkspace={handleNewWorkspace} onRestoreTab={restoreClosedTab} />}
         </main>
+        {tab?.explorer && (
+          <>
+            <SidebarResizer width={session.explorerWidth} min={EXPLORER_MIN} max={EXPLORER_MAX} label="Largeur de l’explorateur de fichiers" reversed onResize={setExplorerWidth} />
+            <FileExplorer root={activePane(tab).path} width={session.explorerWidth} onClose={handleToggleExplorer} onOpenTerminal={handleOpenTerminalAt} />
+          </>
+        )}
       </div>
       <AttentionToasts waiting={waiting} onJoin={handleJoinPane} onDismiss={handleDismissAttention} />
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
       {settingsOpen && <SettingsDialog snapshot={settingsSnapshot} pickedPath={pickedPath} imported={importedPreferences} onClose={handleCloseSettings} onSave={handleSaveSettings} onPick={handlePickPath} onExport={handleExportPreferences} onImport={handleImportPreferences} onInstallHooks={handleInstallHooks} onRemoveHooks={handleRemoveHooks} onTestNotification={handleTestNotification} />}
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavorite} />}
+      {deleteRequest && <DeleteConfirmDialog request={deleteRequest} onConfirm={confirmDelete} onCancel={handleCancelDelete} />}
       {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <Tooltip />
       <StatusBar />

@@ -80,7 +80,7 @@ Ces valeurs sont des références de réalisation, pas des contraintes de taille
 
 **Retenu.** Un explorateur de fichiers intégré s’affiche dans un panneau à droite de la zone de travail, du côté opposé à l’arborescence des workspaces. Il est fermé par défaut et s’ouvre ou se ferme par un bouton. Son état ouvert ou fermé est mémorisé par onglet. Il affiche le dossier courant du pane actif et le suit : un changement de dossier dans le shell ou un changement de pane met l’explorateur à jour. Un fichier s’ouvre dans l’éditeur configuré ; l’explorateur permet de créer, renommer et supprimer des fichiers et des dossiers.
 
-**Conventions proposées.** Placer le bouton dans la barre d’onglets, à côté des actions de split, et proposer la même commande dans la palette. Ouvrir un fichier par double-clic ; déplier un dossier par simple clic ou par le chevron. Supprimer vers la corbeille de Windows après confirmation. Panneau redimensionnable par glisser, largeur mémorisée. Navigation clavier ↑ / ↓ / ← / → / Entrée / F2 / Suppr. La recherche dans le contenu des fichiers reste hors périmètre.
+**Retenu (25 septembre 2026).** Bouton à droite de la barre d’onglets, commande « Afficher / masquer les fichiers » dans la palette, Leader puis E ou Ctrl + Maj + E : ouvre avec le focus dans l’arbre, ou ferme et rend le focus au terminal. Arbre dépliable dont la racine est le dossier du pane actif, dossiers d’abord puis fichiers, triés sans casse ; tout est affiché, `.git` et fichiers cachés compris ; au-delà de 2 000 éléments dans un dossier, le reste est seulement annoncé. Les dossiers affichés sont surveillés en direct, un bouton « Actualiser » relit le tout. Un clic déplie ou replie un dossier ; double-clic ou Entrée ouvre un fichier dans l’éditeur, Entrée déplie ou replie aussi un dossier. Boutons « Nouveau fichier » et « Nouveau dossier » en tête du panneau, menu contextuel (clic droit ou Maj + F10 : ouvrir dans l’éditeur, ouvrir un terminal ici, nouveau fichier, nouveau dossier, renommer, supprimer, copier le chemin), noms saisis en place ; F2 renomme, Suppr place l’élément dans la corbeille de Windows après confirmation. Navigation ↑ / ↓ / ← / → / Début / Fin, Échap rend le focus au terminal. Panneau redimensionnable par glisser ou flèches ; état ouvert par onglet et largeur mémorisés dans la session. La recherche dans le contenu des fichiers reste hors périmètre.
 
 ## 5. Workspaces et panneau en arborescence
 
@@ -202,6 +202,7 @@ Le principe d’une touche Leader est retenu. Le raccourci par défaut est **Ctr
 | Ctrl + Espace, puis F | À définir avec le sélecteur | Sélecteur de projets |
 | Ctrl + Espace, puis W | Ctrl + Maj + W | Nouveau workspace |
 | Ctrl + Espace, puis X | Ctrl + Maj + X | Fermer le pane actif |
+| Ctrl + Espace, puis E | Ctrl + Maj + E | Explorateur de fichiers |
 | Ctrl + Espace, puis flèche | Alt + flèche | Navigation entre panes |
 
 Les séquences Leader sont consommées par l’application uniquement lorsqu’elles correspondent à une commande active. Une commande non reconnue ou expirée rend la saisie au pane actif ; les raccourcis personnalisés peuvent désactiver ou remplacer les valeurs par défaut.

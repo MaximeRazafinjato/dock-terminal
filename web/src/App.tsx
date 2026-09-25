@@ -10,6 +10,7 @@ import { useSessionStore } from './store/sessionStore'
 import { useUiStore } from './store/uiStore'
 import { receiveActivity, receiveApplicationClosing } from './terminal/closeGuard'
 import { receiveContext } from './terminal/contextActions'
+import { receiveCreated, receiveDeleted, receiveListing, receiveRenamed } from './explorer/fileExplorerActions'
 import { terminalRegistry } from './terminal/terminalRegistry'
 import { forgetRemovedText, markTextSaveFailed, primeSessionText, startTextAutosave } from './terminal/textPersistence'
 
@@ -82,6 +83,10 @@ export default function App() {
       bridge.on('terminal.pathMissing', (message) => markPathMissing(message.pane, message.path, message.fallback)),
       bridge.on('projects.listed', (message) => setProjects(message.root, message.projects, message.error ?? null)),
       bridge.on('context.result', (message) => receiveContext(message.pane, message.path, message.git)),
+      bridge.on('files.listed', (message) => receiveListing(message.path, message.entries, message.total, message.error)),
+      bridge.on('files.created', (message) => receiveCreated(message.path)),
+      bridge.on('files.renamed', (message) => receiveRenamed(message.path, message.target)),
+      bridge.on('files.deleted', (message) => receiveDeleted(message.path)),
       bridge.on('terminal.exit', (message) => {
         terminalRegistry.markExited(message.pane, message.code)
         markExited(message.pane, message.code)

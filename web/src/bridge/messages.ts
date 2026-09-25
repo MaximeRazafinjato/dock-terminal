@@ -25,6 +25,17 @@ export enum OpenTarget {
   Explorer = 'explorer',
 }
 
+export enum EntryKind {
+  File = 'file',
+  Folder = 'folder',
+}
+
+export interface FileEntry {
+  name: string
+  path: string
+  isDirectory: boolean
+}
+
 export interface GitContext {
   isRepository: boolean
   branch: string | null
@@ -138,6 +149,10 @@ export type HostToWebMessage =
   | { type: 'agent.join'; pane: string }
   | { type: 'projects.listed'; root: string; projects: Project[]; error?: string }
   | { type: 'context.result'; pane: string; path: string; git: GitContext }
+  | { type: 'files.listed'; path: string; entries: FileEntry[]; total: number; error?: string }
+  | { type: 'files.created'; path: string }
+  | { type: 'files.renamed'; path: string; target: string }
+  | { type: 'files.deleted'; path: string }
   | { type: 'error'; pane?: string; message: string }
 
 export type WebToHostMessage =
@@ -163,6 +178,12 @@ export type WebToHostMessage =
   | { type: 'context.query'; pane: string; path: string }
   | { type: 'context.open'; pane: string; path: string; target: OpenTarget }
   | { type: 'link.open'; url: string }
+  | { type: 'files.watch'; paths: string[] }
+  | { type: 'files.refresh' }
+  | { type: 'files.open'; path: string }
+  | { type: 'files.create'; path: string; name: string; kind: EntryKind }
+  | { type: 'files.rename'; path: string; parent: string; name: string }
+  | { type: 'files.delete'; path: string; parent: string }
   | { type: 'window.close' }
   | { type: 'window.closeCancel' }
 

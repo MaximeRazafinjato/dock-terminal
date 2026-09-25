@@ -44,6 +44,7 @@ public static class SessionValidator
 
         session.Favorites = session.Favorites.Distinct().ToList();
         session.Sidebar = Math.Clamp(session.Sidebar, SessionLimits.MinSidebarWidth, SessionLimits.MaxSidebarWidth);
+        session.ExplorerWidth = Math.Clamp(session.ExplorerWidth, SessionLimits.MinExplorerWidth, SessionLimits.MaxExplorerWidth);
         return ValidationResultModel.Ok();
     }
 

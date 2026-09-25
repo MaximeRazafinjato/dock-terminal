@@ -5,6 +5,7 @@ import { Direction, paneInDirection } from '../components/paneNavigation'
 import { useSessionStore } from '../store/sessionStore'
 import { requestApplicationClose } from '../terminal/closeGuard'
 import { closePaneKeepingText, restoreClosedTab } from '../terminal/tabLifecycle'
+import { toggleExplorer } from '../explorer/fileExplorerActions'
 import { RenameOrigin, useUiStore } from '../store/uiStore'
 
 const LEADER_TIMEOUT_MS = 5000
@@ -23,6 +24,7 @@ export const LEADER_HINTS: LeaderHint[] = [
   { keys: 'H', label: 'haut / bas' },
   { keys: 'W', label: 'workspace' },
   { keys: 'F', label: 'projet' },
+  { keys: 'E', label: 'fichiers' },
   { keys: 'X', label: 'fermer le pane' },
   { keys: 'Z', label: 'rouvrir' },
   { keys: 'P', label: 'palette' },
@@ -49,6 +51,7 @@ export enum Command {
   MoveTabLeft = 'moveTabLeft',
   MoveTabRight = 'moveTabRight',
   RestoreTab = 'restoreTab',
+  ToggleExplorer = 'toggleExplorer',
 }
 
 const LEADER_KEYS: Record<string, Command> = {
@@ -58,6 +61,7 @@ const LEADER_KEYS: Record<string, Command> = {
   h: Command.SplitTopBottom,
   w: Command.NewWorkspace,
   f: Command.Projects,
+  e: Command.ToggleExplorer,
   ',': Command.Settings,
   x: Command.ClosePane,
   z: Command.RestoreTab,
@@ -82,6 +86,7 @@ const DIRECT_LETTER_KEYS: Record<string, Command> = {
   w: Command.NewWorkspace,
   x: Command.ClosePane,
   z: Command.RestoreTab,
+  e: Command.ToggleExplorer,
 }
 
 const DIRECT_ARROW_KEYS: Record<string, Command> = {
@@ -231,6 +236,9 @@ export const runCommand = (command: Command): void => {
       break
     case Command.RestoreTab:
       restoreClosedTab()
+      break
+    case Command.ToggleExplorer:
+      toggleExplorer(true)
       break
   }
 }
