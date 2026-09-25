@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { GitRefKind, type GitBranch, type GitRemoteBranch, type GitState, type GitStash, type GitTag } from '../bridge/gitMessages'
 import { shortSha } from '../git/gitLabels'
 import { branchMenu, remoteBranchMenu, stashMenu, tagMenu } from '../git/gitMenus'
 import { promptNewBranch, promptNewTag, promptStash, switchToBranch, switchToRemote } from '../git/gitRefActions'
 import { openGitMenu, revealCommit } from '../git/gitRequests'
 import type { ActionMenuItem } from './ActionMenu'
+import { GitAheadBehind } from './GitAheadBehind'
 import { GitRefRow } from './GitRefRow'
 import { GitSection } from './GitSection'
 import { Icon } from './Icon'
@@ -26,11 +27,11 @@ const localKey = (branch: GitBranch) => `${LOCAL}\n${branch.name}`
 const remoteKey = (branch: GitRemoteBranch) => `${REMOTE}\n${branch.name}`
 const groupKey = (remote: string) => `${REMOTE}:${remote}`
 
-const branchMeta = (branch: GitBranch): string | undefined => {
+const branchMeta = (branch: GitBranch): ReactNode => {
   if (branch.gone) {
     return 'supprimée'
   }
-  return branch.ahead > 0 || branch.behind > 0 ? `↑${branch.ahead} ↓${branch.behind}` : undefined
+  return branch.ahead > 0 || branch.behind > 0 ? <GitAheadBehind ahead={branch.ahead} behind={branch.behind} /> : undefined
 }
 
 const branchTip = (branch: GitBranch): string => {

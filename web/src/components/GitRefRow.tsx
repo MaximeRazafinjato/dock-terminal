@@ -1,4 +1,4 @@
-import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react'
+import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react'
 import { beginRefDrag, sameRef } from '../git/gitDrag'
 import { useGitStore, type GitRefHandle } from '../store/gitStore'
 import { Icon } from './Icon'
@@ -10,7 +10,7 @@ interface GitRefRowProps {
   rowKey: string
   icon: IconName
   name: string
-  meta?: string
+  meta?: ReactNode
   metaTip?: string
   tip?: string
   current?: boolean

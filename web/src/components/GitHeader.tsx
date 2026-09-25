@@ -3,6 +3,7 @@ import { headSummary, plural } from '../git/gitLabels'
 import { fetchRemote, pullBranch, pushBranch, refreshRepository, undoLastOperation } from '../git/gitRequests'
 import { toggleGitGraph } from '../panel/rightPanel'
 import { useGitStore } from '../store/gitStore'
+import { GitAheadBehind } from './GitAheadBehind'
 import { GitToolButton } from './GitToolButton'
 import { Icon } from './Icon'
 import { IconName } from './iconName'
@@ -44,9 +45,7 @@ export function GitHeader({ state, busy }: GitHeaderProps) {
           <span className="truncate">{headSummary(head)}</span>
         </span>
         {head.upstream && (head.ahead > 0 || head.behind > 0) && (
-          <span className="shrink-0 font-mono text-[11px] text-dock-muted" data-tip={trackingTip}>
-            {`↑${head.ahead} ↓${head.behind}`}
-          </span>
+          <GitAheadBehind ahead={head.ahead} behind={head.behind} tip={trackingTip} />
         )}
         {!head.upstream && head.branch && !head.unborn && (
           <span className="shrink-0 text-[11px] text-dock-muted" data-tip="Aucune branche distante suivie : Push la publie">
