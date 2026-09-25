@@ -28,7 +28,7 @@ export function GitToolButton({ icon, tip, label, disabled = false, pressed, onC
       onClick={handleClick}
     >
       <Icon name={icon} />
-      {label && <span className="whitespace-nowrap @max-[340px]:hidden">{label}</span>}
+      {label && <span className="whitespace-nowrap">{label}</span>}
     </button>
   )
 }
