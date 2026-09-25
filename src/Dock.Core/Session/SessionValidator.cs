@@ -100,6 +100,11 @@ public static class SessionValidator
             return ValidationResultModel.Fail("Onglet invalide.");
         }
 
+        if (tab.Panel is not null && !SessionLimits.Panels.Contains(tab.Panel))
+        {
+            tab.Panel = null;
+        }
+
         var treeResult = ValidateTree(tab.Tree, 0, ref nodeCount);
         if (!treeResult.IsValid)
         {

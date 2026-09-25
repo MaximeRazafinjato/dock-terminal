@@ -39,6 +39,7 @@ public sealed class TabModel
     public bool Manual { get; set; }
     public string Active { get; set; } = string.Empty;
     public bool Explorer { get; set; }
+    public string? Panel { get; set; }
     public SplitNodeModel Tree { get; set; } = new();
 }
 
@@ -78,4 +79,5 @@ public static class SessionLimits
     public const int MaxClosedTextChars = 2_000_000;
     public const int MaxFavorites = 50;
     public const int MaxFavoriteLength = 100;
+    public static readonly string[] Panels = ["files", "git"];
 }

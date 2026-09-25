@@ -19,6 +19,7 @@ import {
   setRatioAt,
   splitLeaf,
   updatePane,
+  RightPanelView,
   SIDEBAR_MAX,
   SIDEBAR_MIN,
   SplitAxis,
@@ -40,6 +41,8 @@ interface SessionState {
   toggleSidebar: () => void
   setSidebarWidth: (width: number) => void
   toggleExplorer: () => boolean
+  togglePanelView: (view: RightPanelView) => boolean
+  setPanelView: (view: RightPanelView) => void
   setExplorerWidth: (width: number) => void
   newWorkspace: (name: string, path: string, shell: string) => string
   renameWorkspace: (workspaceId: string, name: string) => void
@@ -72,6 +75,11 @@ const mutateTab = (session: Session | null, mutate: (tab: Tab, workspace: Worksp
   mutateWorkspace(session, (workspace, draft) => mutate(activeTab(workspace), workspace, draft))
 
 const tabNameFor = (tab: Tab, paneId: string, path: string): string => (!tab.manual && tab.active === paneId ? folderName(path) || tab.name : tab.name)
+
+const rightPanelOpen = (session: Session | null): boolean => {
+  const workspace = session ? activeWorkspace(session) : undefined
+  return Boolean(workspace && activeTab(workspace).explorer)
+}
 
 const pathChanges = (session: Session | null, paneId: string, path: string): boolean =>
   (session?.workspaces ?? []).some((workspace) =>
@@ -135,10 +143,22 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
 
   toggleExplorer: () => {
     set((state) => ({ session: mutateTab(state.session, (tab) => { tab.explorer = !tab.explorer }) }))
-    const { session } = get()
-    const workspace = session ? activeWorkspace(session) : undefined
-    return Boolean(workspace && activeTab(workspace).explorer)
+    return rightPanelOpen(get().session)
   },
+
+  togglePanelView: (view) => {
+    set((state) => ({
+      session: mutateTab(state.session, (tab) => {
+        const shown = tab.explorer && (tab.panel ?? RightPanelView.Files) === view
+        tab.explorer = !shown
+        tab.panel = view
+      }),
+    }))
+    return rightPanelOpen(get().session)
+  },
+
+  setPanelView: (view) =>
+    set((state) => ({ session: mutateTab(state.session, (tab) => { tab.panel = view }) })),
 
   setExplorerWidth: (width) =>
     set((state) => ({

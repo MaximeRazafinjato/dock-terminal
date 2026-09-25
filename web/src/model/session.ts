@@ -29,6 +29,11 @@ export enum SplitSide {
 
 export type SplitPath = SplitSide[]
 
+export enum RightPanelView {
+  Files = 'files',
+  Git = 'git',
+}
+
 export interface Tab {
   id: string
   name: string
@@ -36,6 +41,7 @@ export interface Tab {
   active: string
   tree: SplitNode
   explorer?: boolean
+  panel?: RightPanelView
 }
 
 export interface Workspace {

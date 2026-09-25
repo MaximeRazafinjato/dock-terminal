@@ -162,6 +162,29 @@ public sealed class SessionValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenPanelUnknown_ThenFallsBackToFiles()
+    {
+        var session = SessionFactory.Initial();
+        session.Workspaces[0].Tabs[0].Panel = "inconnu";
+
+        var result = SessionValidator.Validate(session);
+
+        Assert.True(result.IsValid);
+        Assert.Null(session.Workspaces[0].Tabs[0].Panel);
+    }
+
+    [Fact]
+    public void Validate_WhenPanelGit_ThenKeepsIt()
+    {
+        var session = SessionFactory.Initial();
+        session.Workspaces[0].Tabs[0].Panel = "git";
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal("git", session.Workspaces[0].Tabs[0].Panel);
+    }
+
+    [Fact]
     public void Validate_WhenExplorerWidthOutOfRange_ThenClampsIt()
     {
         var session = SessionFactory.Initial();
