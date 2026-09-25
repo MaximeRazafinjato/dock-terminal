@@ -127,9 +127,15 @@
   },
   {
     "id": "F23",
-    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/62",
     "number": 62,
-    "title": "[F23] Explorer les fichiers du pane actif dans un panneau à droite"
+    "title": "[F23] Explorer les fichiers du pane actif dans un panneau à droite",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/62"
+  },
+  {
+    "id": "F24",
+    "url": "https://github.com/MaximeRazafinjato/dock-terminal/issues/68",
+    "number": 68,
+    "title": "[F24] Gérer Git visuellement depuis le panneau de droite"
   },
   {
     "id": "T01",

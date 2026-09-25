@@ -1,6 +1,6 @@
 # Backlog fonctionnel
 
-24 issues : 22 fonctionnalités, une tâche technique et une clarification. F13 est retirée du périmètre. Aucune priorité ni échéance. Les dépendances sont fonctionnelles, pas un planning.
+25 issues : 23 fonctionnalités, une tâche technique et une clarification. F13 est retirée du périmètre. Aucune priorité ni échéance. Les dépendances sont fonctionnelles, pas un planning.
 
 | ID | Issue | Dépendances |
 | --- | --- | --- |
@@ -26,5 +26,6 @@
 | F21 | [[F21] Notifier les demandes d’attention sans interrompre le travail](https://github.com/MaximeRazafinjato/dock-terminal/issues/21) | [F20](https://github.com/MaximeRazafinjato/dock-terminal/issues/20) |
 | F22 | [[F22] Ouvrir les liens des terminaux par Ctrl + clic](https://github.com/MaximeRazafinjato/dock-terminal/issues/57) | [F11](https://github.com/MaximeRazafinjato/dock-terminal/issues/11) |
 | F23 | [[F23] Explorer les fichiers du pane actif dans un panneau à droite](https://github.com/MaximeRazafinjato/dock-terminal/issues/62) | [F11](https://github.com/MaximeRazafinjato/dock-terminal/issues/11), [F15](https://github.com/MaximeRazafinjato/dock-terminal/issues/15) |
+| F24 | [[F24] Gérer Git visuellement depuis le panneau de droite](https://github.com/MaximeRazafinjato/dock-terminal/issues/68) | [F11](https://github.com/MaximeRazafinjato/dock-terminal/issues/11), [F15](https://github.com/MaximeRazafinjato/dock-terminal/issues/15), [F23](https://github.com/MaximeRazafinjato/dock-terminal/issues/62) |
 | T01 | [[T01] Valider la pile Windows et le pipeline de terminal](https://github.com/MaximeRazafinjato/dock-terminal/issues/23) | — |
 | D01 | [[D01] Trancher les comportements fonctionnels encore ouverts](https://github.com/MaximeRazafinjato/dock-terminal/issues/22) | — |
