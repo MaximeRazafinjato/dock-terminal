@@ -54,11 +54,13 @@ export function GitCommitSummary({ details, error, selected, stash }: GitCommitS
         className={`flex h-[22px] w-full shrink-0 cursor-pointer items-center gap-[6px] px-[12px] text-left text-[12px] ${isSelected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-ink-soft hover:bg-dock-green-hover hover:text-dock-ink'}`}
         onClick={handleSelect}
       >
-        <span className={`w-[12px] shrink-0 text-center font-mono text-[11px] font-semibold ${CHANGE_CLASSES[change.kind]}`} data-tip={change.oldPath ? `${CHANGE_LABELS[change.kind]} depuis ${change.oldPath}` : CHANGE_LABELS[change.kind]}>
-          {CHANGE_LETTERS[change.kind]}
+        <span className="flex min-w-0 flex-1 items-baseline gap-[6px]">
+          <span className={`w-[12px] shrink-0 text-center font-mono text-[11px] font-semibold ${CHANGE_CLASSES[change.kind]}`} data-tip={change.oldPath ? `${CHANGE_LABELS[change.kind]} depuis ${change.oldPath}` : CHANGE_LABELS[change.kind]}>
+            {CHANGE_LETTERS[change.kind]}
+          </span>
+          <span className="min-w-0 shrink truncate">{fileName(change.path)}</span>
+          <span className="min-w-0 flex-1 truncate text-[11px] text-dock-muted">{fileFolder(change.path)}</span>
         </span>
-        <span className="min-w-0 shrink truncate">{fileName(change.path)}</span>
-        <span className="min-w-0 flex-1 truncate text-[11px] text-dock-muted">{fileFolder(change.path)}</span>
       </button>
     )
   }

@@ -58,12 +58,14 @@ export const GitFileRow = memo(function GitFileRow({ row, selected, focusable, h
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
-      <span className={`w-[12px] shrink-0 text-center font-mono text-[11px] font-semibold ${letterClass}`} data-tip={statusTip(row)}>
-        {letter}
-      </span>
-      <span className="min-w-0 shrink truncate">{fileName(path)}</span>
-      <span className="min-w-0 flex-1 truncate text-[11px] text-dock-muted" data-tip={path}>
-        {fileFolder(path)}
+      <span className="flex min-w-0 flex-1 items-baseline gap-[6px]">
+        <span className={`w-[12px] shrink-0 text-center font-mono text-[11px] font-semibold ${letterClass}`} data-tip={statusTip(row)}>
+          {letter}
+        </span>
+        <span className="min-w-0 shrink truncate">{fileName(path)}</span>
+        <span className="min-w-0 flex-1 truncate text-[11px] text-dock-muted" data-tip={path}>
+          {fileFolder(path)}
+        </span>
       </span>
       <span className="flex shrink-0 items-center opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
         {canEdit && (
