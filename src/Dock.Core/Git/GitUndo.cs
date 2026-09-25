@@ -41,7 +41,7 @@ public static class GitUndo
                 GitRepository.Require(record.HeadBefore is null ? repository.Run("update-ref", "-d", "HEAD") : repository.Run("reset", "--soft", record.HeadBefore), failure);
                 break;
             case GitUndoKind.Merge or GitUndoKind.Pull or GitUndoKind.Rebase or GitUndoKind.CherryPick:
-                GitRepository.Require(repository.Run("reset", "--keep", record.HeadBefore!), $"{failure} Des modifications locales gênent : remisez-les ou committez-les.");
+                GitRepository.Require(repository.Run("reset", "--keep", record.HeadBefore!), $"{failure} Des modifications locales gênent : faites un stash ou un commit.");
                 break;
             case GitUndoKind.ResetSoft:
                 GitRepository.Require(repository.Run("reset", "--soft", record.HeadBefore!), failure);
@@ -126,7 +126,7 @@ public static class GitUndo
             }
 
             return RewritingKinds.Contains(record.Kind) && !record.Published && record.HeadAfter is not null && repository.IsPublished(record.HeadAfter)
-                ? "les commits ont déjà été poussés"
+                ? "un push a déjà publié les commits"
                 : null;
         }
 

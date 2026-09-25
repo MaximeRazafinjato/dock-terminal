@@ -67,7 +67,7 @@ public sealed class GitHistoryCommandsTests : IDisposable
         var merged = _sandbox.Repository.Resolve("HEAD^2");
         GitUndo.Apply(_sandbox.Repository, finished.Undo);
 
-        Assert.Equal("Fusion terminée.", finished.Message);
+        Assert.Equal("Merge terminé.", finished.Message);
         Assert.NotNull(merged);
         Assert.Equal(head, _sandbox.Head());
         Assert.Equal("main\n", _sandbox.Read("conflit.txt"));

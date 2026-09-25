@@ -38,7 +38,7 @@ const branchTip = (branch: GitBranch): string => {
     return `${branch.name} : la branche distante suivie ${branch.upstream ?? ''} a été supprimée`
   }
   const tracking = branch.upstream ? `suit ${branch.upstream}` : 'aucune branche distante suivie'
-  return `${branch.name} · ${tracking} · clic : aller au commit · double-clic : basculer · glisser sur la branche courante : fusionner ou rebaser`
+  return `${branch.name} · ${tracking} · clic : aller au commit · double-clic : checkout · glisser sur la branche courante : merge ou rebase`
 }
 
 export function GitRefsSidebar({ state, width }: GitRefsSidebarProps) {
@@ -93,7 +93,7 @@ export function GitRefsSidebar({ state, width }: GitRefsSidebarProps) {
         icon={IconName.Local}
         name={branch.name}
         meta={branchMeta(branch)}
-        metaTip={branch.upstream ? `↑ à pousser, ↓ à tirer depuis ${branch.upstream}` : undefined}
+        metaTip={branch.upstream ? `↑ à push, ↓ à pull depuis ${branch.upstream}` : undefined}
         tip={branchTip(branch)}
         current={branch.current}
         focusable={key === focusable}
@@ -115,7 +115,7 @@ export function GitRefsSidebar({ state, width }: GitRefsSidebarProps) {
         rowKey={key}
         icon={IconName.Remote}
         name={branch.branch}
-        tip={`${branch.name} · clic : aller au commit · double-clic : basculer sur une branche locale qui la suit`}
+        tip={`${branch.name} · clic : aller au commit · double-clic : checkout d’une branche locale qui la suit`}
         indent
         focusable={key === focusable}
         handle={{ kind: GitRefKind.Remote, name: branch.name }}
@@ -185,7 +185,7 @@ export function GitRefsSidebar({ state, width }: GitRefsSidebarProps) {
       </GitSection>
       <GitSection title="Distantes" count={state.remoteBranches.length} expanded={!collapsed[REMOTE]} empty={state.remotes.length === 0 ? 'Aucun dépôt distant configuré.' : 'Aucune branche distante.'} onToggle={toggle(REMOTE)}>
         {groups.map((group) => (
-          <GitSection key={group.remote} title={group.remote} count={group.branches.length} nested expanded={!collapsed[groupKey(group.remote)]} empty="Aucune branche récupérée." onToggle={toggle(groupKey(group.remote))}>
+          <GitSection key={group.remote} title={group.remote} count={group.branches.length} nested expanded={!collapsed[groupKey(group.remote)]} empty="Aucune branche : faites un fetch." onToggle={toggle(groupKey(group.remote))}>
             {group.branches.map(renderRemoteBranch)}
           </GitSection>
         ))}
@@ -193,7 +193,7 @@ export function GitRefsSidebar({ state, width }: GitRefsSidebarProps) {
       <GitSection title="Tags" count={state.tags.length} expanded={!collapsed[TAGS]} empty="Aucun tag." onToggle={toggle(TAGS)} actions={headerButton(IconName.Plus, 'Nouveau tag sur HEAD', handleNewTag, state.head.unborn)}>
         {state.tags.map(renderTag)}
       </GitSection>
-      <GitSection title="Stash" count={state.stashes.length} expanded={!collapsed[STASHES]} empty="Aucune modification remisée." onToggle={toggle(STASHES)} actions={headerButton(IconName.Stash, clean ? 'Aucune modification à remiser' : 'Remiser les modifications', promptStash, clean)}>
+      <GitSection title="Stash" count={state.stashes.length} expanded={!collapsed[STASHES]} empty="Aucun stash." onToggle={toggle(STASHES)} actions={headerButton(IconName.Stash, clean ? 'Aucune modification à stash' : 'Stash des modifications', promptStash, clean)}>
         {state.stashes.map(renderStash)}
       </GitSection>
     </div>

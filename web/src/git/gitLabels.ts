@@ -41,7 +41,7 @@ export const CONFLICT_LABELS: Record<GitConflictKind, string> = {
 }
 
 export const OPERATION_LABELS: Record<GitOperationKind, string> = {
-  [GitOperationKind.Merge]: 'Fusion',
+  [GitOperationKind.Merge]: 'Merge',
   [GitOperationKind.Rebase]: 'Rebase',
   [GitOperationKind.CherryPick]: 'Cherry-pick',
   [GitOperationKind.Revert]: 'Revert',
@@ -116,9 +116,9 @@ export const refLabelTip = (label: GitRefLabel): string => {
     case GitRefKind.Tag:
       return `Tag ${label.name}`
     case GitRefKind.Remote:
-      return `Branche distante ${label.name} · double-clic : basculer sur une branche locale qui la suit`
+      return `Branche distante ${label.name} · double-clic : checkout d’une branche locale qui la suit`
     default:
-      return `${label.current ? 'Branche courante' : 'Branche locale'} ${label.name}${label.remotes.length > 0 ? ` · à jour avec ${label.remotes.join(', ')}` : ''}${label.current ? '' : ' · double-clic : basculer'}`
+      return `${label.current ? 'Branche courante' : 'Branche locale'} ${label.name}${label.remotes.length > 0 ? ` · à jour avec ${label.remotes.join(', ')}` : ''}${label.current ? '' : ' · double-clic : checkout'}`
   }
 }
 

@@ -7,7 +7,7 @@ public static class GitSyncCommands
 
     public static GitOutcomeModel Push(GitRepository repository, bool force, bool confirmed, bool forceAllowed)
     {
-        var branch = repository.CurrentBranch() ?? throw new GitCommandException("HEAD détachée : basculez sur une branche avant de pousser.", string.Empty);
+        var branch = repository.CurrentBranch() ?? throw new GitCommandException("HEAD détachée : faites le checkout d’une branche avant le push.", string.Empty);
         if (force)
         {
             GitPaths.RequireConfirmation(confirmed);
@@ -35,22 +35,22 @@ public static class GitSyncCommands
         if (rejected is not null)
         {
             throw force
-                ? new GitCommandException("Push forcé refusé : la branche distante a changé depuis la dernière récupération. Récupérez, vérifiez le graphe puis réessayez.", output.Details)
+                ? new GitCommandException("Push forcé refusé : la branche distante a changé depuis le dernier fetch. Faites un fetch, vérifiez le graphe puis réessayez.", output.Details)
                 : new GitPushRejectedException(branch, Rejection(rejected), output.Details);
         }
 
         GitRepository.Require(output, "Le push a échoué.");
         var destination = $"{target.Remote}/{target.Destination[HeadsPrefix.Length..]}";
-        var message = force ? $"Push forcé vers {destination} (--force-with-lease)." : target.Publish ? $"Branche « {branch} » publiée sur {target.Remote}." : $"Poussé vers {destination}.";
+        var message = force ? $"Push forcé vers {destination} (--force-with-lease)." : target.Publish ? $"Branche « {branch} » publiée sur {target.Remote}." : $"Push vers {destination} terminé.";
         return new GitOutcomeModel(message);
     }
 
     public static GitOutcomeModel Pull(GitRepository repository)
     {
-        var branch = repository.CurrentBranch() ?? throw new GitCommandException("HEAD détachée : basculez sur une branche avant de tirer.", string.Empty);
+        var branch = repository.CurrentBranch() ?? throw new GitCommandException("HEAD détachée : faites le checkout d’une branche avant le pull.", string.Empty);
         if (repository.Config($"branch.{branch}.merge") is null)
         {
-            throw new GitCommandException($"La branche « {branch} » ne suit aucune branche distante : publiez-la d’abord.", string.Empty);
+            throw new GitCommandException($"La branche « {branch} » ne suit aucune branche distante : faites d’abord un push pour la publier.", string.Empty);
         }
 
         repository.RequireNoOperation();
@@ -91,8 +91,8 @@ public static class GitSyncCommands
             throw new GitCommandException("Aucun dépôt distant configuré : ajoutez-en un avec « git remote add ».", string.Empty);
         }
 
-        GitRepository.Require(repository.Run("fetch", "--all"), "La récupération a échoué.");
-        return new GitOutcomeModel("Récupération terminée.");
+        GitRepository.Require(repository.Run("fetch", "--all"), "Le fetch a échoué.");
+        return new GitOutcomeModel("Fetch terminé.");
     }
 
     public static GitOutcomeModel PushTag(GitRepository repository, string? name)
@@ -106,7 +106,7 @@ public static class GitSyncCommands
         }
 
         GitRepository.Require(output, $"Le push du tag « {tag} » a échoué.");
-        return new GitOutcomeModel($"Tag « {tag} » poussé sur {remote}.");
+        return new GitOutcomeModel($"Push du tag « {tag} » vers {remote} terminé.");
     }
 
     public static GitOutcomeModel DeleteRemoteBranch(GitRepository repository, string? reference, bool confirmed)
@@ -137,7 +137,7 @@ public static class GitSyncCommands
         var remotes = repository.Remotes();
         var remote = preferred ?? repository.Config("remote.pushDefault") ?? (remotes.Contains(Origin) ? Origin : remotes.Count == 1 ? remotes[0] : null);
         return remote ?? throw new GitCommandException(
-            remotes.Count == 0 ? "Aucun dépôt distant configuré : ajoutez-en un avec « git remote add »." : "Plusieurs dépôts distants et aucun « origin » : poussez une première fois au terminal.",
+            remotes.Count == 0 ? "Aucun dépôt distant configuré : ajoutez-en un avec « git remote add »." : "Plusieurs dépôts distants et aucun « origin » : faites un premier push au terminal.",
             string.Empty);
     }
 
@@ -147,8 +147,8 @@ public static class GitSyncCommands
         var reason = start >= 0 ? line[(start + 1)..].TrimEnd(')', ' ', '\r') : string.Empty;
         return reason switch
         {
-            "fetch first" => "Push refusé : la branche distante contient des commits absents de votre branche. Tirez pour les intégrer, ou forcez le push.",
-            "non-fast-forward" => "Push refusé : votre branche et la branche distante ont divergé (historique réécrit ?). Tirez pour les réconcilier, ou forcez le push.",
+            "fetch first" => "Push refusé : la branche distante contient des commits absents de votre branche. Faites un pull pour les intégrer, ou forcez le push.",
+            "non-fast-forward" => "Push refusé : votre branche et la branche distante ont divergé (historique réécrit ?). Faites un pull pour les réconcilier, ou forcez le push.",
             _ => $"Push refusé ({reason})."
         };
     }

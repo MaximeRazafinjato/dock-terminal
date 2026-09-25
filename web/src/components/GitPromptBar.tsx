@@ -12,7 +12,7 @@ const SUBMIT_LABELS: Record<GitPromptKind, string> = {
   [GitPromptKind.NewBranch]: 'Créer',
   [GitPromptKind.RenameBranch]: 'Renommer',
   [GitPromptKind.NewTag]: 'Créer le tag',
-  [GitPromptKind.Stash]: 'Remiser',
+  [GitPromptKind.Stash]: 'Stash',
 }
 
 const NAME_MAX_LENGTH = 200
@@ -60,7 +60,7 @@ export function GitPromptBar({ prompt }: GitPromptBarProps) {
         {prompt.kind === GitPromptKind.NewBranch ? (
           <label className="flex min-w-0 flex-1 items-center gap-[6px] text-[12px] text-dock-ink-soft">
             <input type="checkbox" checked={checkout} onChange={handleCheckoutChange} />
-            <span className="truncate">Basculer dessus</span>
+            <span className="truncate">Checkout après création</span>
           </label>
         ) : (
           <span className="flex-1" />

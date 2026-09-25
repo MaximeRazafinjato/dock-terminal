@@ -30,14 +30,14 @@ export const branchMenu = (branch: GitBranch, state: GitState): ActionMenuItem[]
   const current = currentName(state.head)
   const blocked = Boolean(state.operation)
   return [
-    { id: 'switch', label: 'Basculer sur cette branche', disabled: branch.current || blocked, run: () => switchToBranch(branch) },
-    { id: 'merge', label: `Fusionner dans « ${current} »`, disabled: branch.current || blocked, run: () => mergeIntoCurrent(branch.name) },
-    { id: 'rebase', label: `Rebaser « ${current} » sur cette branche`, disabled: branch.current || blocked || state.head.detached, run: () => rebaseCurrentOnto(branch.name) },
+    { id: 'switch', label: 'Checkout de cette branche', disabled: branch.current || blocked, run: () => switchToBranch(branch) },
+    { id: 'merge', label: `Merge dans « ${current} »`, disabled: branch.current || blocked, run: () => mergeIntoCurrent(branch.name) },
+    { id: 'rebase', label: `Rebase de « ${current} » sur cette branche`, disabled: branch.current || blocked || state.head.detached, run: () => rebaseCurrentOnto(branch.name) },
     { id: 'show', label: 'Aller au commit', run: () => revealCommit(branch.sha) },
     { id: 'branch', label: 'Créer une branche ici…', run: () => promptNewBranch(branch.name, branch.name) },
     { id: 'tag', label: 'Créer un tag ici…', run: () => promptNewTag(branch.sha, `« ${branch.name} »`) },
     { id: 'rename', label: 'Renommer…', run: () => promptRenameBranch(branch) },
-    { id: 'delete', label: branch.merged ? 'Supprimer' : 'Supprimer (non fusionnée)…', disabled: branch.current, run: () => deleteBranch(branch) },
+    { id: 'delete', label: branch.merged ? 'Supprimer' : 'Supprimer (sans merge)…', disabled: branch.current, run: () => deleteBranch(branch) },
     copyName(branch.name),
   ]
 }
@@ -46,9 +46,9 @@ export const remoteBranchMenu = (branch: GitRemoteBranch, state: GitState): Acti
   const current = currentName(state.head)
   const blocked = Boolean(state.operation)
   return [
-    { id: 'switch', label: 'Basculer (branche locale suivie)', disabled: blocked, run: () => switchToRemote(branch) },
-    { id: 'merge', label: `Fusionner dans « ${current} »`, disabled: blocked, run: () => mergeIntoCurrent(branch.name) },
-    { id: 'rebase', label: `Rebaser « ${current} » sur cette branche`, disabled: blocked || state.head.detached, run: () => rebaseCurrentOnto(branch.name) },
+    { id: 'switch', label: 'Checkout (branche locale suivie)', disabled: blocked, run: () => switchToRemote(branch) },
+    { id: 'merge', label: `Merge dans « ${current} »`, disabled: blocked, run: () => mergeIntoCurrent(branch.name) },
+    { id: 'rebase', label: `Rebase de « ${current} » sur cette branche`, disabled: blocked || state.head.detached, run: () => rebaseCurrentOnto(branch.name) },
     { id: 'show', label: 'Aller au commit', run: () => revealCommit(branch.sha) },
     { id: 'branch', label: 'Créer une branche ici…', run: () => promptNewBranch(branch.name, branch.name) },
     { id: 'delete', label: 'Supprimer la branche distante…', run: () => deleteRemoteBranch(branch) },
@@ -58,7 +58,7 @@ export const remoteBranchMenu = (branch: GitRemoteBranch, state: GitState): Acti
 
 export const tagMenu = (tag: GitTag, state: GitState): ActionMenuItem[] => [
   { id: 'show', label: 'Aller au commit', run: () => revealCommit(tag.sha) },
-  { id: 'push', label: 'Pousser le tag', disabled: state.remotes.length === 0, run: () => pushTag(tag) },
+  { id: 'push', label: 'Push du tag', disabled: state.remotes.length === 0, run: () => pushTag(tag) },
   { id: 'branch', label: 'Créer une branche ici…', run: () => promptNewBranch(tag.sha, tag.name) },
   { id: 'delete', label: 'Supprimer le tag', run: () => deleteTag(tag) },
   copyName(tag.name),
@@ -77,12 +77,12 @@ export const commitMenu = (commit: GitCommit, state: GitState): ActionMenuItem[]
   const blocked = Boolean(state.operation)
   const short = shortSha(commit.sha)
   return [
-    { id: 'checkout', label: 'Extraire ce commit (HEAD détachée)', disabled: isHead || blocked, run: () => checkoutCommit(commit) },
+    { id: 'checkout', label: 'Checkout de ce commit (HEAD détachée)', disabled: isHead || blocked, run: () => checkoutCommit(commit) },
     { id: 'branch', label: 'Créer une branche ici…', run: () => promptNewBranch(commit.sha, short) },
     { id: 'tag', label: 'Créer un tag ici…', run: () => promptNewTag(commit.sha, short) },
     { id: 'cherry-pick', label: `Cherry-pick sur « ${current} »`, disabled: isHead || blocked, run: () => cherryPickCommit(commit) },
-    { id: 'merge', label: `Fusionner dans « ${current} »`, disabled: isHead || blocked, run: () => mergeIntoCurrent(commit.sha) },
-    { id: 'rebase', label: `Rebaser « ${current} » ici`, disabled: isHead || blocked || state.head.detached, run: () => rebaseCurrentOnto(commit.sha) },
+    { id: 'merge', label: `Merge dans « ${current} »`, disabled: isHead || blocked, run: () => mergeIntoCurrent(commit.sha) },
+    { id: 'rebase', label: `Rebase de « ${current} » ici`, disabled: isHead || blocked || state.head.detached, run: () => rebaseCurrentOnto(commit.sha) },
     { id: 'reset-soft', label: `Reset soft de « ${current} » ici`, disabled: isHead || blocked, run: () => resetCurrentTo(commit, GitResetMode.Soft) },
     { id: 'reset-mixed', label: `Reset mixed de « ${current} » ici`, disabled: isHead || blocked, run: () => resetCurrentTo(commit, GitResetMode.Mixed) },
     { id: 'reset-hard', label: `Reset hard de « ${current} » ici…`, disabled: isHead || blocked, run: () => resetCurrentTo(commit, GitResetMode.Hard) },
@@ -92,8 +92,8 @@ export const commitMenu = (commit: GitCommit, state: GitState): ActionMenuItem[]
 }
 
 export const workingTreeMenu = (state: GitState): ActionMenuItem[] => [
-  { id: 'stage', label: 'Tout indexer', disabled: state.unstagedTotal === 0, run: () => stageChanges([]) },
-  { id: 'stash', label: 'Remiser les modifications…', disabled: state.stagedTotal + state.unstagedTotal === 0, run: promptStash },
+  { id: 'stage', label: 'Stage de tout', disabled: state.unstagedTotal === 0, run: () => stageChanges([]) },
+  { id: 'stash', label: 'Stash des modifications…', disabled: state.stagedTotal + state.unstagedTotal === 0, run: promptStash },
   { id: 'branch', label: 'Créer une branche depuis HEAD…', disabled: state.head.unborn, run: () => promptNewBranch() },
 ]
 
@@ -124,8 +124,8 @@ export const dropMenu = (source: GitRefHandle, target: GitRefHandle, state: GitS
   const current = currentName(state.head)
   const other = isCurrentBranch(target, state) ? source.name : target.name
   return [
-    { id: 'merge', label: `Fusionner « ${other} » dans « ${current} »`, run: () => mergeIntoCurrent(other) },
-    { id: 'rebase', label: `Rebaser « ${current} » sur « ${other} »`, run: () => rebaseCurrentOnto(other) },
+    { id: 'merge', label: `Merge de « ${other} » dans « ${current} »`, run: () => mergeIntoCurrent(other) },
+    { id: 'rebase', label: `Rebase de « ${current} » sur « ${other} »`, run: () => rebaseCurrentOnto(other) },
   ]
 }
 

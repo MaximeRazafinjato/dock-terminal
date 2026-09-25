@@ -74,8 +74,8 @@ export function GitCommitSummary({ details, error, selected, stash }: GitCommitS
           </button>
           <span data-tip={details.email}>{details.author}</span>
           <span>{fullDate(details.date)}</span>
-          {stash && <span>{`Remisé sur ${shortSha(details.parents[0])}`}</span>}
-          {!stash && details.parents.length > 1 && <span>{`Fusion de ${details.parents.map(shortSha).join(' et ')}`}</span>}
+          {stash && <span>{`Stash sur ${shortSha(details.parents[0])}`}</span>}
+          {!stash && details.parents.length > 1 && <span>{`Merge de ${details.parents.map(shortSha).join(' et ')}`}</span>}
         </div>
       </div>
       <p className={`shrink-0 px-[12px] pt-[8px] pb-[4px] ${SECTION_TITLE}`}>{plural(details.files.length, 'fichier modifié', 'fichiers modifiés')}</p>

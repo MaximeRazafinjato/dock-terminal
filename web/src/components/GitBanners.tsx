@@ -53,7 +53,7 @@ export function GitBanners({ state, busy }: GitBannersProps) {
           </div>
           <div className="flex flex-wrap gap-[6px]">
             <button type="button" className={GIT_SECONDARY} onClick={pullBranch}>
-              Tirer
+              Pull
             </button>
             <button type="button" className={GIT_DANGER} data-tip="git push --force-with-lease, après confirmation" onClick={forcePush}>
               Forcer le push…

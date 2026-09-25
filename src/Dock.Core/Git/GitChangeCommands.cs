@@ -9,22 +9,22 @@ public static class GitChangeCommands
     {
         if (files.Count == 0)
         {
-            GitRepository.Require(repository.Run("add", "-A"), "L’indexation a échoué.");
-            return new GitOutcomeModel("Toutes les modifications sont indexées.");
+            GitRepository.Require(repository.Run("add", "-A"), "Le stage a échoué.");
+            return new GitOutcomeModel("Stage de toutes les modifications.");
         }
 
-        GitPaths.Run(repository, "L’indexation a échoué.", files, "add");
-        return new GitOutcomeModel(files.Count == 1 ? $"Indexé : {files[0]}" : $"{files.Count} fichiers indexés.");
+        GitPaths.Run(repository, "Le stage a échoué.", files, "add");
+        return new GitOutcomeModel(files.Count == 1 ? $"Stage : {files[0]}" : $"Stage de {files.Count} fichiers.");
     }
 
     public static GitOutcomeModel Unstage(GitRepository repository, IReadOnlyList<string> files)
     {
-        const string failure = "Le retrait de l’index a échoué.";
+        const string failure = "L’unstage a échoué.";
         var unborn = repository.HeadSha() is null;
         if (files.Count == 0)
         {
             GitRepository.Require(unborn ? repository.Run("rm", "-r", "-q", "--cached", "--", ".") : repository.Run("reset", "-q"), failure);
-            return new GitOutcomeModel("Plus aucune modification indexée.");
+            return new GitOutcomeModel("Unstage de toutes les modifications.");
         }
 
         if (unborn)
@@ -36,7 +36,7 @@ public static class GitChangeCommands
             GitPaths.Run(repository, failure, files, "restore", "--staged");
         }
 
-        return new GitOutcomeModel(files.Count == 1 ? $"Retiré de l’index : {files[0]}" : $"{files.Count} fichiers retirés de l’index.");
+        return new GitOutcomeModel(files.Count == 1 ? $"Unstage : {files[0]}" : $"Unstage de {files.Count} fichiers.");
     }
 
     public static GitOutcomeModel Discard(GitRepository repository, IReadOnlyList<string> files, bool confirmed)
@@ -84,7 +84,7 @@ public static class GitChangeCommands
 
         if (!amend && status.StagedTotal == 0)
         {
-            throw new GitCommandException("Aucune modification indexée : indexez au moins un fichier avant de committer.", string.Empty);
+            throw new GitCommandException("Aucune modification staged : il faut au moins un fichier staged pour committer.", string.Empty);
         }
 
         if (!amend && text.Length == 0)
@@ -95,7 +95,7 @@ public static class GitChangeCommands
         var before = repository.HeadSha();
         if (amend && before is null)
         {
-            throw new GitCommandException("Aucun commit à modifier.", string.Empty);
+            throw new GitCommandException("Aucun commit : amend impossible.", string.Empty);
         }
 
         var arguments = new List<string> { "commit" };
@@ -105,19 +105,19 @@ public static class GitChangeCommands
         }
 
         arguments.AddRange(text.Length > 0 ? ["-F", "-"] : ["--no-edit"]);
-        GitRepository.Require(repository.Run(new GitRunOptionsModel(Input: text.Length > 0 ? $"{text}\n" : null), [.. arguments]), amend ? "La modification du dernier commit a échoué." : "Le commit a échoué.");
+        GitRepository.Require(repository.Run(new GitRunOptionsModel(Input: text.Length > 0 ? $"{text}\n" : null), [.. arguments]), amend ? "L’amend a échoué." : "Le commit a échoué.");
         var after = repository.HeadSha() ?? throw new GitCommandException("Le commit n’a pas été créé.", string.Empty);
         var subject = repository.Read("log", "-1", "--format=%s", after).Trim();
         var record = new GitUndoRecordModel
         {
             Kind = amend ? GitUndoKind.Amend : GitUndoKind.Commit,
-            Label = amend ? "Modification du dernier commit" : $"Commit « {subject} »",
+            Label = amend ? "Amend du dernier commit" : $"Commit « {subject} »",
             HeadBefore = before,
             HeadAfter = after,
             BranchAfter = repository.CurrentBranch(),
             Published = repository.IsPublished(after)
         };
-        return new GitOutcomeModel(amend ? $"Dernier commit modifié : {GitRepository.Short(after)} « {subject} »." : $"Commit {GitRepository.Short(after)} créé : « {subject} ».", Undo: record);
+        return new GitOutcomeModel(amend ? $"Amend terminé : {GitRepository.Short(after)} « {subject} »." : $"Commit {GitRepository.Short(after)} créé : « {subject} ».", Undo: record);
     }
 
     public static GitOutcomeModel Resolve(GitRepository repository, IReadOnlyList<string> files, bool confirmed)

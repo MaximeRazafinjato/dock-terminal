@@ -78,7 +78,7 @@ export const submitPrompt = (value: string, checkout: boolean): void => {
 
 const confirmForcedDelete = (branch: GitBranch): void =>
   askConfirmation({
-    title: `Supprimer la branche non fusionnée « ${branch.name} » ?`,
+    title: `Supprimer « ${branch.name} » sans merge ?`,
     body: 'Ses commits ne sont ni dans la branche courante ni dans sa branche distante : ils ne seront plus visibles dans le graphe.',
     detail: '« Annuler » dans la vue Git peut recréer la branche tant qu’aucune autre opération n’est faite.',
     confirmLabel: 'Supprimer',
@@ -112,7 +112,7 @@ export const applyStash = (stash: GitStash, pop: boolean): void => withRoot((pat
 export const dropStash = (stash: GitStash): void =>
   askConfirmation({
     title: 'Supprimer ce stash ?',
-    body: 'Les modifications remisées seront supprimées.',
+    body: 'Les modifications de ce stash seront supprimées.',
     detail: `${stash.message}\n« Annuler » dans la vue Git peut le restaurer tant qu’aucune autre opération n’est faite.`,
     confirmLabel: 'Supprimer',
     run: () => withRoot((path) => ({ type: 'git.stashDrop', path, index: stash.index, commit: stash.sha, confirmed: true })),

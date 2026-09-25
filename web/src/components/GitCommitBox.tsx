@@ -19,17 +19,17 @@ const commitBlocker = (state: GitState, busy: string | null, message: string, am
     return 'Terminez ou abandonnez d’abord l’opération en cours'
   }
   if (amend) {
-    return state.head.unborn ? 'Aucun commit à modifier' : null
+    return state.head.unborn ? 'Aucun commit : amend impossible' : null
   }
   if (state.stagedTotal === 0) {
-    return 'Aucune modification indexée'
+    return 'Aucune modification staged'
   }
   return message.trim().length === 0 ? 'Saisissez un message de commit' : null
 }
 
 const pushBlocker = (state: GitState): string | null => {
   if (state.head.detached) {
-    return 'HEAD détachée : impossible de pousser'
+    return 'HEAD détachée : push impossible'
   }
   return state.remotes.length === 0 ? 'Aucun dépôt distant configuré' : null
 }
@@ -38,7 +38,7 @@ export function GitCommitBox({ state, busy }: GitCommitBoxProps) {
   const { message, amend } = useGitStore(useShallow((store) => ({ message: store.message, amend: store.amend })))
   const blocker = commitBlocker(state, busy, message, amend)
   const pushBlocked = blocker ?? pushBlocker(state)
-  const commitLabel = amend ? 'Modifier le commit' : 'Commit'
+  const commitLabel = amend ? 'Amend' : 'Commit'
 
   const handleMessageChange = (event: ChangeEvent<HTMLTextAreaElement>) => useGitStore.getState().setMessage(event.target.value)
   const handleAmendChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -72,20 +72,20 @@ export function GitCommitBox({ state, busy }: GitCommitBoxProps) {
         rows={3}
         spellCheck={false}
         aria-label="Message du commit"
-        placeholder={amend ? 'Message du commit modifié' : 'Message du commit'}
+        placeholder={amend ? 'Message du commit (amend)' : 'Message du commit'}
         className={`${GIT_INPUT} resize-none leading-[17px]`}
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
       />
       <label className="flex items-center gap-[6px] text-[12px] text-dock-ink-soft">
         <input type="checkbox" checked={amend} disabled={state.head.unborn} onChange={handleAmendChange} />
-        <span className="truncate">Modifier le dernier commit</span>
+        <span className="truncate">Amend du dernier commit</span>
       </label>
       <div className="flex gap-[6px]">
-        <button type="button" className={`${GIT_PRIMARY} min-w-0 flex-1 truncate`} aria-disabled={blocker !== null} data-tip={blocker ?? `${commitLabel} ${amend ? '' : plural(state.stagedTotal, 'fichier indexé', 'fichiers indexés')} (Ctrl + Entrée)`} onClick={handleCommit}>
+        <button type="button" className={`${GIT_PRIMARY} min-w-0 flex-1 truncate`} aria-disabled={blocker !== null} data-tip={blocker ?? `${commitLabel} ${amend ? 'du dernier commit' : `de ${plural(state.stagedTotal, 'fichier staged', 'fichiers staged')}`} (Ctrl + Entrée)`} onClick={handleCommit}>
           {commitLabel}
         </button>
-        <button type="button" className={`${GIT_SECONDARY} min-w-0 flex-1 truncate`} aria-disabled={pushBlocked !== null} data-tip={pushBlocked ?? `${commitLabel} puis pousser`} onClick={handleCommitAndPush}>
+        <button type="button" className={`${GIT_SECONDARY} min-w-0 flex-1 truncate`} aria-disabled={pushBlocked !== null} data-tip={pushBlocked ?? `${commitLabel} puis push`} onClick={handleCommitAndPush}>
           {`${commitLabel} et push`}
         </button>
       </div>

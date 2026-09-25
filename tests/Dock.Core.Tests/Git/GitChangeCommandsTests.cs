@@ -41,7 +41,7 @@ public sealed class GitChangeCommandsTests : IDisposable
 
         var exception = Assert.Throws<GitCommandException>(() => GitChangeCommands.Commit(_sandbox.Repository, "Message", false));
 
-        Assert.Equal("Aucune modification indexée : indexez au moins un fichier avant de committer.", exception.Message);
+        Assert.Equal("Aucune modification staged : il faut au moins un fichier staged pour committer.", exception.Message);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class GitChangeCommandsTests : IDisposable
 
         var info = GitUndo.Describe(_sandbox.Repository, outcome.Undo, _sandbox.Repository.Status().Head, null);
 
-        Assert.Equal(new GitUndoInfoModel("Commit « Deux »", false, "les commits ont déjà été poussés"), info);
+        Assert.Equal(new GitUndoInfoModel("Commit « Deux »", false, "un push a déjà publié les commits"), info);
     }
 
     [Fact]

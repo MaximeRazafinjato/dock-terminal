@@ -12,8 +12,8 @@ import { IconName } from './iconName'
 import { PANEL_HEADER_BUTTON } from './rightPanelStyles'
 
 const SOURCE_LABELS: Record<GitDiffSource, string> = {
-  [GitDiffSource.Unstaged]: 'Non indexé',
-  [GitDiffSource.Staged]: 'Indexé',
+  [GitDiffSource.Unstaged]: 'Unstaged',
+  [GitDiffSource.Staged]: 'Staged',
   [GitDiffSource.Commit]: 'Commit',
 }
 
@@ -56,11 +56,11 @@ export function GitDiffDrawer() {
           <span className="flex shrink-0 items-center gap-[2px]">
             <GitToolButton icon={IconName.Editor} tip="Ouvrir dans l’éditeur" onClick={handleEdit} />
             {working.source === GitDiffSource.Staged ? (
-              <GitToolButton icon={IconName.Minus} tip="Retirer de l’index" onClick={handleUnstage} />
+              <GitToolButton icon={IconName.Minus} tip="Unstage" onClick={handleUnstage} />
             ) : (
               <>
                 <GitToolButton icon={IconName.Discard} tip="Abandonner les modifications" onClick={handleDiscard} />
-                <GitToolButton icon={IconName.Plus} tip="Indexer" onClick={handleStage} />
+                <GitToolButton icon={IconName.Plus} tip="Stage" onClick={handleStage} />
               </>
             )}
           </span>

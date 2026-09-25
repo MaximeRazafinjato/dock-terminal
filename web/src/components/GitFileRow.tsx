@@ -77,7 +77,7 @@ export const GitFileRow = memo(function GitFileRow({ row, selected, focusable, h
           </button>
         )}
         {group === GitRowGroup.Staged && (
-          <button type="button" tabIndex={-1} className={ROW_ACTION} aria-label="Retirer de l’index" data-tip="Retirer de l’index (Espace)" onClick={handleUnstage}>
+          <button type="button" tabIndex={-1} className={ROW_ACTION} aria-label="Unstage" data-tip="Unstage (Espace)" onClick={handleUnstage}>
             <Icon name={IconName.Minus} />
           </button>
         )}
@@ -86,7 +86,7 @@ export const GitFileRow = memo(function GitFileRow({ row, selected, focusable, h
             <button type="button" tabIndex={-1} className={`${ROW_ACTION} hover:text-dock-error`} aria-label="Abandonner les modifications" data-tip="Abandonner les modifications (Suppr)" onClick={handleDiscard}>
               <Icon name={IconName.Discard} />
             </button>
-            <button type="button" tabIndex={-1} className={ROW_ACTION} aria-label="Indexer" data-tip="Indexer (Espace)" onClick={handleStage}>
+            <button type="button" tabIndex={-1} className={ROW_ACTION} aria-label="Stage" data-tip="Stage (Espace)" onClick={handleStage}>
               <Icon name={IconName.Plus} />
             </button>
           </>

@@ -39,7 +39,7 @@ public static class GitBranchCommands
             BranchBefore = checkout ? branchBefore : null,
             BranchAfter = checkout ? branch : null
         };
-        return new GitOutcomeModel(checkout ? $"Branche « {branch} » créée et extraite." : $"Branche « {branch} » créée.", Undo: record);
+        return new GitOutcomeModel(checkout ? $"Checkout de la nouvelle branche « {branch} »." : $"Branche « {branch} » créée.", Undo: record);
     }
 
     public static GitOutcomeModel Switch(GitRepository repository, string? reference, string? target)
@@ -76,21 +76,21 @@ public static class GitBranchCommands
                 output = repository.Run("switch", "--detach", sha);
                 break;
             default:
-                throw new GitCommandException($"Cible de bascule inconnue : {target}.", string.Empty);
+                throw new GitCommandException($"Cible de checkout inconnue : {target}.", string.Empty);
         }
 
-        GitRepository.Require(output, $"Impossible de basculer sur « {label} ».");
+        GitRepository.Require(output, $"Checkout de « {label} » impossible.");
         var record = new GitUndoRecordModel
         {
             Kind = GitUndoKind.Switch,
-            Label = $"Bascule sur « {label} »",
+            Label = $"Checkout de « {label} »",
             HeadBefore = before,
             HeadAfter = repository.HeadSha(),
             BranchBefore = branchBefore,
             BranchAfter = repository.CurrentBranch(),
             RefName = created
         };
-        return new GitOutcomeModel(target == CommitTarget ? $"HEAD détachée sur {label}." : $"Basculé sur « {label} ».", Undo: record);
+        return new GitOutcomeModel(target == CommitTarget ? $"Checkout de {label} : HEAD détachée." : $"Checkout de « {label} » terminé.", Undo: record);
     }
 
     public static GitOutcomeModel Rename(GitRepository repository, string? name, string? newName)
@@ -117,7 +117,7 @@ public static class GitBranchCommands
         var branch = GitNames.RequireBranchName(repository, name);
         if (branch == repository.CurrentBranch())
         {
-            throw new GitCommandException("Impossible de supprimer la branche courante : basculez d’abord sur une autre branche.", string.Empty);
+            throw new GitCommandException("Impossible de supprimer la branche courante : faites d’abord le checkout d’une autre branche.", string.Empty);
         }
 
         var target = repository.Resolve($"refs/heads/{branch}") ?? throw new GitCommandException($"La branche « {branch} » n’existe plus.", string.Empty);
@@ -131,7 +131,7 @@ public static class GitBranchCommands
             var reference = upstream is null ? repository.HeadSha() : $"refs/remotes/{upstream}";
             if (reference is null || !repository.IsAncestor(target, reference))
             {
-                throw new GitCommandException($"La branche « {branch} » n’est pas fusionnée.", "Ses commits ne sont pas dans la branche de référence. Confirmez pour la supprimer quand même.", GitFailureCode.NotMerged);
+                throw new GitCommandException($"La branche « {branch} » a des commits sans merge.", "Ses commits ne sont pas dans la branche de référence. Confirmez pour la supprimer quand même.", GitFailureCode.NotMerged);
             }
         }
 

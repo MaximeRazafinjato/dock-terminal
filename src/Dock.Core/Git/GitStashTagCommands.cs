@@ -29,7 +29,7 @@ public static class GitStashTagCommands
         var status = repository.Status();
         if (status.StagedTotal + status.UnstagedTotal == 0)
         {
-            throw new GitCommandException("Aucune modification à remiser.", string.Empty);
+            throw new GitCommandException("Aucune modification à stash.", string.Empty);
         }
 
         var text = message?.Trim() ?? string.Empty;
@@ -39,10 +39,10 @@ public static class GitStashTagCommands
             arguments.AddRange(["-m", text]);
         }
 
-        GitRepository.Require(repository.Run([.. arguments]), "La remise des modifications a échoué.");
+        GitRepository.Require(repository.Run([.. arguments]), "Le stash a échoué.");
         var sha = repository.RefValue("refs/stash");
-        var record = sha is null ? null : new GitUndoRecordModel { Kind = GitUndoKind.StashPush, Label = "Remise des modifications", Backup = sha };
-        return new GitOutcomeModel(text.Length > 0 ? $"Modifications remisées : « {text} »." : "Modifications remisées.", Undo: record, ClearUndo: record is null);
+        var record = sha is null ? null : new GitUndoRecordModel { Kind = GitUndoKind.StashPush, Label = "Stash des modifications", Backup = sha };
+        return new GitOutcomeModel(text.Length > 0 ? $"Stash créé : « {text} »." : "Stash créé.", Undo: record, ClearUndo: record is null);
     }
 
     public static GitOutcomeModel ApplyStash(GitRepository repository, int index, string? sha, bool pop)

@@ -12,13 +12,13 @@ public static class GitOperationNames
 
     public static string Label(GitOperationKind operation) => operation switch
     {
-        GitOperationKind.Merge => "Fusion",
+        GitOperationKind.Merge => "Merge",
         GitOperationKind.Rebase => "Rebase",
         GitOperationKind.CherryPick => "Cherry-pick",
         _ => "Revert"
     };
 
-    public static string Finished(GitOperationKind operation) => operation == GitOperationKind.Merge ? "Fusion terminée." : $"{Label(operation)} terminé.";
+    public static string Finished(GitOperationKind operation) => $"{Label(operation)} terminé.";
 
-    public static string Aborted(GitOperationKind operation) => operation == GitOperationKind.Merge ? "Fusion annulée." : $"{Label(operation)} annulé.";
+    public static string Aborted(GitOperationKind operation) => $"{Label(operation)} annulé.";
 }

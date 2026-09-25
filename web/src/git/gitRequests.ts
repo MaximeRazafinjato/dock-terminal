@@ -158,12 +158,12 @@ export const unstageChanges = (changes: GitFileChange[]): void => withRoot((path
 export const discardChanges = (changes: GitFileChange[], total: number): void => {
   const single = changes.length === 1 ? changes[0] : null
   askConfirmation({
-    title: single ? `Abandonner les modifications de « ${fileName(single.path)} » ?` : `Abandonner ${plural(total, 'modification non indexée', 'modifications non indexées')} ?`,
+    title: single ? `Abandonner les modifications de « ${fileName(single.path)} » ?` : `Abandonner ${plural(total, 'modification unstaged', 'modifications unstaged')} ?`,
     body: single
       ? single.kind === GitChangeKind.Untracked
         ? 'Ce fichier non suivi sera supprimé.'
-        : 'Le fichier revient à sa version indexée.'
-      : 'Les fichiers suivis reviennent à leur version indexée et les fichiers non suivis sont supprimés.',
+        : 'Le fichier revient à sa version staged, sinon à celle du dernier commit.'
+      : 'Les fichiers suivis reviennent à leur version staged, sinon à celle du dernier commit, et les fichiers non suivis sont supprimés.',
     detail: `${single ? `${single.path}\n` : ''}« Annuler » dans la vue Git peut encore les restaurer tant qu’aucune autre opération n’est faite.`,
     confirmLabel: 'Abandonner',
     run: () => withRoot((path) => ({ type: 'git.discard', path, files: single ? [single.path] : [], confirmed: true }), false),
@@ -187,7 +187,7 @@ export const forcePush = (): void => {
   askConfirmation({
     title: `Forcer le push de « ${branch} » ?`,
     body: 'La branche distante sera remplacée par votre historique local avec git push --force-with-lease.',
-    detail: 'Le push est refusé si la branche distante a changé depuis la dernière récupération : les commits d’autres personnes ne sont jamais écrasés sans que vous les ayez vus.',
+    detail: 'Le push est refusé si la branche distante a changé depuis le dernier fetch : les commits d’autres personnes ne sont jamais écrasés sans que vous les ayez vus.',
     confirmLabel: 'Forcer le push',
     run: () => withRoot((path) => ({ type: 'git.push', path, force: true, confirmed: true })),
   })

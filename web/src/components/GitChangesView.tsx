@@ -18,7 +18,7 @@ interface GitChangesViewProps {
   busy: string | null
 }
 
-const KEYBOARD_TIP = 'Entrée : diff · Espace : indexer ou retirer · Suppr : abandonner'
+const KEYBOARD_TIP = 'Entrée : diff · Espace : stage ou unstage · Suppr : abandonner'
 
 const hiddenNote = (shown: number, total: number) =>
   total > shown ? <p className="py-[2px] pl-[30px] text-[11px] text-dock-muted italic">{`… et ${plural(total - shown, 'autre fichier non affiché', 'autres fichiers non affichés')}`}</p> : null
@@ -110,8 +110,8 @@ export function GitChangesView({ state, busy }: GitChangesViewProps) {
         )}
         {state.stagedTotal > 0 && (
           <>
-            <GitGroupHeader title="Indexées" count={state.stagedTotal} tip={KEYBOARD_TIP}>
-              <button type="button" className={ROW_ACTION} aria-label="Tout retirer de l’index" data-tip="Tout retirer de l’index" onClick={handleUnstageAll}>
+            <GitGroupHeader title="Staged" count={state.stagedTotal} tip={KEYBOARD_TIP}>
+              <button type="button" className={ROW_ACTION} aria-label="Unstage de tout" data-tip="Unstage de tout" onClick={handleUnstageAll}>
                 <Icon name={IconName.Minus} />
               </button>
             </GitGroupHeader>
@@ -121,11 +121,11 @@ export function GitChangesView({ state, busy }: GitChangesViewProps) {
         )}
         {state.unstagedTotal > 0 && (
           <>
-            <GitGroupHeader title="Non indexées" count={state.unstagedTotal} tip={KEYBOARD_TIP}>
-              <button type="button" className={`${ROW_ACTION} hover:text-dock-error`} aria-label="Tout abandonner" data-tip="Abandonner toutes les modifications non indexées" onClick={handleDiscardAll}>
+            <GitGroupHeader title="Unstaged" count={state.unstagedTotal} tip={KEYBOARD_TIP}>
+              <button type="button" className={`${ROW_ACTION} hover:text-dock-error`} aria-label="Tout abandonner" data-tip="Abandonner toutes les modifications unstaged" onClick={handleDiscardAll}>
                 <Icon name={IconName.Discard} />
               </button>
-              <button type="button" className={ROW_ACTION} aria-label="Tout indexer" data-tip="Tout indexer" onClick={handleStageAll}>
+              <button type="button" className={ROW_ACTION} aria-label="Stage de tout" data-tip="Stage de tout" onClick={handleStageAll}>
                 <Icon name={IconName.Plus} />
               </button>
             </GitGroupHeader>
