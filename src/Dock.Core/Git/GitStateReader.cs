@@ -30,11 +30,10 @@ public static class GitStateReader
             status.Head.Branch is { } branch && forcePushAllowed(branch));
     }
 
-    public static GitRefsModel Refs(GitStateModel state) => new(state.Branches, state.RemoteBranches, state.Tags, state.Remotes);
-
     public static string Signature(GitStateModel state) =>
         string.Join('\n', new[] { state.Head.Sha ?? string.Empty, state.Head.Branch ?? string.Empty, state.Head.Upstream ?? string.Empty }
             .Concat(state.Branches.Select(branch => $"{branch.Name} {branch.Sha}"))
             .Concat(state.RemoteBranches.Select(branch => $"{branch.Name} {branch.Sha}"))
-            .Concat(state.Tags.Select(tag => $"{tag.Name} {tag.Sha}")));
+            .Concat(state.Tags.Select(tag => $"{tag.Name} {tag.Sha}"))
+            .Concat(state.Stashes.Select(stash => $"stash {stash.Sha}")));
 }

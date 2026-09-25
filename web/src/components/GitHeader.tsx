@@ -1,6 +1,8 @@
 import type { GitState } from '../bridge/gitMessages'
 import { headSummary, plural } from '../git/gitLabels'
 import { fetchRemote, pullBranch, pushBranch, refreshRepository, undoLastOperation } from '../git/gitRequests'
+import { toggleGitGraph } from '../panel/rightPanel'
+import { useGitStore } from '../store/gitStore'
 import { GitToolButton } from './GitToolButton'
 import { Icon } from './Icon'
 import { IconName } from './iconName'
@@ -19,6 +21,7 @@ const undoTip = ({ undo }: GitState): string => {
 
 export function GitHeader({ state, busy }: GitHeaderProps) {
   const { head, remotes } = state
+  const graphOpen = useGitStore((store) => store.graphOpen)
   const working = busy !== null
   const noRemote = remotes.length === 0
   const trackingTip = head.upstream ? `${plural(head.ahead, 'commit', 'commits')} à pousser, ${plural(head.behind, 'commit', 'commits')} à tirer depuis ${head.upstream}` : ''
@@ -50,6 +53,8 @@ export function GitHeader({ state, busy }: GitHeaderProps) {
             non publiée
           </span>
         )}
+        <span className="flex-1" />
+        <GitToolButton icon={IconName.Graph} label="Graphe" tip={graphOpen ? 'Masquer le graphe et revenir aux terminaux' : 'Afficher le graphe des branches et des commits à la place des terminaux'} pressed={graphOpen} onClick={toggleGitGraph} />
       </div>
       <div className="flex items-center gap-[2px]">
         <GitToolButton icon={IconName.Fetch} label="Récupérer" tip={noRemote ? 'Aucun dépôt distant configuré' : 'Récupérer les branches distantes (git fetch --all)'} disabled={working || noRemote} onClick={fetchRemote} />

@@ -80,7 +80,7 @@ public sealed class GitReadTests : IDisposable
         _sandbox.Git("tag", "v1", root);
         var state = GitStateReader.Read(_sandbox.Repository, null, _ => false);
 
-        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.All, 10, state.Head, GitStateReader.Refs(state));
+        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.All, 10, state);
 
         Assert.Equal(4, history.Commits.Count);
         Assert.False(history.HasMore);
@@ -98,10 +98,70 @@ public sealed class GitReadTests : IDisposable
         _sandbox.Commit("Trois", ("a.txt", "3"));
         var state = GitStateReader.Read(_sandbox.Repository, null, _ => false);
 
-        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.Current, 2, state.Head, GitStateReader.Refs(state));
+        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.Current, 2, state);
 
         Assert.Equal(["Trois", "Deux"], history.Commits.Select(commit => commit.Subject));
         Assert.True(history.HasMore);
+    }
+
+    [Fact]
+    public void ReadHistory_WhenOtherBranchIsNewer_ThenWorkingTreeLinksToHeadWithDashedLane()
+    {
+        _sandbox.Commit("Base", ("a.txt", "a\n"));
+        _sandbox.Git("switch", "-q", "-c", "feature");
+        _sandbox.Commit("Feature", ("f.txt", "f\n"));
+        _sandbox.Git("switch", "-q", "main");
+        var state = GitStateReader.Read(_sandbox.Repository, null, _ => false);
+
+        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.All, 10, state);
+
+        Assert.Equal((0, GitSegmentKind.Out, true), (history.WorkingTree.Lane, history.WorkingTree.Segments.Single().Kind, history.WorkingTree.Segments.Single().Dashed));
+        Assert.Contains(new GitGraphSegmentModel(0, 0, history.WorkingTree.Color, GitSegmentKind.Through, true), history.Commits[0].Graph.Segments);
+        Assert.Equal((0, true), (history.Commits[1].Graph.Lane, history.Commits[1].Graph.Segments.Any(segment => segment.Kind == GitSegmentKind.In && segment.Dashed)));
+    }
+
+    [Fact]
+    public void ReadHistory_WhenStash_ThenInsertsItAboveItsBaseCommit()
+    {
+        _sandbox.Commit("Base", ("a.txt", "a\n"));
+        var head = _sandbox.Commit("Tête", ("a.txt", "b\n"));
+        _sandbox.Write("a.txt", "remisé\n");
+        _sandbox.Git("stash", "push", "-q", "-m", "essai");
+        var state = GitStateReader.Read(_sandbox.Repository, null, _ => false);
+
+        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.All, 10, state);
+
+        var stash = Assert.Single(state.Stashes);
+        Assert.Equal(
+            [(stash.Sha, true, head), (head, false, history.Commits[2].Sha)],
+            history.Commits.Take(2).Select(commit => (commit.Sha, commit.Stash, commit.Parents[0])));
+        Assert.Equal(("On main: essai", head), (history.Commits[0].Subject, stash.Base));
+    }
+
+    [Fact]
+    public void ReadHistory_WhenLocalAndRemoteBranchesShareCommit_ThenSingleLabelListsRemote()
+    {
+        _sandbox.CreateRemote();
+        var pushed = _sandbox.Commit("Publié", ("a.txt", "a\n"));
+        _sandbox.Git("push", "-q", "-u", "origin", "main");
+        _sandbox.Git("branch", "outil");
+        _sandbox.Git("push", "-q", "origin", "outil");
+        _sandbox.Git("branch", "-q", "-D", "outil");
+        _sandbox.Commit("Local", ("b.txt", "b\n"));
+        _sandbox.Git("push", "-q", "origin", "main:partagée");
+        _sandbox.Git("fetch", "-q", "origin");
+        _sandbox.Git("branch", "-q", "partagée", "origin/partagée");
+        var state = GitStateReader.Read(_sandbox.Repository, null, _ => false);
+
+        var history = GitHistoryReader.Read(_sandbox.Repository, GitHistoryScope.All, 10, state);
+
+        Assert.Equal(
+            [("main", GitRefKind.Branch, ""), ("partagée", GitRefKind.Branch, "origin/partagée")],
+            history.Commits[0].Refs.Select(label => (label.Name, label.Kind, string.Join(',', label.Remotes))));
+        Assert.Equal(pushed, history.Commits[1].Sha);
+        Assert.Equal(
+            [("origin/main", GitRefKind.Remote), ("origin/outil", GitRefKind.Remote)],
+            history.Commits[1].Refs.Select(label => (label.Name, label.Kind)).Order());
     }
 
     [Fact]

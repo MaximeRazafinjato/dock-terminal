@@ -194,4 +194,28 @@ public sealed class SessionValidatorTests
 
         Assert.Equal(SessionLimits.MaxExplorerWidth, session.ExplorerWidth);
     }
+
+    [Fact]
+    public void Validate_WhenGitGraphMissing_ThenUsesDefaultLayout()
+    {
+        var session = SessionFactory.Initial();
+        session.GitGraph = null;
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal((SessionLimits.DefaultGitLabelsWidth, true, true), (session.GitGraph?.LabelsWidth, session.GitGraph?.AuthorShown, session.GitGraph?.ReferencesOpen));
+    }
+
+    [Fact]
+    public void Validate_WhenGitGraphWidthsOutOfRange_ThenClampsThem()
+    {
+        var session = SessionFactory.Initial();
+        session.GitGraph = new GitGraphLayoutModel { ReferencesWidth = 10, LabelsWidth = 5000, GraphWidth = -3, AuthorShown = false };
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal(
+            (SessionLimits.MinGitReferencesWidth, SessionLimits.MaxGitColumnWidth, SessionLimits.MinGitColumnWidth, false),
+            (session.GitGraph?.ReferencesWidth, session.GitGraph?.LabelsWidth, session.GitGraph?.GraphWidth, session.GitGraph?.AuthorShown));
+    }
 }

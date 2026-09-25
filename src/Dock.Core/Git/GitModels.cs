@@ -73,7 +73,7 @@ public sealed record GitRemoteBranchModel(string Name, string Remote, string Bra
 
 public sealed record GitTagModel(string Name, string Sha);
 
-public sealed record GitStashModel(int Index, string Sha, string Message);
+public sealed record GitStashModel(int Index, string Sha, string Message, string Base, string Author, string Email, long Date);
 
 public sealed record GitRefsModel(
     IReadOnlyList<GitBranchModel> Branches,
@@ -102,11 +102,20 @@ public sealed record GitStateModel(
     GitUndoInfoModel? Undo,
     bool ForcePushAllowed);
 
-public sealed record GitRefLabelModel(string Name, GitRefKind Kind, bool Current);
+public sealed record GitRefLabelModel(string Name, GitRefKind Kind, bool Current, IReadOnlyList<string> Remotes);
 
-public sealed record GitCommitModel(string Sha, IReadOnlyList<string> Parents, string Author, string Email, long Date, string Subject, IReadOnlyList<GitRefLabelModel> Refs, GitGraphRowModel Graph);
+public sealed record GitCommitModel(
+    string Sha,
+    IReadOnlyList<string> Parents,
+    string Author,
+    string Email,
+    long Date,
+    string Subject,
+    IReadOnlyList<GitRefLabelModel> Refs,
+    GitGraphRowModel Graph,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Stash = false);
 
-public sealed record GitHistoryModel(string Root, GitHistoryScope Scope, IReadOnlyList<GitCommitModel> Commits, bool HasMore);
+public sealed record GitHistoryModel(string Root, GitHistoryScope Scope, IReadOnlyList<GitCommitModel> Commits, bool HasMore, GitGraphRowModel WorkingTree);
 
 public sealed record GitCommitDetailsModel(string Sha, IReadOnlyList<string> Parents, string Author, string Email, long Date, string Message, IReadOnlyList<GitFileChangeModel> Files);
 

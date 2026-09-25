@@ -7,6 +7,8 @@ public static class GitRefsReader
     private const string RemotesPrefix = "refs/remotes/";
     private const string TagsPrefix = "refs/tags/";
     private const string RefFormat = "--format=%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)%1f%(symref)";
+    private const string StashFormat = "--format=%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%gs";
+    private const int StashFields = 6;
 
     public static GitRefsModel Read(GitRepository repository, GitHeadModel head)
     {
@@ -50,18 +52,23 @@ public static class GitRefsReader
 
     public static IReadOnlyList<GitStashModel> ReadStashes(GitRepository repository)
     {
-        var output = repository.Run("stash", "list", "--format=%H%x1f%gs");
+        var output = repository.Run("stash", "list", StashFormat);
         if (!output.Succeeded)
         {
             return [];
         }
 
         return Lines(output.Output)
-            .Select((line, index) =>
-            {
-                var fields = line.Split(Separator, 2);
-                return new GitStashModel(index, fields[0], fields.Length > 1 ? fields[1] : string.Empty);
-            })
+            .Select((line, index) => (Index: index, Fields: line.Split(Separator, StashFields)))
+            .Where(entry => entry.Fields.Length == StashFields)
+            .Select(entry => new GitStashModel(
+                entry.Index,
+                entry.Fields[0],
+                entry.Fields[5],
+                GitHistoryReader.Parents(entry.Fields[1]).FirstOrDefault() ?? string.Empty,
+                entry.Fields[2],
+                entry.Fields[3],
+                long.TryParse(entry.Fields[4], out var date) ? date : 0))
             .ToList();
     }
 

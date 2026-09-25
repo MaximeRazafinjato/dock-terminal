@@ -1,49 +1,28 @@
-import { GitRefKind, type GitRefLabel } from '../bridge/gitMessages'
+import type { GitRefLabel } from '../bridge/gitMessages'
+import { refLabelText } from '../git/gitLabels'
+import { laneBar, type GitGraphRowHandlers } from './gitGraphStyles'
+import { GitRefPill } from './GitRefPill'
 
 interface GitRefLabelsProps {
   refs: GitRefLabel[]
+  color: number
+  width: number
+  remotes: string[]
+  handlers: GitGraphRowHandlers
 }
 
-const MAX_LABELS = 2
-
-const LABEL_CLASSES: Record<GitRefKind, string> = {
-  [GitRefKind.Head]: 'border-dock-warning/50 text-dock-warning',
-  [GitRefKind.Branch]: 'border-dock-line text-dock-ink',
-  [GitRefKind.Remote]: 'border-dashed border-dock-line text-dock-muted',
-  [GitRefKind.Tag]: 'border-dock-warning/40 text-dock-warning',
-}
-
-const LABEL_TIPS: Record<GitRefKind, string> = {
-  [GitRefKind.Head]: 'HEAD détachée',
-  [GitRefKind.Branch]: 'Branche locale',
-  [GitRefKind.Remote]: 'Branche distante',
-  [GitRefKind.Tag]: 'Tag',
-}
-
-const CURRENT_CLASS = 'border-dock-green bg-dock-green-soft font-semibold text-dock-green-deep'
-
-export function GitRefLabels({ refs }: GitRefLabelsProps) {
-  if (refs.length === 0) {
-    return null
-  }
-  const hidden = refs.slice(MAX_LABELS)
+export function GitRefLabels({ refs, color, width, remotes, handlers }: GitRefLabelsProps) {
+  const [first, ...hidden] = refs
 
   return (
-    <span className="flex max-w-[55%] shrink-0 items-center gap-[3px] overflow-hidden">
-      {refs.slice(0, MAX_LABELS).map((label) => (
-        <span
-          key={`${label.kind}\n${label.name}`}
-          className={`min-w-0 truncate rounded border px-[4px] text-[10.5px] leading-[15px] ${label.current ? CURRENT_CLASS : LABEL_CLASSES[label.kind]}`}
-          data-tip={`${label.current ? 'Branche courante' : LABEL_TIPS[label.kind]} : ${label.name}`}
-        >
-          {label.name}
-        </span>
-      ))}
+    <div className="flex h-full shrink-0 items-center gap-[4px] overflow-hidden pl-[6px]" style={{ width }}>
+      {first && <GitRefPill label={first} text={refLabelText(first, remotes)} color={color} onMenu={handlers.openLabelMenu} onActivate={handlers.activateLabel} />}
       {hidden.length > 0 && (
-        <span className="shrink-0 text-[10.5px] text-dock-muted" data-tip={hidden.map((label) => label.name).join(', ')}>
+        <span className="shrink-0 rounded bg-dock-paper px-[4px] text-[10.5px] text-dock-muted" data-tip={hidden.map((label) => refLabelText(label, remotes)).join(', ')}>
           {`+${hidden.length}`}
         </span>
       )}
-    </span>
+      {first && <span className={`h-[1.5px] min-w-[6px] flex-1 ${laneBar(color)}`} />}
+    </div>
   )
 }

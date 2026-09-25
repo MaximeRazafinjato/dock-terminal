@@ -21,6 +21,12 @@ const SHAPES: Record<IconName, ReactNode> = {
   [IconName.Check]: <path d="M2.5 6.3 5 8.8l4.5-5.3" />,
   [IconName.Chevron]: <path d="M4.5 2.5 8 6l-3.5 3.5" />,
   [IconName.Close]: <path d="M3 3l6 6M9 3 3 9" />,
+  [IconName.Columns]: (
+    <>
+      <rect x="1.5" y="2" width="9" height="8" rx="1" />
+      <path d="M4.5 2v8M7.5 2v8" />
+    </>
+  ),
   [IconName.Discard]: (
     <>
       <path d="M2.3 2.8v2.6h2.6" />
@@ -47,6 +53,20 @@ const SHAPES: Record<IconName, ReactNode> = {
     </>
   ),
   [IconName.Folder]: <path d="M1.5 9.2V2.8a.8.8 0 0 1 .8-.8h2.5l1 1.1h3.9a.8.8 0 0 1 .8.8v5.3a.8.8 0 0 1-.8.8H2.3a.8.8 0 0 1-.8-.8Z" />,
+  [IconName.Graph]: (
+    <>
+      <circle cx="3" cy="2.5" r="1.1" />
+      <circle cx="3" cy="9.5" r="1.1" />
+      <circle cx="9" cy="6" r="1.1" />
+      <path d="M3 3.6v4.8M3 4.2c0 1.5 4.9.3 4.9 1.8M3 7.8c0-1.5 4.9-.3 4.9-1.8" />
+    </>
+  ),
+  [IconName.Local]: (
+    <>
+      <rect x="2.3" y="2.5" width="7.4" height="5" rx=".7" />
+      <path d="M1 9.5h10" />
+    </>
+  ),
   [IconName.Minus]: <path d="M2.2 6h7.6" />,
   [IconName.More]: (
     <>
@@ -82,6 +102,13 @@ const SHAPES: Record<IconName, ReactNode> = {
     <>
       <path d="M10 6a4 4 0 1 1-1.2-2.85" />
       <path d="M9.3 1.6v2H7.3" />
+    </>
+  ),
+  [IconName.Remote]: <path d="M3.3 9.5H3a2.2 2.2 0 0 1-.3-4.4 3.3 3.3 0 0 1 6.3-.9 2.4 2.4 0 0 1 .2 4.8Z" />,
+  [IconName.Sidebar]: (
+    <>
+      <rect x="1.5" y="2" width="9" height="8" rx="1" />
+      <path d="M4.7 2v8" />
     </>
   ),
   [IconName.Stash]: (

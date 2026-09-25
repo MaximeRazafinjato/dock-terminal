@@ -1,4 +1,4 @@
-import { GitChangeKind, GitConflictKind, GitOperationKind, type GitHead } from '../bridge/gitMessages'
+import { GitChangeKind, GitConflictKind, GitOperationKind, GitRefKind, type GitHead, type GitRefLabel, type GitState } from '../bridge/gitMessages'
 
 export const CHANGE_LETTERS: Record<GitChangeKind, string> = {
   [GitChangeKind.Modified]: 'M',
@@ -92,5 +92,52 @@ export const relativeDate = (unixSeconds: number): string => {
 }
 
 export const fullDate = (unixSeconds: number): string => new Date(unixSeconds * 1000).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+
+export const shortDate = (unixSeconds: number): string =>
+  new Date(unixSeconds * 1000).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')
+
+export const initials = (author: string): string => {
+  const words = author.split(/[\s._-]+/).filter((word) => word.length > 0)
+  const letters = words.length > 1 ? `${words[0][0]}${words[1][0]}` : (words[0] ?? '?').slice(0, 2)
+  return letters.toUpperCase()
+}
+
+export const remoteBranchName = (name: string, remotes: string[]): string => {
+  const remote = remotes.filter((candidate) => name.startsWith(`${candidate}/`)).sort((left, right) => right.length - left.length)[0]
+  return remote ? name.slice(remote.length + 1) : name
+}
+
+export const refLabelText = (label: GitRefLabel, remotes: string[]): string => (label.kind === GitRefKind.Remote ? remoteBranchName(label.name, remotes) : label.name)
+
+export const refLabelTip = (label: GitRefLabel): string => {
+  switch (label.kind) {
+    case GitRefKind.Head:
+      return 'HEAD détachée'
+    case GitRefKind.Tag:
+      return `Tag ${label.name}`
+    case GitRefKind.Remote:
+      return `Branche distante ${label.name} · double-clic : basculer sur une branche locale qui la suit`
+    default:
+      return `${label.current ? 'Branche courante' : 'Branche locale'} ${label.name}${label.remotes.length > 0 ? ` · à jour avec ${label.remotes.join(', ')}` : ''}${label.current ? '' : ' · double-clic : basculer'}`
+  }
+}
+
+export interface WorkingTreeCounts {
+  modified: number
+  added: number
+  deleted: number
+  conflicts: number
+}
+
+export const workingTreeCounts = (state: GitState): WorkingTreeCounts => {
+  const kinds = new Map([...state.staged, ...state.unstaged].map((change) => [change.path, change.kind]))
+  const values = [...kinds.values()]
+  return {
+    modified: values.filter((kind) => kind !== GitChangeKind.Added && kind !== GitChangeKind.Untracked && kind !== GitChangeKind.Deleted).length,
+    added: values.filter((kind) => kind === GitChangeKind.Added || kind === GitChangeKind.Untracked).length,
+    deleted: values.filter((kind) => kind === GitChangeKind.Deleted).length,
+    conflicts: state.conflicts.length,
+  }
+}
 
 export const absolutePath = (root: string, path: string): string => `${root.replace(/[\\/]+$/, '')}\\${path.replaceAll('/', '\\')}`

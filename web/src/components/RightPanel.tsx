@@ -21,7 +21,7 @@ const VIEWS: { view: RightPanelView; label: string; shortcut: string }[] = [
 
 export function RightPanel({ view, root, width, onClose, onOpenTerminal }: RightPanelProps) {
   return (
-    <aside data-right-panel="" aria-label="Panneau de droite" className="flex h-full min-h-0 shrink-0 flex-col bg-dock-paper" style={{ width }}>
+    <aside data-right-panel="" aria-label="Panneau de droite" className="flex h-full min-h-0 shrink-0 flex-col overflow-hidden bg-dock-paper" style={{ width }}>
       <div role="tablist" aria-label="Vue du panneau" className="flex h-[36px] shrink-0 items-center gap-[2px] pr-[6px] pl-[8px]">
         {VIEWS.map((entry) => {
           const selected = entry.view === view

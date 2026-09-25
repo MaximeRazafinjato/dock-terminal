@@ -1,34 +1,30 @@
 import { useEffect, type KeyboardEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { focusActivePane } from '../explorer/fileExplorerActions'
-import { closeDrawer, followRepository } from '../git/gitRequests'
+import { focusGitGraph } from '../git/gitFocus'
+import { plural } from '../git/gitLabels'
+import { followRepository } from '../git/gitRequests'
 import { RightPanelView } from '../model/session'
 import { togglePanelView } from '../panel/rightPanel'
-import { GitTab, useGitStore } from '../store/gitStore'
+import { useGitStore } from '../store/gitStore'
 import { GitBanners } from './GitBanners'
-import { GitBranchesView } from './GitBranchesView'
 import { GitChangesView } from './GitChangesView'
+import { GitCommitDetail } from './GitCommitDetail'
 import { GitHeader } from './GitHeader'
-import { GitHistoryView } from './GitHistoryView'
 import { GitPromptBar } from './GitPromptBar'
+import { SECTION_TITLE } from './rightPanelStyles'
 
 interface GitPanelProps {
   folder: string
 }
 
-const TABS: { tab: GitTab; label: string }[] = [
-  { tab: GitTab.Changes, label: 'Modifications' },
-  { tab: GitTab.History, label: 'Historique' },
-  { tab: GitTab.Branches, label: 'Branches' },
-]
-
 const handleEscape = (): void => {
   const store = useGitStore.getState()
-  if (store.file || store.commit) {
+  if (store.file) {
     store.closeDrawer()
   } else if (store.prompt) {
     store.setPrompt(null)
-  } else {
+  } else if (!store.graphOpen || !focusGitGraph()) {
     focusActivePane()
   }
 }
@@ -49,8 +45,8 @@ const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
 }
 
 export function GitPanel({ folder }: GitPanelProps) {
-  const { state, error, resolved, tab, prompt, busy } = useGitStore(
-    useShallow((store) => ({ state: store.state, error: store.error, resolved: store.resolved, tab: store.tab, prompt: store.prompt, busy: store.busy })),
+  const { state, error, resolved, commit, prompt, busy } = useGitStore(
+    useShallow((store) => ({ state: store.state, error: store.error, resolved: store.resolved, commit: store.commit, prompt: store.prompt, busy: store.busy })),
   )
 
   useEffect(() => {
@@ -59,31 +55,10 @@ export function GitPanel({ folder }: GitPanelProps) {
   useEffect(
     () => () => {
       followRepository('')
-      closeDrawer()
+      useGitStore.getState().clearSelection()
     },
     [],
   )
-
-  const changeCount = state ? state.stagedTotal + state.unstagedTotal + state.conflicts.length : 0
-
-  const renderTabs = () =>
-    TABS.map((entry) => {
-      const selected = entry.tab === tab
-      const handleSelect = () => useGitStore.getState().setTab(entry.tab)
-      return (
-        <button
-          key={entry.tab}
-          type="button"
-          role="tab"
-          aria-selected={selected}
-          className={`flex cursor-pointer items-center gap-[5px] rounded-md px-[8px] py-[3px] text-[12px] ${selected ? 'bg-dock-green-soft text-dock-green-deep' : 'text-dock-muted hover:bg-dock-green-hover hover:text-dock-ink'}`}
-          onClick={handleSelect}
-        >
-          {entry.label}
-          {entry.tab === GitTab.Changes && changeCount > 0 && <span className="rounded-full bg-dock-panel px-[5px] text-[10.5px] leading-[15px] text-dock-muted">{changeCount}</span>}
-        </button>
-      )
-    })
 
   const renderContent = () => {
     if (!state) {
@@ -95,17 +70,23 @@ export function GitPanel({ folder }: GitPanelProps) {
         </div>
       )
     }
+    const changeCount = state.stagedTotal + state.unstagedTotal + state.conflicts.length
     return (
       <>
         <GitHeader state={state} busy={busy} />
         <GitBanners state={state} busy={busy} />
         {prompt && <GitPromptBar key={`${prompt.kind}\n${prompt.target ?? ''}`} prompt={prompt} />}
-        <div role="tablist" aria-label="Vues Git" className="flex shrink-0 items-center gap-[2px] border-b border-dock-line px-[8px] pb-[5px]">
-          {renderTabs()}
-        </div>
-        {tab === GitTab.Changes && <GitChangesView state={state} busy={busy} />}
-        {tab === GitTab.History && <GitHistoryView state={state} />}
-        {tab === GitTab.Branches && <GitBranchesView state={state} />}
+        {commit ? (
+          <GitCommitDetail state={state} busy={busy} />
+        ) : (
+          <>
+            <div className="flex h-[30px] shrink-0 items-center gap-[8px] border-y border-dock-line px-[12px]">
+              <span className={SECTION_TITLE}>Modifications</span>
+              <span className="text-[11px] text-dock-muted">{changeCount > 0 ? plural(changeCount, 'fichier', 'fichiers') : 'aucune'}</span>
+            </div>
+            <GitChangesView state={state} busy={busy} />
+          </>
+        )}
       </>
     )
   }

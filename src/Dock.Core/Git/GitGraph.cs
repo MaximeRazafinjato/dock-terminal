@@ -10,9 +10,9 @@ public enum GitSegmentKind
     [JsonStringEnumMemberName("out")] Out
 }
 
-public sealed record GitGraphNodeModel(string Sha, IReadOnlyList<string> Parents);
+public sealed record GitGraphNodeModel(string Sha, IReadOnlyList<string> Parents, bool Dashed = false);
 
-public sealed record GitGraphSegmentModel(int From, int To, int Color, GitSegmentKind Kind);
+public sealed record GitGraphSegmentModel(int From, int To, int Color, GitSegmentKind Kind, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Dashed = false);
 
 public sealed record GitGraphRowModel(int Lane, int Color, int Width, IReadOnlyList<GitGraphSegmentModel> Segments);
 
@@ -48,8 +48,8 @@ public static class GitGraph
                 if (before[index] is { } passing)
                 {
                     segments.Add(matches.Contains(index)
-                        ? new GitGraphSegmentModel(index, lane, passing.Color, GitSegmentKind.In)
-                        : new GitGraphSegmentModel(index, index, passing.Color, GitSegmentKind.Through));
+                        ? new GitGraphSegmentModel(index, lane, passing.Color, GitSegmentKind.In, passing.Dashed)
+                        : new GitGraphSegmentModel(index, index, passing.Color, GitSegmentKind.Through, passing.Dashed));
                 }
             }
 
@@ -60,8 +60,8 @@ public static class GitGraph
 
             if (node.Parents.Count > 0)
             {
-                lanes[lane] = new Lane(node.Parents[0], color);
-                segments.Add(new GitGraphSegmentModel(lane, lane, color, GitSegmentKind.Out));
+                lanes[lane] = new Lane(node.Parents[0], color, node.Dashed);
+                segments.Add(new GitGraphSegmentModel(lane, lane, color, GitSegmentKind.Out, node.Dashed));
             }
 
             foreach (var parent in node.Parents.Skip(1))
@@ -70,7 +70,7 @@ public static class GitGraph
                 if (target < 0)
                 {
                     target = Claim(lanes);
-                    lanes[target] = new Lane(parent, nextColor++ % PaletteSize);
+                    lanes[target] = new Lane(parent, nextColor++ % PaletteSize, false);
                 }
 
                 segments.Add(new GitGraphSegmentModel(lane, target, lanes[target]!.Color, GitSegmentKind.Out));
@@ -100,5 +100,5 @@ public static class GitGraph
         return lanes.Count - 1;
     }
 
-    private sealed record Lane(string Sha, int Color);
+    private sealed record Lane(string Sha, int Color, bool Dashed);
 }

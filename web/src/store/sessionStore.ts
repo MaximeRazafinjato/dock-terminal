@@ -5,10 +5,12 @@ import {
   activeTab,
   activeWorkspace,
   CLOSED_TABS_MAX,
+  clampGitGraph,
   cloneTabWithNewIds,
   createPane,
   createTab,
   createWorkspace,
+  DEFAULT_GIT_GRAPH,
   EXPLORER_DEFAULT,
   EXPLORER_MAX,
   EXPLORER_MIN,
@@ -24,6 +26,7 @@ import {
   SIDEBAR_MIN,
   SplitAxis,
   type ClosedTab,
+  type GitGraphLayout,
   type Session,
   type SplitPath,
   type Tab,
@@ -44,6 +47,7 @@ interface SessionState {
   togglePanelView: (view: RightPanelView) => boolean
   setPanelView: (view: RightPanelView) => void
   setExplorerWidth: (width: number) => void
+  setGitGraphLayout: (change: Partial<GitGraphLayout>) => void
   newWorkspace: (name: string, path: string, shell: string) => string
   renameWorkspace: (workspaceId: string, name: string) => void
   newTab: (shell: string) => void
@@ -89,7 +93,8 @@ const pathChanges = (session: Session | null, paneId: string, path: string): boo
 export const useSessionStore = create<SessionState>()((set, get) => ({
   session: null,
 
-  load: (session) => set({ session: { ...session, closed: session.closed ?? [], favorites: session.favorites ?? [], explorerWidth: session.explorerWidth ?? EXPLORER_DEFAULT } }),
+  load: (session) =>
+    set({ session: { ...session, closed: session.closed ?? [], favorites: session.favorites ?? [], explorerWidth: session.explorerWidth ?? EXPLORER_DEFAULT, gitGraph: clampGitGraph({ ...DEFAULT_GIT_GRAPH, ...session.gitGraph }) } }),
 
   selectWorkspace: (workspaceId) =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.active = workspaceId }) })),
@@ -163,6 +168,11 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
   setExplorerWidth: (width) =>
     set((state) => ({
       session: mutateSession(state.session, (draft) => { draft.explorerWidth = Math.min(EXPLORER_MAX, Math.max(EXPLORER_MIN, Math.round(width))) }),
+    })),
+
+  setGitGraphLayout: (change) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => { Object.assign(draft.gitGraph, clampGitGraph({ ...draft.gitGraph, ...change })) }),
     })),
 
   newWorkspace: (name, path, shell) => {

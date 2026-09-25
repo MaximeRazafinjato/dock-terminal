@@ -1,6 +1,6 @@
 import { bridge } from '../bridge/bridge'
 import { GitChangeKind, GitDiffSource, type GitConflict, type GitFileChange, type GitHistoryScope, type GitWebMessage } from '../bridge/gitMessages'
-import { HISTORY_PAGE, useGitStore, type GitConfirmation, type GitFileTarget } from '../store/gitStore'
+import { HISTORY_MAX, HISTORY_PAGE, useGitStore, type GitConfirmation, type GitFileTarget, type GitMenuRequest } from '../store/gitStore'
 import { StatusLevel, useHostStore } from '../store/hostStore'
 import { absolutePath, currentName, fileName, OPERATION_LABELS, plural } from './gitLabels'
 
@@ -11,6 +11,7 @@ interface PendingRetry {
 
 let lastRequest = 0
 let pendingRetry: PendingRetry | null = null
+let detailsTimer: ReturnType<typeof setTimeout> | undefined
 
 const nextRequest = (): number => ++lastRequest
 
@@ -65,13 +66,31 @@ export const setHistoryScope = (scope: GitHistoryScope): void => {
   bridge.send({ type: 'git.history', scope, count: HISTORY_PAGE })
 }
 
+const requestHistoryCount = (count: number): void => {
+  const { scope, requestHistory } = useGitStore.getState()
+  requestHistory(scope, count)
+  bridge.send({ type: 'git.history', scope, count })
+}
+
 export const loadMoreHistory = (): void => {
-  const { history, historyCount, scope, requestHistory } = useGitStore.getState()
-  if (!history?.hasMore || history.commits.length < historyCount) {
+  const { history, historyCount } = useGitStore.getState()
+  if (history?.hasMore && history.commits.length >= historyCount) {
+    requestHistoryCount(historyCount + HISTORY_PAGE)
+  }
+}
+
+export const loadUntilRevealed = (): void => {
+  const { reveal, history, historyCount, requestReveal } = useGitStore.getState()
+  const loading = history?.hasMore && history.commits.length < historyCount
+  if (!reveal || !history || loading || history.commits.some((entry) => entry.sha === reveal)) {
     return
   }
-  requestHistory(scope, historyCount + HISTORY_PAGE)
-  bridge.send({ type: 'git.history', scope, count: historyCount + HISTORY_PAGE })
+  if (history.hasMore && historyCount < HISTORY_MAX) {
+    requestHistoryCount(Math.min(HISTORY_MAX, historyCount * 2))
+    return
+  }
+  requestReveal(null)
+  useHostStore.getState().setStatus('Ce commit n’apparaît pas dans le graphe affiché : son détail reste visible dans le panneau Git.')
 }
 
 const requestDiff = (file: GitFileTarget): void => {
@@ -88,14 +107,42 @@ export const showChange = (change: GitFileChange, source: GitDiffSource): void =
 
 export const reloadDiff = (file: GitFileTarget): void => requestDiff(file)
 
-export const showCommit = (commit: string): void => {
+const requestDetails = (commit: string, delay: number): void => {
   const path = currentRoot()
   if (path) {
     const request = nextRequest()
     useGitStore.getState().showCommit(commit, request)
-    bridge.send({ type: 'git.details', path, request, commit })
+    clearTimeout(detailsTimer)
+    detailsTimer = setTimeout(() => bridge.send({ type: 'git.details', path, request, commit }), delay)
   }
 }
+
+export const showCommit = (commit: string, delay = 0): void => {
+  const { commit: selected, detailsError } = useGitStore.getState()
+  if (selected !== commit || detailsError) {
+    requestDetails(commit, delay)
+  }
+}
+
+export const retryFailedDetails = (): void => {
+  const { commit, detailsError, file } = useGitStore.getState()
+  if (commit && detailsError && !file) {
+    requestDetails(commit, 0)
+  }
+}
+
+export const selectWorkingTree = (): void => {
+  clearTimeout(detailsTimer)
+  useGitStore.getState().selectWorkingTree()
+}
+
+export const revealCommit = (commit: string): void => {
+  showCommit(commit)
+  useGitStore.getState().requestReveal(commit)
+  loadUntilRevealed()
+}
+
+export const openGitMenu = (menu: GitMenuRequest): void => useGitStore.getState().openMenu(menu)
 
 export const showCommitFile = (commit: string, change: GitFileChange): void =>
   requestDiff({ source: GitDiffSource.Commit, path: change.path, oldPath: change.oldPath, untracked: false, commit })

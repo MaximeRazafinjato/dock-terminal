@@ -7,7 +7,7 @@ public sealed class GitGraphTests
 {
     private static GitGraphNodeModel Node(string sha, params string[] parents) => new(sha, parents);
 
-    private static GitGraphSegmentModel Segment(int from, int to, int color, GitSegmentKind kind) => new(from, to, color, kind);
+    private static GitGraphSegmentModel Segment(int from, int to, int color, GitSegmentKind kind, bool dashed = false) => new(from, to, color, kind, dashed);
 
     [Fact]
     public void Layout_WhenLinearHistory_ThenSingleLane()
@@ -48,5 +48,14 @@ public sealed class GitGraphTests
         var rows = GitGraph.Layout([Node("tip1", "base"), Node("tip2", "base"), Node("base", "root"), Node("tip3", "root"), Node("root")]);
 
         Assert.Equal(1, rows[3].Lane);
+    }
+
+    [Fact]
+    public void Layout_WhenDashedNode_ThenItsLaneStaysDashedUntilParent()
+    {
+        var rows = GitGraph.Layout([new GitGraphNodeModel("wip", ["base"], true), Node("tip", "base"), Node("base")]);
+
+        Assert.Equal([Segment(0, 0, 0, GitSegmentKind.Through, true), Segment(1, 1, 1, GitSegmentKind.Out)], rows[1].Segments);
+        Assert.Equal([Segment(0, 0, 0, GitSegmentKind.In, true), Segment(1, 0, 1, GitSegmentKind.In)], rows[2].Segments);
     }
 }

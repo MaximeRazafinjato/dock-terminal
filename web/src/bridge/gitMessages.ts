@@ -121,6 +121,10 @@ export interface GitStash {
   index: number
   sha: string
   message: string
+  base: string
+  author: string
+  email: string
+  date: number
 }
 
 export interface GitUndoInfo {
@@ -154,6 +158,7 @@ export interface GitGraphSegment {
   to: number
   color: number
   kind: GitSegmentKind
+  dashed?: boolean
 }
 
 export interface GitGraphRow {
@@ -167,6 +172,7 @@ export interface GitRefLabel {
   name: string
   kind: GitRefKind
   current: boolean
+  remotes: string[]
 }
 
 export interface GitCommit {
@@ -178,6 +184,7 @@ export interface GitCommit {
   subject: string
   refs: GitRefLabel[]
   graph: GitGraphRow
+  stash?: boolean
 }
 
 export interface GitHistory {
@@ -185,6 +192,7 @@ export interface GitHistory {
   scope: GitHistoryScope
   commits: GitCommit[]
   hasMore: boolean
+  workingTree: GitGraphRow
 }
 
 export interface GitCommitDetails {

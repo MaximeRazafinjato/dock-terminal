@@ -1,4 +1,6 @@
-import type { KeyboardEvent, MouseEvent } from 'react'
+import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react'
+import { beginRefDrag, sameRef } from '../git/gitDrag'
+import { useGitStore, type GitRefHandle } from '../store/gitStore'
 import { Icon } from './Icon'
 import { IconName } from './iconName'
 import { ROW_ACTION } from './rightPanelStyles'
@@ -14,13 +16,15 @@ interface GitRefRowProps {
   current?: boolean
   indent?: boolean
   focusable: boolean
+  handle?: GitRefHandle
   onFocus: (key: string) => void
   onActivate: () => void
   onSelect?: () => void
   onMenu: (x: number, y: number) => void
 }
 
-export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = false, indent = false, focusable, onFocus, onActivate, onSelect, onMenu }: GitRefRowProps) {
+export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = false, indent = false, focusable, handle, onFocus, onActivate, onSelect, onMenu }: GitRefRowProps) {
+  const dropTarget = useGitStore((store) => handle !== undefined && sameRef(store.drag?.target, handle))
   const handleClick = () => {
     onFocus(rowKey)
     onSelect?.()
@@ -34,6 +38,12 @@ export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = fa
     event.stopPropagation()
     const rect = event.currentTarget.getBoundingClientRect()
     onMenu(rect.left, rect.bottom)
+  }
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (handle) {
+      const row = event.currentTarget
+      beginRefDrag(event, handle, () => row.focus())
+    }
   }
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter') {
@@ -53,12 +63,15 @@ export function GitRefRow({ rowKey, icon, name, meta, metaTip, tip, current = fa
       role="option"
       aria-selected={current}
       data-git-row={rowKey}
+      data-git-drop-kind={handle?.kind}
+      data-git-drop-name={handle?.name}
       tabIndex={focusable ? 0 : -1}
       data-tip={tip}
-      className={`group flex h-[24px] cursor-pointer items-center gap-[6px] pr-[4px] text-[12px] select-none hover:bg-dock-green-hover ${indent ? 'pl-[26px]' : 'pl-[12px]'} ${current ? 'text-dock-green-deep' : 'text-dock-ink-soft hover:text-dock-ink'}`}
+      className={`group flex h-[24px] cursor-pointer items-center gap-[6px] pr-[4px] text-[12px] select-none hover:bg-dock-green-hover ${indent ? 'pl-[26px]' : 'pl-[12px]'} ${current ? 'text-dock-green-deep' : 'text-dock-ink-soft hover:text-dock-ink'} ${dropTarget ? 'outline-2 -outline-offset-2 outline-dock-focus' : ''}`}
       onClick={handleClick}
       onDoubleClick={onActivate}
       onContextMenu={handleContextMenu}
+      onPointerDown={handlePointerDown}
       onKeyDown={handleKeyDown}
     >
       <Icon name={icon} className="shrink-0 text-dock-muted" />

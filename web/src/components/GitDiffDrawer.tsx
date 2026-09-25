@@ -5,7 +5,6 @@ import { focusGitPanel } from '../git/gitFocus'
 import { shortSha } from '../git/gitLabels'
 import { closeDrawer, discardChanges, openInEditor, stageChanges, unstageChanges } from '../git/gitRequests'
 import { useGitStore, type GitFileTarget } from '../store/gitStore'
-import { GitCommitSummary } from './GitCommitSummary'
 import { GitDiffView } from './GitDiffView'
 import { GitToolButton } from './GitToolButton'
 import { Icon } from './Icon'
@@ -34,26 +33,24 @@ const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
 }
 
 export function GitDiffDrawer() {
-  const { file, commit, diff, diffError, details, detailsError } = useGitStore(
-    useShallow((store) => ({ file: store.file, commit: store.commit, diff: store.diff, diffError: store.diffError, details: store.details, detailsError: store.detailsError })),
-  )
-  if (!file && !commit) {
+  const { file, diff, diffError, stashes } = useGitStore(useShallow((store) => ({ file: store.file, diff: store.diff, diffError: store.diffError, stashes: store.state?.stashes })))
+  if (!file) {
     return null
   }
-  const working = file && !commit ? file : null
-  const title = commit ? (details?.message.split('\n')[0] ?? shortSha(commit)) : (file?.path ?? '')
-  const context = commit ? `Commit ${shortSha(commit)}` : working?.untracked ? 'Non suivi' : SOURCE_LABELS[working?.source ?? GitDiffSource.Unstaged]
+  const working = file.commit ? null : file
+  const stash = file.commit ? stashes?.find((candidate) => candidate.sha === file.commit) : undefined
+  const context = file.commit ? (stash ? `stash@{${stash.index}}` : `Commit ${shortSha(file.commit)}`) : file.untracked ? 'Non suivi' : SOURCE_LABELS[file.source]
   const handleEdit = () => working && openInEditor(working.path)
   const handleStage = () => working && stageChanges([asChange(working)])
   const handleUnstage = () => working && unstageChanges([asChange(working)])
   const handleDiscard = () => working && discardChanges([asChange(working)], 1)
 
   return (
-    <aside aria-label={commit ? 'Détail du commit' : 'Diff du fichier'} data-git-drawer="" className="absolute inset-y-0 right-0 z-20 flex w-[min(920px,100%)] flex-col border-l border-dock-line bg-dock-panel shadow-2xl" onKeyDown={handleKeyDown}>
+    <aside aria-label="Diff du fichier" data-git-drawer="" className="absolute inset-y-0 right-0 z-20 flex w-[min(920px,100%)] flex-col border-l border-dock-line bg-dock-panel shadow-2xl" onKeyDown={handleKeyDown}>
       <header className="flex h-[36px] shrink-0 items-center gap-[8px] border-b border-dock-line pr-[6px] pl-[12px]">
         <span className="shrink-0 rounded bg-dock-paper px-[6px] py-[1px] text-[11px] text-dock-muted">{context}</span>
-        <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-dock-ink" data-tip={title}>
-          {title}
+        <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-dock-ink" data-tip={file.oldPath ? `${file.oldPath} → ${file.path}` : file.path}>
+          {file.path}
         </span>
         {working && (
           <span className="flex shrink-0 items-center gap-[2px]">
@@ -72,8 +69,7 @@ export function GitDiffDrawer() {
           <Icon name={IconName.Close} />
         </button>
       </header>
-      {commit && <GitCommitSummary details={details} error={detailsError} selected={file} />}
-      <GitDiffView key={file ? `${file.source}\n${file.path}\n${file.commit ?? ''}` : 'aucun'} diff={file ? diff : null} error={file ? diffError : null} placeholder={file ? 'Chargement du diff…' : 'Choisissez un fichier pour voir ses modifications.'} />
+      <GitDiffView key={`${file.source}\n${file.path}\n${file.commit ?? ''}`} diff={diff} error={diffError} placeholder="Chargement du diff…" />
     </aside>
   )
 }

@@ -188,11 +188,11 @@ public sealed class GitFeed : IDisposable
     {
         try
         {
-            _post(new { type = "git.history", history = GitHistoryReader.Read(repository, scope, count, state.Head, GitStateReader.Refs(state)) });
+            _post(new { type = "git.history", history = GitHistoryReader.Read(repository, scope, count, state) });
         }
         catch (GitCommandException exception)
         {
-            _post(new { type = "git.history", history = new GitHistoryModel(repository.Root, scope, [], false), error = exception.Message });
+            _post(new { type = "git.history", history = GitHistoryReader.Empty(repository.Root, scope), error = exception.Message });
         }
     }
 

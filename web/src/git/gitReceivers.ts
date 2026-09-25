@@ -1,8 +1,8 @@
 import { GitDiffSource, type GitCommitDetails, type GitDiff, type GitFailureCode, type GitHistory, type GitState } from '../bridge/gitMessages'
-import { GitTab, useGitStore, type GitFileTarget } from '../store/gitStore'
+import { useGitStore, type GitFileTarget } from '../store/gitStore'
 import { StatusLevel, useHostStore } from '../store/hostStore'
 import { refocusGitIfLost } from './gitFocus'
-import { closeDrawer, reloadDiff, showCommitFile, takeRetry } from './gitRequests'
+import { closeDrawer, loadUntilRevealed, reloadDiff, retryFailedDetails, selectWorkingTree, takeRetry } from './gitRequests'
 
 const COMMIT_OPERATION = 'git.commit'
 
@@ -30,12 +30,13 @@ export const receiveGitState = (path: string, state: GitState | undefined, error
   const previous = useGitStore.getState().state
   useGitStore.getState().receiveState(path, state ?? null, error ?? null)
   if (state && state.conflicts.length > 0 && (previous?.conflicts.length ?? 0) === 0) {
-    useGitStore.getState().setTab(GitTab.Changes)
+    selectWorkingTree()
   }
   const { file, commit } = useGitStore.getState()
   if (state && file && !commit) {
     followShownFile(state, file)
   }
+  retryFailedDetails()
   refocusGitIfLost()
 }
 
@@ -46,17 +47,15 @@ export const receiveGitChanged = (path: string): void => {
   }
 }
 
-export const receiveGitHistory =(history: GitHistory, error: string | undefined): void => useGitStore.getState().receiveHistory(history, error ?? null)
+export const receiveGitHistory = (history: GitHistory, error: string | undefined): void => {
+  useGitStore.getState().receiveHistory(history, error ?? null)
+  loadUntilRevealed()
+}
 
 export const receiveGitDiff = (request: number, diff: GitDiff | undefined, error: string | undefined): void => useGitStore.getState().receiveDiff(request, diff ?? null, error ?? null)
 
-export const receiveGitDetails = (request: number, details: GitCommitDetails | undefined, error: string | undefined): void => {
+export const receiveGitDetails = (request: number, details: GitCommitDetails | undefined, error: string | undefined): void =>
   useGitStore.getState().receiveDetails(request, details ?? null, error ?? null)
-  const { commit, file } = useGitStore.getState()
-  if (details && commit === details.sha && !file && details.files.length > 0) {
-    showCommitFile(details.sha, details.files[0])
-  }
-}
 
 export const receiveGitDone = (operation: string, message: string, warning: boolean): void => {
   finishBusy(operation)

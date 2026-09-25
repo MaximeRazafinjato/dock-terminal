@@ -1,27 +1,19 @@
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import type { GitBranch, GitRemoteBranch, GitState, GitStash, GitTag } from '../bridge/gitMessages'
-import { focusGitRow } from '../git/gitFocus'
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { GitRefKind, type GitBranch, type GitRemoteBranch, type GitState, type GitStash, type GitTag } from '../bridge/gitMessages'
 import { shortSha } from '../git/gitLabels'
 import { branchMenu, remoteBranchMenu, stashMenu, tagMenu } from '../git/gitMenus'
 import { promptNewBranch, promptNewTag, promptStash, switchToBranch, switchToRemote } from '../git/gitRefActions'
-import { showCommit } from '../git/gitRequests'
+import { openGitMenu, revealCommit } from '../git/gitRequests'
 import type { ActionMenuItem } from './ActionMenu'
-import { GitContextMenu } from './GitContextMenu'
 import { GitRefRow } from './GitRefRow'
 import { GitSection } from './GitSection'
 import { Icon } from './Icon'
 import { IconName } from './iconName'
 import { ROW_ACTION } from './rightPanelStyles'
 
-interface GitBranchesViewProps {
+interface GitRefsSidebarProps {
   state: GitState
-}
-
-interface MenuRequest {
-  x: number
-  y: number
-  label: string
-  items: ActionMenuItem[]
+  width: number
 }
 
 const LOCAL = 'local'
@@ -45,13 +37,13 @@ const branchTip = (branch: GitBranch): string => {
   if (branch.gone) {
     return `${branch.name} : la branche distante suivie ${branch.upstream ?? ''} a été supprimée`
   }
-  return branch.upstream ? `${branch.name} · suit ${branch.upstream}` : `${branch.name} · aucune branche distante suivie`
+  const tracking = branch.upstream ? `suit ${branch.upstream}` : 'aucune branche distante suivie'
+  return `${branch.name} · ${tracking} · clic : aller au commit · double-clic : basculer · glisser sur la branche courante : fusionner ou rebaser`
 }
 
-export function GitBranchesView({ state }: GitBranchesViewProps) {
+export function GitRefsSidebar({ state, width }: GitRefsSidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [focusKey, setFocusKey] = useState<string | null>(null)
-  const [menu, setMenu] = useState<MenuRequest | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const groups = useMemo(
     () => state.remotes.map((remote) => ({ remote, branches: state.remoteBranches.filter((branch) => branch.remote === remote) })),
@@ -66,25 +58,20 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
   const focusable = keys.find((key) => key === focusKey) ?? keys[0]
   const clean = state.stagedTotal + state.unstagedTotal === 0
 
+  const rows = (): HTMLElement[] => Array.from(containerRef.current?.querySelectorAll<HTMLElement>(ROW_SELECTOR) ?? [])
   const toggle = (section: string) => () => setCollapsed((current) => ({ ...current, [section]: !current[section] }))
-  const openMenu = (label: string, items: ActionMenuItem[]) => (x: number, y: number) => setMenu({ x, y, label, items })
-  const handleDismissMenu = useCallback(() => {
-    setMenu(null)
-    requestAnimationFrame(() => {
-      if (document.activeElement === document.body && focusKey) {
-        focusGitRow(focusKey)
-      }
-    })
-  }, [focusKey])
+  const openMenu = (key: string, label: string, items: ActionMenuItem[]) => (x: number, y: number) =>
+    openGitMenu({ x, y, label, items, restoreFocus: () => rows().find((row) => row.dataset.gitRow === key)?.focus() })
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const rows = Array.from(containerRef.current?.querySelectorAll<HTMLElement>(ROW_SELECTOR) ?? [])
-    const index = rows.indexOf(event.target as HTMLElement)
-    const moves: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: rows.length - 1 }
+    const all = rows()
+    const index = all.indexOf(event.target as HTMLElement)
+    const moves: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: all.length - 1 }
     if (!(event.key in moves) || index < 0) {
       return
     }
     event.preventDefault()
-    const target = rows[Math.min(Math.max(moves[event.key], 0), rows.length - 1)]
+    event.stopPropagation()
+    const target = all[Math.min(Math.max(moves[event.key], 0), all.length - 1)]
     setFocusKey(target?.dataset.gitRow ?? null)
     target?.focus()
   }
@@ -93,6 +80,7 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
 
   const renderBranch = (branch: GitBranch) => {
     const key = localKey(branch)
+    const handleShow = () => revealCommit(branch.sha)
     const handleActivate = () => {
       if (!branch.current) {
         switchToBranch(branch)
@@ -102,40 +90,45 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
       <GitRefRow
         key={key}
         rowKey={key}
-        icon={IconName.Branch}
+        icon={IconName.Local}
         name={branch.name}
         meta={branchMeta(branch)}
         metaTip={branch.upstream ? `↑ à pousser, ↓ à tirer depuis ${branch.upstream}` : undefined}
         tip={branchTip(branch)}
         current={branch.current}
         focusable={key === focusable}
+        handle={{ kind: GitRefKind.Branch, name: branch.name }}
         onFocus={setFocusKey}
+        onSelect={handleShow}
         onActivate={handleActivate}
-        onMenu={openMenu(`Actions de ${branch.name}`, branchMenu(branch, state))}
+        onMenu={openMenu(key, `Actions de ${branch.name}`, branchMenu(branch, state))}
       />
     )
   }
   const renderRemoteBranch = (branch: GitRemoteBranch) => {
     const key = remoteKey(branch)
+    const handleShow = () => revealCommit(branch.sha)
     const handleActivate = () => switchToRemote(branch)
     return (
       <GitRefRow
         key={key}
         rowKey={key}
-        icon={IconName.Branch}
+        icon={IconName.Remote}
         name={branch.branch}
-        tip={`${branch.name} · double-clic pour basculer sur une branche locale qui la suit`}
+        tip={`${branch.name} · clic : aller au commit · double-clic : basculer sur une branche locale qui la suit`}
         indent
         focusable={key === focusable}
+        handle={{ kind: GitRefKind.Remote, name: branch.name }}
         onFocus={setFocusKey}
+        onSelect={handleShow}
         onActivate={handleActivate}
-        onMenu={openMenu(`Actions de ${branch.name}`, remoteBranchMenu(branch, state))}
+        onMenu={openMenu(key, `Actions de ${branch.name}`, remoteBranchMenu(branch, state))}
       />
     )
   }
   const renderTag = (tag: GitTag) => {
     const key = `${TAGS}\n${tag.name}`
-    const handleShow = () => showCommit(tag.sha)
+    const handleShow = () => revealCommit(tag.sha)
     return (
       <GitRefRow
         key={key}
@@ -143,18 +136,18 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
         icon={IconName.Tag}
         name={tag.name}
         meta={shortSha(tag.sha)}
-        tip={`Tag ${tag.name} · clic pour voir le commit`}
+        tip={`Tag ${tag.name} · clic : aller au commit`}
         focusable={key === focusable}
         onFocus={setFocusKey}
         onSelect={handleShow}
         onActivate={handleShow}
-        onMenu={openMenu(`Actions du tag ${tag.name}`, tagMenu(tag, state))}
+        onMenu={openMenu(key, `Actions du tag ${tag.name}`, tagMenu(tag, state))}
       />
     )
   }
   const renderStash = (stash: GitStash) => {
     const key = `${STASHES}\n${stash.sha}`
-    const handleShow = () => showCommit(stash.sha)
+    const handleShow = () => revealCommit(stash.sha)
     return (
       <GitRefRow
         key={key}
@@ -162,12 +155,12 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
         icon={IconName.Stash}
         name={stash.message}
         meta={`stash@{${stash.index}}`}
-        tip={`${stash.message} · clic pour voir les modifications`}
+        tip={`${stash.message} · clic : voir les modifications`}
         focusable={key === focusable}
         onFocus={setFocusKey}
         onSelect={handleShow}
         onActivate={handleShow}
-        onMenu={openMenu('Actions du stash', stashMenu(stash, state))}
+        onMenu={openMenu(key, 'Actions du stash', stashMenu(stash, state))}
       />
     )
   }
@@ -186,7 +179,7 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
   }
 
   return (
-    <div ref={containerRef} role="listbox" aria-label="Branches, tags et stashes" className="min-h-0 flex-1 overflow-auto py-[4px]" onKeyDown={handleKeyDown}>
+    <div ref={containerRef} role="listbox" aria-label="Branches, tags et stash" className="min-h-0 shrink-0 overflow-auto py-[4px]" style={{ width }} onKeyDown={handleKeyDown}>
       <GitSection title="Locales" count={state.branches.length} expanded={!collapsed[LOCAL]} empty="Aucune branche." onToggle={toggle(LOCAL)} actions={headerButton(IconName.Plus, 'Nouvelle branche depuis HEAD', handleNewBranch, state.head.unborn)}>
         {state.branches.map(renderBranch)}
       </GitSection>
@@ -203,7 +196,6 @@ export function GitBranchesView({ state }: GitBranchesViewProps) {
       <GitSection title="Stash" count={state.stashes.length} expanded={!collapsed[STASHES]} empty="Aucune modification remisée." onToggle={toggle(STASHES)} actions={headerButton(IconName.Stash, clean ? 'Aucune modification à remiser' : 'Remiser les modifications', promptStash, clean)}>
         {state.stashes.map(renderStash)}
       </GitSection>
-      {menu && <GitContextMenu x={menu.x} y={menu.y} label={menu.label} items={menu.items} onDismiss={handleDismissMenu} />}
     </div>
   )
 }

@@ -26,6 +26,7 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog'
 import { EmptyState } from './EmptyState'
 import { GitConfirmDialog } from './GitConfirmDialog'
 import { GitDiffDrawer } from './GitDiffDrawer'
+import { GitGraphView } from './GitGraphView'
 import { Header } from './Header'
 import { HeaderWorkspaces } from './HeaderWorkspaces'
 import { ProjectPicker } from './ProjectPicker'
@@ -206,6 +207,7 @@ export function AppShell({ session }: AppShellProps) {
   const { startRenamingWorkspace, startRenamingTab, openPalette, closePalette, closeProjectPicker, openSettings, closeSettings } = useUiStore.getState()
   const deleteRequest = useExplorerStore((state) => state.deleteRequest)
   const gitConfirmation = useGitStore((state) => state.confirmation)
+  const gitGraphReady = useGitStore((state) => state.graphOpen && state.state !== null)
   const agents = useAgentStore((state) => state.agents)
   const acknowledged = useAgentStore((state) => state.acknowledged)
   const waiting = waitingPanes(session, agents).filter((pane) => acknowledged[pane.paneId] !== agentKey(agents[pane.paneId]))
@@ -294,8 +296,10 @@ export function AppShell({ session }: AppShellProps) {
           onNew={newTab}
           onMove={moveTab}
         />
-        <div className="min-h-0 flex-1 border-t border-dock-line bg-dock-panel p-1">
+        <div className="relative min-h-0 flex-1 border-t border-dock-line bg-dock-panel p-1">
           <SplitView key={currentTab.id} node={currentTab.tree} activePaneId={currentTab.active} onFocus={selectPane} onClose={closePaneKeepingText} onSplit={handleSplit} onResize={handleResize} shells={availableShells} onRestart={restartPane} onRestartIn={restartPaneIn} onChangeShell={changePaneShell} onDismissState={dismissPaneState} />
+          {gitShown && gitGraphReady && <GitGraphView layout={session.gitGraph} />}
+          {gitShown && <GitDiffDrawer />}
         </div>
       </>
     )
@@ -333,7 +337,6 @@ export function AppShell({ session }: AppShellProps) {
         )}
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           {workspace ? renderMain(workspace) : <EmptyState canRestore={session.closed.length > 0} onNewWorkspace={handleNewWorkspace} onRestoreTab={restoreClosedTab} />}
-          {gitShown && <GitDiffDrawer />}
         </main>
         {tab?.explorer && (
           <>
