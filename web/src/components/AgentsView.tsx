@@ -35,7 +35,15 @@ export function AgentsView({ session }: AgentsViewProps) {
   const handleToggle = (paneId: string) => setExpanded((current) => ({ ...current, [paneId]: !(current[paneId] ?? paneId === activePaneId) }))
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const target = event.target
-    if (event.altKey || event.ctrlKey || event.metaKey || !(target instanceof HTMLElement) || !target.matches(AGENT_CARD_SELECTOR)) {
+    if (event.altKey || event.ctrlKey || event.metaKey || !(target instanceof HTMLElement)) {
+      return
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      focusActivePane()
+      return
+    }
+    if (!target.matches(AGENT_CARD_SELECTOR)) {
       return
     }
     const rows = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(AGENT_CARD_SELECTOR))
@@ -45,9 +53,6 @@ export function AgentsView({ session }: AgentsViewProps) {
     if (event.key in destinations) {
       event.preventDefault()
       rows[destinations[event.key]]?.focus()
-    } else if (event.key === 'Escape') {
-      event.preventDefault()
-      focusActivePane()
     } else if (event.key === 'Enter') {
       event.preventDefault()
       joinPane(paneId)
