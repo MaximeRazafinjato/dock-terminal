@@ -9,6 +9,21 @@ public sealed class TerminalSession : IDisposable
 {
     private const int ReadBufferSize = 64 * 1024;
 
+    private static readonly HashSet<string> ClaudeSessionMarkers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "AI_AGENT",
+        "CLAUDECODE",
+        "CLAUDE_CODE_CHILD_SESSION",
+        "CLAUDE_CODE_ENTRYPOINT",
+        "CLAUDE_CODE_EXECPATH",
+        "CLAUDE_CODE_MESSAGING_SOCKET",
+        "CLAUDE_CODE_MESSAGING_TOKEN",
+        "CLAUDE_CODE_SESSION_ATTENDED",
+        "CLAUDE_CODE_SESSION_ID",
+        "CLAUDE_EFFORT",
+        "CLAUDE_PID"
+    };
+
     private readonly PseudoConsole _console;
     private readonly PtyProcess _process;
     private readonly JobObject _job;
@@ -167,7 +182,7 @@ public sealed class TerminalSession : IDisposable
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
         {
             var key = (string)entry.Key;
-            if (!key.StartsWith("WEZTERM_", StringComparison.OrdinalIgnoreCase))
+            if (!key.StartsWith("WEZTERM_", StringComparison.OrdinalIgnoreCase) && !ClaudeSessionMarkers.Contains(key))
             {
                 environment[key] = (string?)entry.Value ?? string.Empty;
             }
