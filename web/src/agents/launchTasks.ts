@@ -9,7 +9,7 @@ const READY_DELAY_MS = 500
 const BRACKETED_PASTE_WAIT_MS = 15_000
 const SUBMIT_DELAY_MS = 300
 const SUBMIT_CHECK_MS = 2500
-const START_TIMEOUT_MS = 180_000
+const START_TIMEOUT_MS = 1_800_000
 const FOCUS_IN_REPORT = '\u001b[I'
 
 interface PendingTask {
