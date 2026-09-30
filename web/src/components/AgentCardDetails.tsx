@@ -2,6 +2,7 @@ import { contextLabel } from '../agents/agentSummary'
 import type { AgentCard, AgentFileChange } from '../bridge/agentMessages'
 import { bridge } from '../bridge/bridge'
 import { AgentState } from '../bridge/messages'
+import { useHostStore } from '../store/hostStore'
 import { AgentFollowUp } from './AgentFollowUp'
 import { AgentRequestActions } from './AgentRequestActions'
 import { LazyAgentMarkdown } from './LazyAgentMarkdown'
@@ -14,6 +15,7 @@ interface AgentCardDetailsProps {
 const SECTION_LABEL = 'text-[10.5px] font-semibold tracking-[0.06em] text-tily-muted uppercase'
 
 export function AgentCardDetails({ card, onOpenFile }: AgentCardDetailsProps) {
+  const hooksOutdated = useHostStore((state) => state.hooksOutdated)
   const pullRequest = card.pullRequest
   const handleOpenPullRequest = () => {
     if (pullRequest) {
@@ -42,7 +44,11 @@ export function AgentCardDetails({ card, onOpenFile }: AgentCardDetailsProps) {
         </div>
       )}
       {card.state === AgentState.Waiting && card.request && <AgentRequestActions paneId={card.paneId} request={card.request} />}
-      {card.state === AgentState.Waiting && !card.request && <p className="text-[11.5px] text-tily-muted">Cette demande se règle dans le terminal (↗).</p>}
+      {card.state === AgentState.Waiting && !card.request && (
+        <p className="text-[11.5px] text-tily-muted">
+          {hooksOutdated ? 'Cette demande se règle dans le terminal (↗) : pour y répondre d’ici, mettez à jour les hooks dans Paramètres (Leader puis ,).' : 'Cette demande se règle dans le terminal (↗).'}
+        </p>
+      )}
       {card.action && card.state !== AgentState.Waiting && (
         <p className="break-words text-tily-ink-soft">
           <span className={SECTION_LABEL}>Action en cours </span>

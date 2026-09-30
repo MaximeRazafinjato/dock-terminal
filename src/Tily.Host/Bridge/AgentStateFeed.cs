@@ -71,6 +71,18 @@ public sealed class AgentStateFeed : IDisposable
         return new { script = ScriptPath, stateDirectory = StateDirectory, settingsFile = status.SettingsFile, hooksInstalled = status.Installed, hooksOutdated = status.Outdated };
     }
 
+    public bool HooksOutdated()
+    {
+        try
+        {
+            return Hooks.Status().Outdated;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
     public void Start() => _timer = new Timer(_ => Refresh(), null, PollInterval, PollInterval);
 
     public string? HistoryLoadError => _history.LoadError;

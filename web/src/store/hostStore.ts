@@ -21,12 +21,13 @@ interface HostState {
   unsaved: boolean
   persistence: PersistenceSettings
   settingsSnapshot: SettingsSnapshot | null
+  hooksOutdated: boolean
   pickedPath: PickedPath | null
   setPickedPath: (picked: PickedPath) => void
   importedPreferences: ImportedPreferences | null
   setImportedPreferences: (imported: ImportedPreferences) => void
   applySettings: (snapshot: SettingsSnapshot, shells: ShellProfile[], persistence: PersistenceSettings) => void
-  setHello: (version: string, shells: ShellProfile[], home: string, persistence: PersistenceSettings) => void
+  setHello: (version: string, shells: ShellProfile[], home: string, persistence: PersistenceSettings, hooksOutdated: boolean) => void
   setUnsaved: (unsaved: boolean) => void
   setStatus: (text: string, level?: StatusLevel) => void
   setLeaderActive: (active: boolean) => void
@@ -48,12 +49,13 @@ export const useHostStore = create<HostState>()((set) => ({
   unsaved: false,
   persistence: { textIntervalSeconds: 30, linesPerPane: 10000, maxTextMebibytes: 256 },
   settingsSnapshot: null,
+  hooksOutdated: false,
   pickedPath: null,
   setPickedPath: (pickedPath) => set({ pickedPath }),
   importedPreferences: null,
   setImportedPreferences: (importedPreferences) => set({ importedPreferences }),
-  applySettings: (settingsSnapshot, shells, persistence) => set({ settingsSnapshot, shells, persistence }),
-  setHello: (version, shells, home, persistence) => set({ connected: true, version, shells, home, persistence }),
+  applySettings: (settingsSnapshot, shells, persistence) => set({ settingsSnapshot, shells, persistence, hooksOutdated: settingsSnapshot.agents.hooksOutdated }),
+  setHello: (version, shells, home, persistence, hooksOutdated) => set({ connected: true, version, shells, home, persistence, hooksOutdated }),
   setUnsaved: (unsaved) => set({ unsaved }),
   setStatus: (text, level = StatusLevel.Info) => set({ status: { text, level, at: new Date().toISOString() } }),
   setLeaderActive: (leaderActive) => set({ leaderActive }),

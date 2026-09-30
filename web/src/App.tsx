@@ -46,7 +46,7 @@ export default function App() {
     const { markFailed, markExited, markPathMissing, markAlive } = usePaneStore.getState()
     const subscriptions = [
       bridge.on('app.hello', (message) => {
-        setHello(message.version, message.shells, message.home, message.persistence)
+        setHello(message.version, message.shells, message.home, message.persistence, message.hooksOutdated)
         useStatusLogStore.getState().load(message.statusLog)
         terminalRegistry.configure(message.persistence.linesPerPane)
         terminalRegistry.setFontSize(message.appearance.fontSize)

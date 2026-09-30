@@ -498,6 +498,7 @@ public sealed class HostBridge : IDisposable
             persistence = _persistence,
             appearance = _settings.Appearance,
             statusLog = _statusLog.Entries(),
+            hooksOutdated = _agents.HooksOutdated(),
             recovery = recovery.Length > 0 ? recovery : null
         });
         _updates.PostState();
