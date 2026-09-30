@@ -90,6 +90,13 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (568 tests verts).
 - Commits `ea976df` (lot 4), `629dc88` (texte indicatif raccourci), poussés ; documentation, README et section 18 de la spec mis à jour.
 
+### 1/10 0 h 20 à 0 h 40 : finition, première partie
+
+- PR #123 : `Closes #118` ajouté, passée en « prête » (`gh pr ready`), non mergée.
+- Revue du diff de la branche lancée avec le skill `code-review` (niveau `high`, en arrière-plan).
+- Amélioration `a3faf99` (marqueurs d’une session Claude Code parente retirés de l’environnement des terminaux).
+- Vérifications complémentaires à l’écran : Leader puis I bascule dans les deux sens, y compris quand le focus est déjà dans la vue Agents ; un clic sur un fichier modifié par l’agent (`README.md` du dépôt jetable, `+1 −0`) rejoint le pane et ouvre la vue Git sur son diff Unstaged.
+
 ## Écarts à la spec
 
 - Section 12, convention proposée « L’hôte lit le transcript de chaque session suivie, dont les hooks lui donnent le chemin » : le chemin vient du registre des sessions (`sessionId` et `cwd`), pas des hooks. Raison : les hooks de l’utilisateur exécutent le script de la version installée, qui n’écrit pas ce chemin, et le registre ne dépend pas de la version du script.
@@ -113,10 +120,11 @@ Aucun pour l’instant.
 
 - `app.ready` fait renvoyer `agent.states` (et `agent.board`) : après un rechargement de la page (développement), les indications d’agents restaient vides jusqu’au prochain changement (inclus dans `190f970`, car `agent.board` en a besoin).
 - `c156f44` : plan affiché pour une demande ExitPlanMode, fichiers de plan de Claude Code ignorés dans les fichiers modifiés.
+- `a3faf99` : les terminaux ne reçoivent plus les marqueurs d’une session Claude Code parente (`CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION`…) ; un `claude` lancé dans un Tily lui-même lancé depuis `claude` écrit de nouveau transcript et registre (test `TerminalManagerTests`).
 
 ### Notées seulement
 
-- Un Tily lancé depuis une session Claude Code transmet à ses terminaux `CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION`… : un `claude` lancé dans Tily se croit alors sous-agent, n’enregistre ni transcript ni registre, et la vue Agents ne le voit qu’à moitié. Cas surtout rencontré en développement ; retirer ces marqueurs de l’environnement des panes, comme `WEZTERM_*`, serait simple.
+Aucune pour l’instant.
 
 ## Reste à faire
 
