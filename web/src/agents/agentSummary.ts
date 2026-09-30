@@ -125,17 +125,6 @@ export const nextPaneInState = (tabs: Tab[], agents: AgentMap, state: AgentState
 const MINUTE_MS = 60_000
 const MINUTES_PER_HOUR = 60
 
-export const waitedFor = (elapsedMs: number): string => {
-  const minutes = Math.floor(elapsedMs / MINUTE_MS)
-  if (minutes < 1) {
-    return 'depuis moins d’une minute'
-  }
-  if (minutes < MINUTES_PER_HOUR) {
-    return `depuis ${minutes} min`
-  }
-  return `depuis ${Math.floor(minutes / MINUTES_PER_HOUR)} h ${String(minutes % MINUTES_PER_HOUR).padStart(2, '0')}`
-}
-
 export const stateDuration = (elapsedMs: number): string => {
   const minutes = Math.floor(elapsedMs / MINUTE_MS)
   if (minutes < 1) {
@@ -146,6 +135,8 @@ export const stateDuration = (elapsedMs: number): string => {
   }
   return `${Math.floor(minutes / MINUTES_PER_HOUR)} h ${String(minutes % MINUTES_PER_HOUR).padStart(2, '0')}`
 }
+
+export const waitedFor = (elapsedMs: number): string => (elapsedMs < MINUTE_MS ? 'depuis moins d’une minute' : `depuis ${stateDuration(elapsedMs)}`)
 
 export const longestWaitingFirst = (panes: WaitingPane[], since: Record<string, number>, now: number): WaitingPane[] =>
   panes.toSorted((first, second) => (since[first.paneId] ?? now) - (since[second.paneId] ?? now))

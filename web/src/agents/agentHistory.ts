@@ -1,9 +1,9 @@
 import { bridge } from '../bridge/bridge'
-import { activeTab, activeWorkspace, DEFAULT_SHELL, folderName } from '../model/session'
+import { AgentLaunchTarget, folderName } from '../model/session'
 import { useHostStore } from '../store/hostStore'
-import { useSessionStore } from '../store/sessionStore'
 import { focusPane, joinPane } from '../terminal/terminalActions'
 import { terminalRegistry } from '../terminal/terminalRegistry'
+import { openLaunchPane } from './agentLaunch'
 
 const MINUTE_MS = 60_000
 const HOUR_MS = 60 * MINUTE_MS
@@ -16,19 +16,6 @@ export const resumeSession = (sessionId: string, paneId?: string): void => {
   bridge.send({ type: 'agent.prepareResume', request: nextRequest, sessionId, pane: paneId })
 }
 
-const openResumeTab = (directory: string): string | undefined => {
-  const store = useSessionStore.getState()
-  const session = store.session
-  if (session && activeWorkspace(session)) {
-    store.newTabAt(directory, DEFAULT_SHELL)
-  } else {
-    store.newWorkspace(folderName(directory), directory, DEFAULT_SHELL)
-  }
-  const current = useSessionStore.getState().session
-  const workspace = current ? activeWorkspace(current) : undefined
-  return workspace ? activeTab(workspace).active : undefined
-}
-
 export const receiveResumePrepared = (directory: string, command: string, paneId: string | undefined): void => {
   const terminal = paneId ? terminalRegistry.get(paneId)?.terminal : undefined
   if (paneId && terminal) {
@@ -37,7 +24,7 @@ export const receiveResumePrepared = (directory: string, command: string, paneId
     useHostStore.getState().setStatus('Reprise de la session Claude Code dans ce terminal.')
     return
   }
-  const opened = openResumeTab(directory)
+  const opened = openLaunchPane(directory, AgentLaunchTarget.Tab)
   if (opened) {
     terminalRegistry.runAtStart(opened, command)
     requestAnimationFrame(() => requestAnimationFrame(() => focusPane(opened)))

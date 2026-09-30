@@ -63,7 +63,7 @@ export const submitAgentLaunch = (): void => {
   bridge.send({ type: 'agent.prepareLaunch', request: nextRequest, launchMode: draft.mode, shell: DEFAULT_SHELL })
 }
 
-const openLaunchPane = (path: string, target: AgentLaunchTarget): string | undefined => {
+export const openLaunchPane = (path: string, target: AgentLaunchTarget): string | undefined => {
   const store = useSessionStore.getState()
   if (target === AgentLaunchTarget.Workspace || !currentPane()) {
     store.newWorkspace(folderName(path), path, DEFAULT_SHELL)
