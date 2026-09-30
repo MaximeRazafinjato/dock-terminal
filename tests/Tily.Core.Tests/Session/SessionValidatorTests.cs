@@ -162,6 +162,28 @@ public sealed class SessionValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenSidebarViewAgents_ThenKeepsIt()
+    {
+        var session = SessionFactory.Initial();
+        session.SidebarView = "agents";
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal("agents", session.SidebarView);
+    }
+
+    [Fact]
+    public void Validate_WhenSidebarViewUnknown_ThenFallsBackToWorkspaces()
+    {
+        var session = SessionFactory.Initial();
+        session.SidebarView = "workspaces";
+
+        SessionValidator.Validate(session);
+
+        Assert.Null(session.SidebarView);
+    }
+
+    [Fact]
     public void Validate_WhenPanelUnknown_ThenFallsBackToFiles()
     {
         var session = SessionFactory.Initial();

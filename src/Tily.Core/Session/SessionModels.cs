@@ -9,6 +9,7 @@ public sealed class SessionModel
     public string Active { get; set; } = string.Empty;
     public int Sidebar { get; set; } = SessionLimits.DefaultSidebarWidth;
     public bool SidebarCollapsed { get; set; }
+    public string? SidebarView { get; set; }
     public int ExplorerWidth { get; set; } = SessionLimits.DefaultExplorerWidth;
     public GitGraphLayoutModel? GitGraph { get; set; }
     public List<ClosedTabModel> Closed { get; set; } = new();
@@ -105,4 +106,5 @@ public static class SessionLimits
     public const int MaxFavoriteLength = 100;
     public const int MaxNoteChars = 100_000;
     public static readonly string[] Panels = ["files", "git", "notes"];
+    public const string AgentsSidebarView = "agents";
 }

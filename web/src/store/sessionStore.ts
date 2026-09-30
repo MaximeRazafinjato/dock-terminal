@@ -30,6 +30,7 @@ import {
   RightPanelView,
   SIDEBAR_MAX,
   SIDEBAR_MIN,
+  SidebarView,
   SplitAxis,
   type ClosedTab,
   type GitGraphLayout,
@@ -48,6 +49,7 @@ interface SessionState {
   toggleWorkspace: (workspaceId: string) => void
   collapseOtherWorkspaces: (workspaceId: string) => void
   toggleSidebar: () => void
+  setSidebarView: (view: SidebarView) => void
   setSidebarWidth: (width: number) => void
   toggleExplorer: () => boolean
   togglePanelView: (view: RightPanelView) => boolean
@@ -157,6 +159,16 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
 
   toggleSidebar: () =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.sidebarCollapsed = !draft.sidebarCollapsed }) })),
+
+  setSidebarView: (view) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        draft.sidebarCollapsed = false
+        if ((draft.sidebarView ?? SidebarView.Workspaces) !== view) {
+          draft.sidebarView = view
+        }
+      }),
+    })),
 
   setSidebarWidth: (width) =>
     set((state) => ({

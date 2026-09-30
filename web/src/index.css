@@ -294,3 +294,23 @@ html[data-git-dragging] * {
 .hljs-deletion {
   color: var(--color-tily-diff-removed-ink);
 }
+
+.tily-markdown.tily-markdown-compact {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.tily-markdown.tily-markdown-compact :is(p, ul, ol, blockquote, pre, table, details) {
+  margin: 0 0 8px;
+}
+
+.tily-markdown.tily-markdown-compact > :last-child {
+  margin-bottom: 0;
+}
+
+.tily-markdown.tily-markdown-compact :is(h1, h2, h3, h4, h5, h6) {
+  margin: 12px 0 6px;
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-size: 13px;
+}

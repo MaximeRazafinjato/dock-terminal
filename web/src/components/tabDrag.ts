@@ -1,4 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { LEFT_PANEL_SELECTOR, showWorkspacesView } from '../agents/agentsView'
 import { useUiStore, type TabDropTarget } from '../store/uiStore'
 import { trackPointerDrag } from './pointerDrag'
 
@@ -41,6 +42,9 @@ export const beginTabDrag = (event: ReactPointerEvent<HTMLElement>, tabId: strin
   trackPointerDrag(event, {
     start: () => useUiStore.getState().startDraggingTab(tabId),
     move: (x, y) => {
+      if (document.elementFromPoint(x, y)?.closest(LEFT_PANEL_SELECTOR)) {
+        showWorkspacesView()
+      }
       const target = dropTargetAt(x, y)
       const { tabDropTarget, setTabDropTarget } = useUiStore.getState()
       if (!sameDropTarget(tabDropTarget, target)) {

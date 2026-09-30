@@ -35,6 +35,11 @@ export enum RightPanelView {
   Notes = 'notes',
 }
 
+export enum SidebarView {
+  Workspaces = 'workspaces',
+  Agents = 'agents',
+}
+
 export interface Tab {
   id: string
   name: string
@@ -79,6 +84,7 @@ export interface Session {
   active: string
   sidebar: number
   sidebarCollapsed: boolean
+  sidebarView?: SidebarView
   explorerWidth: number
   gitGraph: GitGraphLayout
   closed: ClosedTab[]

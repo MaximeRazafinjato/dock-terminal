@@ -1,6 +1,7 @@
 import { bridge } from '../bridge/bridge'
 import { useHostStore } from '../store/hostStore'
-import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, RightPanelView, SplitAxis, type Workspace } from '../model/session'
+import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, RightPanelView, SidebarView, SplitAxis, type Workspace } from '../model/session'
+import { focusAgentsView, toggleAgentsView } from '../agents/agentsView'
 import { Direction } from '../components/paneNavigation'
 import { equalizeActiveTab, focusPaneToward, selectTabNumber, swapPaneToward } from './paneCommands'
 import { focusWorkspacePanel } from '../components/workspacePanel'
@@ -131,17 +132,15 @@ const currentPaneId = (): string => {
 const SIDEBAR_SELECTOR = 'aside'
 
 export const revealWorkspacePanel = (): void => {
-  const { session, toggleSidebar: toggle } = useSessionStore.getState()
-  if (session?.sidebarCollapsed) {
-    toggle()
-  }
+  useSessionStore.getState().setSidebarView(SidebarView.Workspaces)
   requestAnimationFrame(() => focusWorkspacePanel(currentWorkspace()?.id))
 }
 
 const toggleSidebar = (): void => {
   const { session, toggleSidebar: toggle } = useSessionStore.getState()
   if (session?.sidebarCollapsed) {
-    revealWorkspacePanel()
+    toggle()
+    requestAnimationFrame(() => (session.sidebarView === SidebarView.Agents ? focusAgentsView() : focusWorkspacePanel(currentWorkspace()?.id)))
     return
   }
   if (document.activeElement?.closest(SIDEBAR_SELECTOR)) {
@@ -233,6 +232,9 @@ export const runCommand = (command: Command): void => {
       break
     case Command.ToggleSidebar:
       toggleSidebar()
+      break
+    case Command.ToggleAgents:
+      toggleAgentsView()
       break
     case Command.TogglePaneZoom:
       togglePaneZoom()
