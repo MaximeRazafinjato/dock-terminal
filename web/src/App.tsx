@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import { clearSeenCommandNotices } from './terminal/commandNotices'
+import { receiveLaunchPrepared } from './agents/agentLaunch'
 import { receiveAgentResponded, receiveAgentSend } from './agents/agentResponses'
 import { startAttentionNotifier } from './agents/attentionNotifier'
+import { startLaunchTaskWatcher } from './agents/launchTasks'
 import { bridge } from './bridge/bridge'
 import { AppShell } from './components/AppShell'
 import { allPanes, restoredSessionLabel } from './model/session'
@@ -37,6 +39,7 @@ export default function App() {
     const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath, setImportedPreferences } = useHostStore.getState()
     let stopAutosave: (() => void) | undefined
     const stopNotifier = startAttentionNotifier()
+    const stopLaunchTasks = startLaunchTaskWatcher()
     const stopExternalDrops = startExternalDrops()
     const stopStatusLog = startStatusLog()
     const { markFailed, markExited, markPathMissing, markAlive } = usePaneStore.getState()
@@ -87,6 +90,7 @@ export default function App() {
       bridge.on('agent.board', (message) => useAgentStore.getState().setCards(message.cards)),
       bridge.on('agent.responded', receiveAgentResponded),
       bridge.on('agent.send', (message) => receiveAgentSend(message.pane, message.text)),
+      bridge.on('agent.launchPrepared', (message) => receiveLaunchPrepared(message.request, message.sessionId, message.command)),
       bridge.on('agent.join', (message) => joinPane(message.pane)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
@@ -123,7 +127,7 @@ export default function App() {
       bridge.on('git.autoFetchEnded', receiveGitAutoFetchEnded),
       bridge.on('worktrees.planned', (message) => receiveWorktreePlan(message.request, message.plan)),
       bridge.on('worktrees.progress', (message) => receiveWorktreeProgress(message.operation, message.message)),
-      bridge.on('worktrees.created', (message) => receiveWorktreeCreated(message.path, message.name, message.install)),
+      bridge.on('worktrees.created', (message) => receiveWorktreeCreated(message.path, message.name, message.install, message.launch)),
       bridge.on('worktrees.done', (message) => receiveWorktreeDone(message.operation, message.message, message.warnings)),
       bridge.on('worktrees.failed', (message) => receiveWorktreeFailed(message.operation, message.message, message.output, message.lockedBy)),
       bridge.on('update.state', (message) => receiveUpdateState(message)),
@@ -148,6 +152,7 @@ export default function App() {
     }
     return () => {
       stopNotifier()
+      stopLaunchTasks()
       stopExternalDrops()
       stopStatusLog()
       stopAutosave?.()

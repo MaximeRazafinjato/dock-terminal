@@ -1,3 +1,4 @@
+import { openAgentLaunch } from '../agents/agentLaunch'
 import { AgentState } from '../bridge/messages'
 import { SidebarView, type Session } from '../model/session'
 import { useAgentStore } from '../store/agentStore'
@@ -48,6 +49,11 @@ export function LeftPanel({ session, renamingWorkspaceId, renamingTabId, actions
             )}
           </button>
         </div>
+        {agentsShown && (
+          <button type="button" className={HEADER_BUTTON} aria-label="Nouvel agent" data-tip="Lancer Claude Code sur une tâche" onClick={openAgentLaunch}>
+            <Icon name={IconName.Plus} />
+          </button>
+        )}
         {!agentsShown && (
           <>
             <button type="button" className={HEADER_BUTTON} aria-label="Ouvrir un projet" data-tip="Ouvrir un projet (Leader puis F)" onClick={actions.openProjects}>

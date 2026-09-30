@@ -1,4 +1,5 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
+import { openAgentLaunch } from '../agents/agentLaunch'
 import { consecutiveGroups, paneLocations, STATE_LABELS } from '../agents/agentSummary'
 import { AGENT_CARD_SELECTOR, openAgentFileChanges } from '../agents/agentsView'
 import { focusActivePane } from '../explorer/fileExplorerActions'
@@ -57,6 +58,9 @@ export function AgentsView({ session }: AgentsViewProps) {
       <div data-agents-view="" tabIndex={-1} className="flex min-h-0 flex-1 flex-col gap-[6px] px-[14px] py-[10px] text-[12px] text-tily-muted outline-none">
         <p className="text-tily-ink-soft">Aucun agent pour l’instant.</p>
         <p>Lancez Claude Code (<code className="font-mono">claude</code>) dans un terminal : il apparaîtra ici avec son état, son dernier message et les fichiers qu’il modifie.</p>
+        <button type="button" className="self-start cursor-pointer rounded border border-tily-green px-3 py-1 text-[12px] text-tily-green-deep hover:bg-tily-green-soft" onClick={openAgentLaunch}>
+          Lancer un agent…
+        </button>
       </div>
     )
   }

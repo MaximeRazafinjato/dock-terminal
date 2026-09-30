@@ -1,3 +1,4 @@
+import type { AgentLaunchMode } from '../model/session'
 import type { AgentState } from './messages'
 
 export interface AgentAction {
@@ -80,7 +81,14 @@ export type AgentHostMessage =
   | { type: 'agent.board'; cards: AgentCard[] }
   | { type: 'agent.responded'; pane: string }
   | { type: 'agent.send'; pane: string; text: string }
+  | { type: 'agent.launchPrepared'; request: number; sessionId: string; command: string }
 
 export type AgentWebMessage =
   | { type: 'agent.respond'; pane: string; requestId: string; answer: AgentAnswer; message?: string; option?: string }
   | { type: 'agent.message'; pane: string; message: string }
+  | { type: 'agent.prepareLaunch'; request: number; launchMode: AgentLaunchMode; shell: string }
+
+export interface AgentLaunchCommand {
+  sessionId: string
+  command: string
+}

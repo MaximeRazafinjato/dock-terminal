@@ -1,8 +1,9 @@
 import { useEffect, type ChangeEvent, type MouseEvent, type PointerEvent, type SubmitEvent } from 'react'
 import { WorktreeBranchMode, type WorktreePlan } from '../bridge/worktreeMessages'
-import { folderName } from '../model/session'
+import { folderName, type AgentLaunchMode } from '../model/session'
 import type { WorktreeDraft, WorktreeFailure } from '../store/worktreeStore'
 import { changeWorktreeDraft, closeWorktreeDialog, submitWorktree } from '../worktree/worktreeActions'
+import { AgentLaunchModes } from './AgentLaunchModes'
 import { keepTabInside } from './focusTrap'
 import { SETTINGS_BUTTON, SETTINGS_HINT, SETTINGS_INPUT, SETTINGS_LABEL, SETTINGS_SECONDARY } from './settingsStyles'
 import { Spinner } from './Spinner'
@@ -32,6 +33,9 @@ const handleBranchChange = (event: ChangeEvent<HTMLInputElement>) => changeWorkt
 const handleBaseChange = (event: ChangeEvent<HTMLSelectElement>) => changeWorktreeDraft({ base: event.target.value })
 const handleInstallChange = (event: ChangeEvent<HTMLInputElement>) => changeWorktreeDraft({ install: event.target.checked })
 const handleDatabaseChange = (event: ChangeEvent<HTMLInputElement>) => changeWorktreeDraft({ database: event.target.checked })
+const handleLaunchChange = (event: ChangeEvent<HTMLInputElement>) => changeWorktreeDraft({ launch: event.target.checked })
+const handleTaskChange = (event: ChangeEvent<HTMLTextAreaElement>) => changeWorktreeDraft({ task: event.target.value })
+const handleLaunchModeChange = (launchMode: AgentLaunchMode) => changeWorktreeDraft({ launchMode })
 
 const branchOptions = (label: string, branches: string[]) =>
   branches.length > 0 && (
@@ -139,6 +143,18 @@ export function WorktreeDialog({ draft, plan, planPending, busy, failure }: Work
               Répliquer la base de données (PostgreSQL sous Docker ou SQL Server)
             </label>
             <span className={SETTINGS_HINT}>Les ports de développement sont toujours remplacés par des ports libres.</span>
+          </fieldset>
+          <fieldset className="flex flex-col gap-2" disabled={busy}>
+            <label className={RADIO_LABEL}>
+              <input type="checkbox" checked={draft.launch} onChange={handleLaunchChange} />
+              Lancer Claude Code avec une tâche (dans le même terminal, après pnpm install)
+            </label>
+            {draft.launch && (
+              <div className="flex flex-col gap-2 pl-6">
+                <textarea className={`${SETTINGS_INPUT} min-h-[90px] resize-y font-mono`} value={draft.task} placeholder="Tâche collée dans Claude Code dès qu’il est prêt" aria-label="Tâche de l’agent" onChange={handleTaskChange} />
+                <AgentLaunchModes name="worktree-launch-mode" mode={draft.launchMode} onChange={handleLaunchModeChange} />
+              </div>
+            )}
           </fieldset>
           {failure && <WorktreeFailureDetails failure={failure} />}
         </div>

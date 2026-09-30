@@ -14,6 +14,13 @@ public sealed class SessionModel
     public GitGraphLayoutModel? GitGraph { get; set; }
     public List<ClosedTabModel> Closed { get; set; } = new();
     public List<string> Favorites { get; set; } = new();
+    public AgentLaunchModel? AgentLaunch { get; set; }
+}
+
+public sealed class AgentLaunchModel
+{
+    public string Mode { get; set; } = "default";
+    public string Target { get; set; } = "tab";
 }
 
 public sealed class GitGraphLayoutModel
@@ -107,4 +114,5 @@ public static class SessionLimits
     public const int MaxNoteChars = 100_000;
     public static readonly string[] Panels = ["files", "git", "notes"];
     public const string AgentsSidebarView = "agents";
+    public static readonly string[] AgentLaunchTargets = ["tab", "workspace", "split"];
 }

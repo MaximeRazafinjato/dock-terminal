@@ -256,6 +256,10 @@ public sealed class HostBridge : IDisposable
             case "agent.message":
                 SendAgentMessage(RequirePane(command), command.Message);
                 break;
+            case "agent.prepareLaunch":
+                var launch = ClaudeLaunchCommand.Prepare(command.LaunchMode, null, command.Shell ?? ShellCatalog.DefaultShellId);
+                Post(new { type = "agent.launchPrepared", request = command.Request, sessionId = launch.SessionId, command = launch.Command });
+                break;
             case "settings.export":
                 _ = ExportPreferencesAsync();
                 break;

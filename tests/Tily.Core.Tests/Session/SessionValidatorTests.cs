@@ -162,6 +162,28 @@ public sealed class SessionValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenAgentLaunchUnknown_ThenFallsBackToDefaults()
+    {
+        var session = SessionFactory.Initial();
+        session.AgentLaunch = new AgentLaunchModel { Mode = "bypassPermissions", Target = "fenêtre" };
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal(("default", "tab"), (session.AgentLaunch.Mode, session.AgentLaunch.Target));
+    }
+
+    [Fact]
+    public void Validate_WhenAgentLaunchValid_ThenKeepsIt()
+    {
+        var session = SessionFactory.Initial();
+        session.AgentLaunch = new AgentLaunchModel { Mode = "plan", Target = "split" };
+
+        SessionValidator.Validate(session);
+
+        Assert.Equal(("plan", "split"), (session.AgentLaunch.Mode, session.AgentLaunch.Target));
+    }
+
+    [Fact]
     public void Validate_WhenSidebarViewAgents_ThenKeepsIt()
     {
         var session = SessionFactory.Initial();

@@ -40,6 +40,23 @@ export enum SidebarView {
   Agents = 'agents',
 }
 
+export enum AgentLaunchMode {
+  Default = 'default',
+  Plan = 'plan',
+  AcceptEdits = 'acceptEdits',
+}
+
+export enum AgentLaunchTarget {
+  Tab = 'tab',
+  Workspace = 'workspace',
+  Split = 'split',
+}
+
+export interface AgentLaunchPreferences {
+  mode: AgentLaunchMode
+  target: AgentLaunchTarget
+}
+
 export interface Tab {
   id: string
   name: string
@@ -89,6 +106,7 @@ export interface Session {
   gitGraph: GitGraphLayout
   closed: ClosedTab[]
   favorites: string[]
+  agentLaunch?: AgentLaunchPreferences
 }
 
 export const SIDEBAR_MIN = 220

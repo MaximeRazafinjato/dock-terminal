@@ -2,8 +2,7 @@ import type { AgentAnswer } from '../bridge/agentMessages'
 import { bridge } from '../bridge/bridge'
 import { StatusLevel, useHostStore } from '../store/hostStore'
 import { terminalRegistry } from '../terminal/terminalRegistry'
-
-const SUBMIT_DELAY_MS = 150
+import { pasteAndSubmit } from './launchTasks'
 
 interface AnswerDetails {
   message?: string
@@ -23,7 +22,6 @@ export const receiveAgentSend = (paneId: string, text: string): void => {
     useHostStore.getState().setStatus('Terminal de l’agent introuvable : message non envoyé.', StatusLevel.Error)
     return
   }
-  terminal.paste(text)
-  setTimeout(() => terminal.input('\r'), SUBMIT_DELAY_MS)
+  pasteAndSubmit(paneId, terminal, text)
   useHostStore.getState().setStatus('Message envoyé à Claude Code.')
 }

@@ -39,6 +39,7 @@ public sealed class BridgeCommandModel
     public string? RequestId { get; init; }
     public string? Answer { get; init; }
     public string? Option { get; init; }
+    public string? LaunchMode { get; init; }
     public string[]? Panes { get; init; }
     public string[]? Keep { get; init; }
     public string[]? Paths { get; init; }
