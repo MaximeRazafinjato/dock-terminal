@@ -1,7 +1,9 @@
-import { useState, type ChangeEvent, type KeyboardEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { respondToAgent } from '../agents/agentResponses'
 import { AgentAnswer, AgentRequestKind, type AgentQuestionOption, type AgentRequest } from '../bridge/agentMessages'
 import { GIT_DANGER, GIT_INPUT, GIT_PRIMARY, GIT_SECONDARY } from './rightPanelStyles'
+
+const RETRY_DELAY_MS = 4000
 
 interface AgentRequestActionsProps {
   paneId: string
@@ -12,6 +14,14 @@ export function AgentRequestActions({ paneId, request }: AgentRequestActionsProp
   const [sentFor, setSentFor] = useState<string | null>(null)
   const [reason, setReason] = useState<string | null>(null)
   const sent = sentFor === request.id
+
+  useEffect(() => {
+    if (!sent) {
+      return
+    }
+    const timer = setTimeout(() => setSentFor(null), RETRY_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [sent])
 
   const answer = (kind: AgentAnswer, details?: { message?: string; option?: string }) => {
     setSentFor(request.id)
@@ -26,7 +36,9 @@ export function AgentRequestActions({ paneId, request }: AgentRequestActionsProp
   const handleReasonKeys = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
-      handleDeny()
+      if (!sent) {
+        handleDeny()
+      }
     } else if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
