@@ -29,7 +29,8 @@
 - **Branche visible** : l’en-tête de chaque terminal affiche la branche Git de son dossier, mise à jour après chaque commande ; un clic dessus ouvre la vue Git.
 - **Vue Git** : graphe de l’historique, branches et tags, Stage et commit, Push et Pull, Merge, Rebase, Cherry-pick, Revert, Stash, résolution des conflits et bouton « Annuler », sans taper de commande ; le diff d’un fichier se copie en un clic, prêt pour `git apply`, et le chemin relatif d’un fichier modifié depuis son menu, qui l’affiche aussi dans l’arbre des fichiers ; le brouillon du message de commit est gardé par dépôt ; fetch automatique à l’ouverture, désactivable dans les Paramètres.
 - **Worktrees** : lister, ouvrir, créer et supprimer des worktrees Git comme avec `wtr` et `rmwt` (ports de développement libres, `pnpm install` dans le terminal du nouveau workspace, base PostgreSQL ou SQL Server répliquée), depuis la vue Git, la palette, Leader puis N ou l’icône d’arbre du panneau des workspaces.
-- **Suivi de Claude Code** : repérer d’un coup d’œil le workspace et l’onglet où Claude Code travaille, attend une réponse ou a terminé.
+- **Suivi de Claude Code** : repérer d’un coup d’œil le workspace et l’onglet où Claude Code travaille, attend une réponse ou a terminé ; un Échap ne le laisse plus « En cours ».
+- **Vue Agents** : l’onglet « Agents » du panneau de gauche (Ctrl + Maj + I) réunit les agents Claude Code de tous les workspaces, groupés par urgence, avec leur titre, leur dernier message, l’action en cours, les fichiers modifiés et le contexte consommé ; on y autorise ou refuse une permission (raison transmise à Claude, règle « Toujours »), on répond à une question, on envoie un message de suivi, on lance un agent sur une tâche (dossier, projet, worktree, en mode Plan au besoin) et on reprend une session de l’historique, ou, après un redémarrage, celle d’un terminal restauré.
 - **Commandes longues** : quand une commande de plus de 10 secondes se termine dans un onglet que vous ne regardez pas (build, tests, installation), l’onglet porte une coche ou une croix rouge en cas d’échec, et la barre de statut l’annonce en citant la commande ; si Tily n’a pas le focus, il clignote dans la barre des tâches.
 - **Sortie des commandes** : copier la sortie de la dernière commande (menu du terminal ou palette), pour la coller dans un agent, et passer d’une commande à l’autre dans l’historique par Alt + PgUp / PgDn (Windows PowerShell et PowerShell 7).
 - **Liens cliquables** : Ctrl + clic sur un lien affiché dans le terminal l’ouvre dans le navigateur ; Ctrl + clic sur un chemin de fichier (`src/app.ts:12:5`, `Program.cs(42,17)`) l’ouvre dans l’éditeur, à la bonne ligne avec VS Code et ses dérivés.
@@ -79,6 +80,7 @@ Aucun droit administrateur n’est nécessaire. Tily vérifie ensuite lui-même 
 | O | Ctrl + Maj + O | Notes du workspace |
 | L | Ctrl + Maj + L | Journal de la barre de statut |
 | B | Ctrl + Maj + B | Afficher / masquer les workspaces |
+| I | Ctrl + Maj + I | Vue Agents du panneau de gauche, ou retour aux workspaces |
 | Z | Ctrl + Maj + Z | Rouvrir le dernier onglet fermé |
 | A | Ctrl + Maj + A | Rejoindre l’agent Claude Code en attente depuis le plus longtemps |
 | , | — | Paramètres |

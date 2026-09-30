@@ -16,7 +16,7 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
 - [x] 2. Essai du hook PermissionRequest (protocole du mandat) : concluant, le lot 2 répond par le hook
 - [x] 3. Lot 2, « Répondre » (R46)
 - [x] 4. Lot 3, « Lancer » (R47)
-- [ ] 5. Lot 4, « Historique et reprise » (R48)
+- [x] 5. Lot 4, « Historique et reprise » (R48)
 - [ ] 6. Finition : recettes R45 à R48, revue `code-review`, documentation, section 18 de la spec
 
 ## Itérations
@@ -81,6 +81,15 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (556 tests verts).
 - Commit `cf9b666`, poussé.
 
+### 1/10 0 h 00 à 0 h 20 : lot 4, « Historique et reprise »
+
+- `Tily.Core` : `AgentHistory` (`agent-history.json` : 50 dernières sessions vues, dossier, pane, `workspace › onglet`, titre, début, fin, dernier message, fichiers, état ; session ouverte à la fermeture de Tily marquée à reprendre dans son pane au chargement ; raisons d’indisponibilité : session en cours, dossier disparu, transcript effacé ; fichier illisible mis en quarantaine), `AgentHistoryModels`, `ClaudeLaunchCommand.Resume` (identifiant validé), `AgentBoard.PaneLocations`. Hôte : `agent.history` envoyé quand il change, `agent.prepareResume` → `agent.resumePrepared`, une Entrée tapée dans un pane retire sa proposition de reprise, erreur de chargement dans `app.hello`.
+- Web : `AgentHistorySection` (« À reprendre » avec « Reprendre ici », « Historique » repliable), `AgentHistoryRow`, `ResumeClaudeButton` (« Reprendre Claude » dans l’en-tête du pane), `agentHistory.ts`.
+- Tests : `AgentHistoryTests` (10), `ClaudeLaunchCommandTests` (+2).
+- Recette R48 déroulée : trois sessions `claude --model haiku` terminées (dans deux onglets et dans le worktree de R47), Tily fermé puis rouvert → aucun `claude` relancé, « À reprendre » (3) et « Reprendre Claude » dans l’en-tête des panes ; « Reprendre ici » dans le premier pane → la conversation d’origine revient (même réponse, même identifiant de session) ; « Reprendre » depuis l’historique pour le deuxième → nouvel onglet dans son dossier, bonne conversation ; suppression du worktree de la troisième depuis Tily → « Reprendre » grisé, infobulle « Le dossier de la session n’existe plus. ».
+- Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (568 tests verts).
+- Commits `ea976df` (lot 4), `629dc88` (texte indicatif raccourci), poussés ; documentation, README et section 18 de la spec mis à jour.
+
 ## Écarts à la spec
 
 - Section 12, convention proposée « L’hôte lit le transcript de chaque session suivie, dont les hooks lui donnent le chemin » : le chemin vient du registre des sessions (`sessionId` et `cwd`), pas des hooks. Raison : les hooks de l’utilisateur exécutent le script de la version installée, qui n’écrit pas ce chemin, et le registre ne dépend pas de la version du script.
@@ -91,6 +100,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Le pourcentage de contexte n’est affiché que pour les modèles dont la fenêtre est connue de Tily (liste fixe dans `ModelContextWindows`).
 - Lot 2 : une question à plusieurs réponses ou à plusieurs questions ne se règle que dans le terminal (la spec ne demande que le choix unique) ; Tily ne tape jamais les touches du dialogue, le hook se déclenchant pour les questions. « Toujours » envoie les suggestions de Claude Code telles quelles : la règle peut différer de celle du dialogue (commande exacte au lieu de « ping * »). Message de suivi : Entrée envoie, Maj + Entrée va à la ligne (non spécifié). Refus sans raison : « Refusé depuis Tily. ».
 - Le hook PermissionRequest attend au plus 30 minutes : au-delà, la demande disparaît de la vue et se règle dans le terminal.
+- Lot 4 : la fin d’une session est l’instant de sa dernière observation (sessions interrompues par la fermeture de Tily comprises) ; « À reprendre » vaut pour une session encore ouverte à la fermeture de Tily, et la proposition disparaît à la première Entrée tapée dans le pane (y compris une commande vide) ; les sessions « À reprendre » figurent aussi dans l’historique.
 - Lot 3 : « Défaut » ne passe pas `--permission-mode` (le mode par défaut des réglages de Claude Code s’applique, par exemple `auto`) ; le nouveau worktree n’est proposé que pour le dépôt du pane actif et s’ouvre toujours dans un nouveau workspace (comportement de la création de worktree) ; la tâche est collée quand le registre montre la session (après l’éventuelle confirmation de confiance du dossier) plutôt que sur le seul collage délimité, que PowerShell peut aussi activer.
 
 ## Blocages
@@ -110,7 +120,7 @@ Aucun pour l’instant.
 
 ## Reste à faire
 
-Lot 4, finition.
+Finition : recettes R45 à R48 de bout en bout, revue `code-review` du diff de la branche, puis robustesse et améliorations.
 
 ## À vérifier au réveil
 
@@ -119,3 +129,4 @@ Lot 4, finition.
 - **Réinstaller les hooks** après la mise à jour (Paramètres → Agents → « Mettre à jour les hooks ») : sans cela, le hook PermissionRequest garde son délai de 5 s et la vue ne peut pas répondre (elle l’indique : « Cette demande se règle dans le terminal »).
 - Répondre depuis la vue à une vraie permission (Autoriser, Refuser… avec une raison, Toujours) et à une question ; vérifier la règle ajoutée par « Toujours » dans `.claude/settings.local.json` du projet.
 - « Lancer un agent… » depuis un vrai projet (Défaut garde votre mode `auto`) et depuis un nouveau worktree : la tâche doit être collée puis envoyée seule.
+- Fermer Tily avec un agent ouvert, le rouvrir : « À reprendre » et « Reprendre Claude » dans l’en-tête du pane ; reprendre depuis l’historique.
