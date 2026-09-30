@@ -39,7 +39,7 @@ export function AgentCardDetails({ card, onOpenFile }: AgentCardDetailsProps) {
           <p className="font-mono text-[11.5px] [overflow-wrap:anywhere] whitespace-pre-wrap text-tily-ink">{card.detail}</p>
         </div>
       )}
-      {card.action && (
+      {card.action && card.state !== AgentState.Waiting && (
         <p className="break-words text-tily-ink-soft">
           <span className={SECTION_LABEL}>Action en cours </span>
           <span className="font-mono text-[11.5px]">{card.action.target ? `${card.action.tool} : ${card.action.target}` : card.action.tool}</span>
