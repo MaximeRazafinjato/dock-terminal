@@ -14,7 +14,7 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
   - [x] 1.4 Cartes, « Rejoindre », raccourcis, masquage des cartes d’attention
   - [x] 1.5 Vérification à l’écran (recette R45 déroulée)
 - [x] 2. Essai du hook PermissionRequest (protocole du mandat) : concluant, le lot 2 répond par le hook
-- [ ] 3. Lot 2, « Répondre » (R46)
+- [x] 3. Lot 2, « Répondre » (R46)
 - [ ] 4. Lot 3, « Lancer » (R47)
 - [ ] 5. Lot 4, « Historique et reprise » (R48)
 - [ ] 6. Finition : recettes R45 à R48, revue `code-review`, documentation, section 18 de la spec
@@ -60,6 +60,16 @@ Protocole du mandat : un hook d’essai du scratchpad copie son entrée dans un 
 
 Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisable, la première réponse l’emporte) ; le hook doit s’arrêter de lui-même quand la demande est réglée dans le terminal (sinon il traîne jusqu’à son délai) ; sortie en JSON échappé ; « Toujours » envoie la suggestion telle quelle, dont la destination décide où la règle est gardée. Point 16 de la section 18 de la spec et mémoire `claude-code-integration-facts.md` mis à jour.
 
+### 30/09 23 h 15 à 23 h 35 : lot 2, « Répondre »
+
+- Script des hooks (`tily-agent-state.ps1`) : pour PermissionRequest, écrit la demande (`<pane>.request.json`, entrée brute du hook et identifiant), attend la réponse de Tily (`<pane>.answer.json`, identifiant puis sortie du hook), la recopie en octets UTF-8, ou s’arrête sans rien rendre dès que la demande est retirée ou remplacée ; message « Question posée. » pour AskUserQuestion. Installeur : délai de 1 800 s pour PermissionRequest (5 s pour les autres), `Outdated` quand l’installation existante n’a pas ce délai ; Paramètres : « Hooks à mettre à jour » et « Mettre à jour les hooks ».
+- `Tily.Core` : `AgentRequestModel`, `AgentRequestRepository` (règle lisible avec sa destination, question répondable), `PermissionDecisions` (JSON ASCII), `AgentResponder` (vérifie que l’agent attend toujours la même demande avant d’écrire, refuse un message de suivi pendant une attente), `JsonFields` (lecture JSON partagée) ; `ClaudeCodeAdapter` : registre `busy` plus récent qu’une attente → « En cours » (réponse donnée dans le terminal), demande rattachée à l’agent en attente et retirée dès qu’il ne l’est plus, avec une date pour ne jamais retirer une demande plus récente que l’indice. Hôte : `agent.respond`, `agent.message` (file `context.query`), `agent.responded`, `agent.send`, `TerminalManager.Probe`.
+- Web : `AgentRequestActions` (Autoriser, Refuser… avec raison, Toujours · règle, options d’une question), `AgentFollowUp` (message de suivi), `agentResponses.ts` (collage du message accepté puis Entrée).
+- Tests : `AgentRequestRepositoryTests` (10), `AgentResponderTests` (11), `ClaudeCodeAdapterTests` (+5), `ClaudeHooksInstallerTests` (+3), `AgentStateHookScriptTests` (+3, script lancé dans un vrai PowerShell 5.1 : demande écrite, réponse recopiée, retrait).
+- Recette R46 déroulée sur l’instance de dev, le script de la branche ajouté par `claude --settings` (les hooks globaux lancent encore le script installé) : Autoriser → commande exécutée ; Refuser… avec « Refusé depuis la vue Agents : écris plutôt dans r46-b-bis.txt » → Claude reçoit la raison, accents intacts, et poursuit son tour ; Toujours · accès au dossier (cette session) puis Toujours · `Bash(ping -n 1 127.0.0.1)` · ce projet → règle écrite dans `.claude/settings.local.json` du projet jetable ; question à choix unique → « Vert » pris ; message de suivi pendant un long poème → « Press up to edit queued messages », puis traité à la fin du tour (`enqueue` / `dequeue` dans le transcript) ; permission affichée dans la vue puis réglée par « 1 » dans le terminal → carte sans demande, fichier de demande retiré, aucun processus de hook restant.
+- Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (546 tests verts).
+- Commit `a781139`, poussé.
+
 ## Écarts à la spec
 
 - Section 12, convention proposée « L’hôte lit le transcript de chaque session suivie, dont les hooks lui donnent le chemin » : le chemin vient du registre des sessions (`sessionId` et `cwd`), pas des hooks. Raison : les hooks de l’utilisateur exécutent le script de la version installée, qui n’écrit pas ce chemin, et le registre ne dépend pas de la version du script.
@@ -68,6 +78,8 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Titre : entre `/rename` (`custom-title`) et le titre généré (`ai-title`), Tily prend aussi `agent-name` (nom donné à la session par l’utilisateur), absent de la spec.
 - Ordre à l’intérieur des groupes (non spécifié hors attentes) : En erreur comme En attente, du plus ancien au plus récent ; En cours, Terminé et État inconnu, du changement le plus récent au plus ancien.
 - Le pourcentage de contexte n’est affiché que pour les modèles dont la fenêtre est connue de Tily (liste fixe dans `ModelContextWindows`).
+- Lot 2 : une question à plusieurs réponses ou à plusieurs questions ne se règle que dans le terminal (la spec ne demande que le choix unique) ; Tily ne tape jamais les touches du dialogue, le hook se déclenchant pour les questions. « Toujours » envoie les suggestions de Claude Code telles quelles : la règle peut différer de celle du dialogue (commande exacte au lieu de « ping * »). Message de suivi : Entrée envoie, Maj + Entrée va à la ligne (non spécifié). Refus sans raison : « Refusé depuis Tily. ».
+- Le hook PermissionRequest attend au plus 30 minutes : au-delà, la demande disparaît de la vue et se règle dans le terminal.
 
 ## Blocages
 
@@ -85,9 +97,11 @@ Aucun pour l’instant.
 
 ## Reste à faire
 
-Essai PermissionRequest, lots 2, 3 et 4, finition.
+Lots 3 et 4, finition.
 
 ## À vérifier au réveil
 
 - Échap sur un agent Claude Code dans le Tily installé après la mise à jour : l’agent ne doit plus rester « En cours » ni « En attente ».
 - Vue Agents (Ctrl + Maj + I) avec de vraies sessions longues : titre, dernier message, fichiers modifiés et contexte ; durée du premier affichage sur un gros transcript.
+- **Réinstaller les hooks** après la mise à jour (Paramètres → Agents → « Mettre à jour les hooks ») : sans cela, le hook PermissionRequest garde son délai de 5 s et la vue ne peut pas répondre (elle l’indique : « Cette demande se règle dans le terminal »).
+- Répondre depuis la vue à une vraie permission (Autoriser, Refuser… avec une raison, Toujours) et à une question ; vérifier la règle ajoutée par « Toujours » dans `.claude/settings.local.json` du projet.
