@@ -15,7 +15,7 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
   - [x] 1.5 Vérification à l’écran (recette R45 déroulée)
 - [x] 2. Essai du hook PermissionRequest (protocole du mandat) : concluant, le lot 2 répond par le hook
 - [x] 3. Lot 2, « Répondre » (R46)
-- [ ] 4. Lot 3, « Lancer » (R47)
+- [x] 4. Lot 3, « Lancer » (R47)
 - [ ] 5. Lot 4, « Historique et reprise » (R48)
 - [ ] 6. Finition : recettes R45 à R48, revue `code-review`, documentation, section 18 de la spec
 
@@ -70,6 +70,17 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (546 tests verts).
 - Commit `a781139`, poussé.
 
+### 30/09 23 h 35 au 1/10 0 h 00 : lot 3, « Lancer »
+
+- `Tily.Core` : `ClaudeLaunchCommand.Prepare(mode, commande préalable, shell)` rend un `ClaudeLaunchModel(SessionId, Command)` : `claude --session-id <uuid>`, `--permission-mode plan` ou `acceptEdits` (Défaut ne passe rien : le mode des réglages de Claude Code s’applique, comme le modèle), précédé de `pnpm install; ` (`& ` sous CMD) dans un nouveau worktree ; mode inconnu refusé en français. Session : `agentLaunch {mode, target}` (mode et emplacement retenus), validé par `SessionValidator`. Hôte : `agent.prepareLaunch` → `agent.launchPrepared {request, sessionId, command}` ; `worktrees.create` accepte `launchMode`, `worktrees.created` porte alors `launch {sessionId, command}`.
+- Web : formulaire `AgentLaunchDialog` (« Nouvel agent » dans l’en-tête de la vue Agents, bouton de la vue vide, « Lancer un agent… » dans la palette) : dossier du pane actif, projets et worktrees de la racine des projets, nouveau worktree du dépôt du pane actif ; tâche, mode de départ (`AgentLaunchModes`, partagé), nouvel onglet / nouveau workspace / split ; Ctrl + Entrée lance. Le formulaire de création de worktree propose « Lancer Claude Code avec une tâche ». `launchTasks.ts` colle la tâche quand `agent.states` montre la session attendue et que le collage délimité est actif, puis vérifie la prise en compte (nouvelle Entrée précédée d’un signal de focus sinon) ; `pasteAndSubmit` sert aussi au message de suivi.
+- Tests : `ClaudeLaunchCommandTests` (6), `SessionValidatorTests` (+2).
+- Recette R47 déroulée (racine des projets de l’instance de dev redirigée vers un dossier du scratchpad avec un dépôt Git jetable, `ANTHROPIC_MODEL=haiku` pour les agents lancés) : tâche de trois lignes avec guillemets doubles et simples, `$env:PATH`, accents graves et antislash, lancée dans le dossier du pane actif → prompt du transcript identique à la tâche ; nouveau worktree en mode Plan → `pnpm install; claude --session-id … --permission-mode plan` dans le terminal du workspace créé, confiance du dossier acceptée, tâche collée, plan rédigé, carte présente dès le démarrage.
+- Constat : au premier essai, la tâche collée n’avait pas été validée (formulaire fermé sans rendre le focus au nouveau terminal ; même une Entrée envoyée ensuite restait sans effet, jusqu’à ce que le terminal reprenne le focus). Correctif : focus rendu au nouveau pane, et seconde Entrée précédée d’un signal de focus (`ESC [ I`) si l’agent ne passe pas « En cours ».
+- Amélioration en cours de route (commit `c156f44`) : pour ExitPlanMode, le détail de la demande est le plan (plus le JSON brut) ; les fichiers de `.claude\plans` ne comptent plus parmi les fichiers modifiés.
+- Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (556 tests verts).
+- Commit `cf9b666`, poussé.
+
 ## Écarts à la spec
 
 - Section 12, convention proposée « L’hôte lit le transcript de chaque session suivie, dont les hooks lui donnent le chemin » : le chemin vient du registre des sessions (`sessionId` et `cwd`), pas des hooks. Raison : les hooks de l’utilisateur exécutent le script de la version installée, qui n’écrit pas ce chemin, et le registre ne dépend pas de la version du script.
@@ -80,6 +91,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Le pourcentage de contexte n’est affiché que pour les modèles dont la fenêtre est connue de Tily (liste fixe dans `ModelContextWindows`).
 - Lot 2 : une question à plusieurs réponses ou à plusieurs questions ne se règle que dans le terminal (la spec ne demande que le choix unique) ; Tily ne tape jamais les touches du dialogue, le hook se déclenchant pour les questions. « Toujours » envoie les suggestions de Claude Code telles quelles : la règle peut différer de celle du dialogue (commande exacte au lieu de « ping * »). Message de suivi : Entrée envoie, Maj + Entrée va à la ligne (non spécifié). Refus sans raison : « Refusé depuis Tily. ».
 - Le hook PermissionRequest attend au plus 30 minutes : au-delà, la demande disparaît de la vue et se règle dans le terminal.
+- Lot 3 : « Défaut » ne passe pas `--permission-mode` (le mode par défaut des réglages de Claude Code s’applique, par exemple `auto`) ; le nouveau worktree n’est proposé que pour le dépôt du pane actif et s’ouvre toujours dans un nouveau workspace (comportement de la création de worktree) ; la tâche est collée quand le registre montre la session (après l’éventuelle confirmation de confiance du dossier) plutôt que sur le seul collage délimité, que PowerShell peut aussi activer.
 
 ## Blocages
 
@@ -90,6 +102,7 @@ Aucun pour l’instant.
 ### Faites
 
 - `app.ready` fait renvoyer `agent.states` (et `agent.board`) : après un rechargement de la page (développement), les indications d’agents restaient vides jusqu’au prochain changement (inclus dans `190f970`, car `agent.board` en a besoin).
+- `c156f44` : plan affiché pour une demande ExitPlanMode, fichiers de plan de Claude Code ignorés dans les fichiers modifiés.
 
 ### Notées seulement
 
@@ -97,7 +110,7 @@ Aucun pour l’instant.
 
 ## Reste à faire
 
-Lots 3 et 4, finition.
+Lot 4, finition.
 
 ## À vérifier au réveil
 
@@ -105,3 +118,4 @@ Lots 3 et 4, finition.
 - Vue Agents (Ctrl + Maj + I) avec de vraies sessions longues : titre, dernier message, fichiers modifiés et contexte ; durée du premier affichage sur un gros transcript.
 - **Réinstaller les hooks** après la mise à jour (Paramètres → Agents → « Mettre à jour les hooks ») : sans cela, le hook PermissionRequest garde son délai de 5 s et la vue ne peut pas répondre (elle l’indique : « Cette demande se règle dans le terminal »).
 - Répondre depuis la vue à une vraie permission (Autoriser, Refuser… avec une raison, Toujours) et à une question ; vérifier la règle ajoutée par « Toujours » dans `.claude/settings.local.json` du projet.
+- « Lancer un agent… » depuis un vrai projet (Défaut garde votre mode `auto`) et depuis un nouveau worktree : la tâche doit être collée puis envoyée seule.
