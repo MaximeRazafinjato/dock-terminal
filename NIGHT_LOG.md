@@ -117,6 +117,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Premier passage sur les plus gros transcripts réels de l’utilisateur (lecture seule, programme jetable du scratchpad lié à `Tily.Core.dll`) : 44 Mo en 0,53 s, 40 Mo en 0,33 s, 39 Mo en 0,27 s, puis 0 ms aux passages suivants (ajouts seuls). Rien à optimiser : la lecture se fait hors du fil de l’interface, une fois par session.
 - Script des hooks : sans `TILY_PANE_ID` (Claude Code lancé hors de Tily), il sort aussitôt ; le hook PermissionRequest n’attend donc jamais hors de Tily.
 - `c79cd1f` : dans l’historique, un emplacement long (worktree) masquait l’heure de fin ; l’emplacement est tronqué et l’heure reste visible (vérifié à l’écran).
+- `13c36f3` : un double clic sur « Reprendre » (ou « Reprendre ici » puis « Reprendre ») lançait deux `claude --resume` sur la même session, la première n’étant pas encore visible dans le registre. L’hôte marque la session « en cours de reprise » dès la première demande : une seconde est refusée (« Cette session est déjà en cours de reprise. », barre de statut, bouton grisé) jusqu’à l’apparition de la session, ou une minute au plus si Claude ne démarre pas. Trois tests `AgentHistoryTests` (574 tests verts) ; vérifié à l’écran : un seul onglet ouvert, message affiché, session fermée par `/exit`.
 - Libellés de Paramètres → Agents relus dans le code : « Hooks à mettre à jour pour répondre depuis la vue Agents » et « Mettre à jour les hooks » quand l’installation est ancienne.
 
 ## Écarts à la spec
