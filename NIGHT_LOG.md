@@ -13,7 +13,7 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
   - [x] 1.3 Bascule du panneau et liste groupée par urgence
   - [x] 1.4 Cartes, « Rejoindre », raccourcis, masquage des cartes d’attention
   - [x] 1.5 Vérification à l’écran (recette R45 déroulée)
-- [ ] 2. Essai du hook PermissionRequest (protocole du mandat)
+- [x] 2. Essai du hook PermissionRequest (protocole du mandat) : concluant, le lot 2 répond par le hook
 - [ ] 3. Lot 2, « Répondre » (R46)
 - [ ] 4. Lot 3, « Lancer » (R47)
 - [ ] 5. Lot 4, « Historique et reprise » (R48)
@@ -45,6 +45,20 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
 - Constat pour le lot 2 : sur 2.1.286, le hook PermissionRequest se déclenche aussi pour AskUserQuestion (le script installé écrit alors « Autorisation demandée : AskUserQuestion »).
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (515 tests verts).
 - Commits `190f970` (transcript et pont), `4a533e6` (vue), poussés.
+
+### 30/09 23 h 05 à 23 h 15 : essai du hook PermissionRequest
+
+Protocole du mandat : un hook d’essai du scratchpad copie son entrée dans un journal puis attend au plus 120 s un fichier `decision.json` ; `claude --model haiku --permission-mode default --settings essai-settings.json` (`timeout` 180) dans un pane de l’instance de dev, dossier jetable. Claude Code 2.1.286.
+
+| Cas | Résultat |
+| --- | --- |
+| A. Réponse « 1 » dans le terminal pendant que le hook attend | Le dialogue répond, la commande s’exécute, Claude termine son tour. Le hook n’est pas arrêté : il continue d’attendre jusqu’à son délai. Une décision `deny` rendue ensuite est ignorée, sans effet visible. |
+| B. `decision.json` en `allow` | Le dialogue disparaît, la commande s’exécute. |
+| C. `deny` avec `message` | La commande n’est pas exécutée ; Claude reçoit « Error: <message> » et « Denied by PermissionRequest hook », poursuit son tour en tenant compte de la raison (il écrit dans le fichier proposé). Accents abîmés : la sortie de `[Console]::Out` de PowerShell 5.1 n’est pas en UTF-8, il faut écrire des octets UTF-8 ou un JSON échappé. |
+| D. `updatedPermissions` tiré de `permission_suggestions` | Appliqué selon la destination : `session` en mémoire (rien sur disque), `localSettings` dans `.claude/settings.local.json` du projet (`permissions.allow: ["Bash(ping -n 1 127.0.0.1)"]` pour `addRules`, `additionalDirectories` pour `addDirectories`) ; la même commande passe ensuite sans demande. Les suggestions diffèrent du dialogue : « ping * » dans le dialogue, commande exacte dans la suggestion ; pour une écriture par redirection, la suggestion est `addDirectories` en `session`, qui n’évite pas la demande suivante. |
+| E. AskUserQuestion avec `updatedInput` `{questions, answers}` et `allow` | Le hook se déclenche pour la question (dialogue affiché) ; la réponse est prise (« → Vert », « Allowed by PermissionRequest hook »). |
+
+Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisable, la première réponse l’emporte) ; le hook doit s’arrêter de lui-même quand la demande est réglée dans le terminal (sinon il traîne jusqu’à son délai) ; sortie en JSON échappé ; « Toujours » envoie la suggestion telle quelle, dont la destination décide où la règle est gardée. Point 16 de la section 18 de la spec et mémoire `claude-code-integration-facts.md` mis à jour.
 
 ## Écarts à la spec
 
