@@ -70,7 +70,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (546 tests verts).
 - Commit `a781139`, poussé.
 
-### 30/09 23 h 35 au 1/10 0 h 00 : lot 3, « Lancer »
+### 30/09 23 h 31 à 23 h 51 : lot 3, « Lancer »
 
 - `Tily.Core` : `ClaudeLaunchCommand.Prepare(mode, commande préalable, shell)` rend un `ClaudeLaunchModel(SessionId, Command)` : `claude --session-id <uuid>`, `--permission-mode plan` ou `acceptEdits` (Défaut ne passe rien : le mode des réglages de Claude Code s’applique, comme le modèle), précédé de `pnpm install; ` (`& ` sous CMD) dans un nouveau worktree ; mode inconnu refusé en français. Session : `agentLaunch {mode, target}` (mode et emplacement retenus), validé par `SessionValidator`. Hôte : `agent.prepareLaunch` → `agent.launchPrepared {request, sessionId, command}` ; `worktrees.create` accepte `launchMode`, `worktrees.created` porte alors `launch {sessionId, command}`.
 - Web : formulaire `AgentLaunchDialog` (« Nouvel agent » dans l’en-tête de la vue Agents, bouton de la vue vide, « Lancer un agent… » dans la palette) : dossier du pane actif, projets et worktrees de la racine des projets, nouveau worktree du dépôt du pane actif ; tâche, mode de départ (`AgentLaunchModes`, partagé), nouvel onglet / nouveau workspace / split ; Ctrl + Entrée lance. Le formulaire de création de worktree propose « Lancer Claude Code avec une tâche ». `launchTasks.ts` colle la tâche quand `agent.states` montre la session attendue et que le collage délimité est actif, puis vérifie la prise en compte (nouvelle Entrée précédée d’un signal de focus sinon) ; `pasteAndSubmit` sert aussi au message de suivi.
@@ -81,7 +81,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (556 tests verts).
 - Commit `cf9b666`, poussé.
 
-### 1/10 0 h 00 à 0 h 20 : lot 4, « Historique et reprise »
+### 30/09 23 h 51 au 1/10 0 h 04 : lot 4, « Historique et reprise »
 
 - `Tily.Core` : `AgentHistory` (`agent-history.json` : 50 dernières sessions vues, dossier, pane, `workspace › onglet`, titre, début, fin, dernier message, fichiers, état ; session ouverte à la fermeture de Tily marquée à reprendre dans son pane au chargement ; raisons d’indisponibilité : session en cours, dossier disparu, transcript effacé ; fichier illisible mis en quarantaine), `AgentHistoryModels`, `ClaudeLaunchCommand.Resume` (identifiant validé), `AgentBoard.PaneLocations`. Hôte : `agent.history` envoyé quand il change, `agent.prepareResume` → `agent.resumePrepared`, une Entrée tapée dans un pane retire sa proposition de reprise, erreur de chargement dans `app.hello`.
 - Web : `AgentHistorySection` (« À reprendre » avec « Reprendre ici », « Historique » repliable), `AgentHistoryRow`, `ResumeClaudeButton` (« Reprendre Claude » dans l’en-tête du pane), `agentHistory.ts`.
@@ -90,17 +90,31 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (568 tests verts).
 - Commits `ea976df` (lot 4), `629dc88` (texte indicatif raccourci), poussés ; documentation, README et section 18 de la spec mis à jour.
 
-### 1/10 0 h 20 à 0 h 40 : finition, première partie
+### 1/10 0 h 04 à 0 h 09 : finition, première partie
 
 - PR #123 : `Closes #118` ajouté, passée en « prête » (`gh pr ready`), non mergée.
 - Revue du diff de la branche lancée avec le skill `code-review` (niveau `high`, en arrière-plan).
 - Amélioration `a3faf99` (marqueurs d’une session Claude Code parente retirés de l’environnement des terminaux).
 - Vérifications complémentaires à l’écran : Leader puis I bascule dans les deux sens, y compris quand le focus est déjà dans la vue Agents ; un clic sur un fichier modifié par l’agent (`README.md` du dépôt jetable, `+1 −0`) rejoint le pane et ouvre la vue Git sur son diff Unstaged.
 
+### 1/10 0 h 09 à 0 h 25 : revue `code-review` et corrections
+
+- Revue `code-review` (niveau `high`) du diff complet de la branche : 10 défauts relevés, tous confirmés à la relecture et corrigés.
+  1. Le registre passe à `idle` juste avant le hook Stop : pendant un instant, l’agent était « Interrompu », le pane entrait dans l’ensemble des panes terminés et la vraie fin, arrivée ensuite, ne notifiait plus. Délai de grâce de 3 s avant de conclure à une interruption (`ClaudeCodeAdapter.InterruptionGrace`), et un pane interrompu ne compte plus comme terminé pour les notifications (`fdac2b3`).
+  2. `AgentHistory.Save` pouvait s’exécuter deux fois en parallèle (tick du flux et Entrée tapée dans un pane) : écritures sérialisées (`b1034fe`).
+  3. Le flux enregistrait l’historique à chaque changement (le dernier message change presque à chaque tick d’un agent actif) et recalculait toutes les 2 s ses éléments (accès disque pour 50 sessions) : enregistrement au plus toutes les 30 s et à la fermeture de Tily, recalcul sur changement, sur changement des sessions vivantes, après une reprise ou une proposition retirée, et sinon toutes les 15 s (`b1034fe`).
+  4. L’Entrée tapée dans un pane consulte l’historique depuis le fil de l’interface, sous le verrou où se faisaient les vérifications disque : ces vérifications se font désormais hors verrou (`b1034fe`). La règle reste celle des écarts : la première Entrée, même vide, retire la proposition de reprise.
+  5. Une entrée `null` dans `agent-history.json` faisait échouer tout le chargement : elle est ignorée (`b1034fe`, test ajouté).
+  6. « Lancer un agent » dans un nouveau worktree abandonnait la tâche après 3 min, alors que `pnpm install` précède `claude` : 30 min (`b156c68`).
+  7. Les boutons de réponse restaient désactivés pour toujours si la demande restait affichée après l’envoi (hook disparu entre-temps) : réactivés après 4 s ; Entrée dans le champ de raison ne renvoie plus un refus déjà envoyé (`09c3426`).
+  8. Les durées des notifications et de la palette partaient de la réception par la page (remises à zéro par un rechargement), celles des cartes de l’horloge de l’hôte : elles reprennent celles des cartes (`d9d3ae9`).
+  9. et 10. Doublons : l’ouverture de l’onglet de reprise réutilise celle du lancement, `waitedFor` réutilise `stateDuration` (`bcad6ca`).
+- Tests : `ClaudeCodeAdapterTests` (+1, délai de grâce), `AgentHistoryTests` (+1, entrée nulle) ; `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (571 tests verts).
+
 ## Écarts à la spec
 
 - Section 12, convention proposée « L’hôte lit le transcript de chaque session suivie, dont les hooks lui donnent le chemin » : le chemin vient du registre des sessions (`sessionId` et `cwd`), pas des hooks. Raison : les hooks de l’utilisateur exécutent le script de la version installée, qui n’écrit pas ce chemin, et le registre ne dépend pas de la version du script.
-- Un agent interrompu (#121) est « Terminé » avec le message « Interrompu. » (détail non spécifié).
+- Un agent interrompu (#121) est « Terminé » avec le message « Interrompu. » (détail non spécifié), une fois le registre inactif depuis 3 s sans hook Stop.
 - Section 12, convention proposée « lit le transcript par la fin » : le premier passage lit tout le fichier (les 64 derniers Mo au plus), pour que les fichiers modifiés et leurs lignes couvrent toute la session ; seuls les ajouts sont lus ensuite.
 - Titre : entre `/rename` (`custom-title`) et le titre généré (`ai-title`), Tily prend aussi `agent-name` (nom donné à la session par l’utilisateur), absent de la spec.
 - Ordre à l’intérieur des groupes (non spécifié hors attentes) : En erreur comme En attente, du plus ancien au plus récent ; En cours, Terminé et État inconnu, du changement le plus récent au plus ancien.
@@ -128,7 +142,7 @@ Aucune pour l’instant.
 
 ## Reste à faire
 
-Finition : recettes R45 à R48 de bout en bout, revue `code-review` du diff de la branche, puis robustesse et améliorations.
+Finition : recettes R45 à R48 de bout en bout après les corrections de la revue, puis robustesse et améliorations.
 
 ## À vérifier au réveil
 
