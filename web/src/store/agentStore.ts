@@ -22,7 +22,7 @@ export const useAgentStore = create<AgentStoreState>()((set) => ({
   since: {},
   cards: [],
   history: [],
-  setCards: (cards) => set({ cards }),
+  setCards: (cards) => set((state) => ({ cards, since: { ...state.since, ...Object.fromEntries(cards.map((card) => [card.paneId, card.since])) } })),
   setHistory: (history) => set({ history }),
   setAgents: (panes) =>
     set((state) => {
