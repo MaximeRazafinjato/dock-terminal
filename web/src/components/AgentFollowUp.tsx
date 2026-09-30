@@ -29,8 +29,9 @@ export function AgentFollowUp({ paneId }: AgentFollowUpProps) {
       <textarea
         rows={2}
         className={`${GIT_INPUT} min-h-[44px] resize-y`}
-        placeholder="Message à Claude Code (Entrée pour envoyer, Maj + Entrée pour aller à la ligne)"
+        placeholder="Message à Claude Code…"
         aria-label="Message à Claude Code"
+        data-tip="Entrée envoie · Maj + Entrée va à la ligne"
         value={message}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
