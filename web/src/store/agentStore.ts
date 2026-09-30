@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { AgentCard } from '../bridge/agentMessages'
 import type { PaneAgent } from '../bridge/messages'
 
 export const agentKey = (agent: PaneAgent): string => `${agent.state}|${agent.message ?? ''}`
@@ -7,7 +8,9 @@ interface AgentStoreState {
   agents: Record<string, PaneAgent>
   acknowledged: Record<string, string>
   since: Record<string, number>
+  cards: AgentCard[]
   setAgents: (panes: PaneAgent[]) => void
+  setCards: (cards: AgentCard[]) => void
   acknowledge: (paneId: string) => void
 }
 
@@ -15,6 +18,8 @@ export const useAgentStore = create<AgentStoreState>()((set) => ({
   agents: {},
   acknowledged: {},
   since: {},
+  cards: [],
+  setCards: (cards) => set({ cards }),
   setAgents: (panes) =>
     set((state) => {
       const agents = Object.fromEntries(panes.map((agent) => [agent.paneId, agent]))

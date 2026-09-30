@@ -413,6 +413,8 @@ public sealed class HostBridge : IDisposable
     {
         var loaded = _sessions.Load();
         var session = loaded.Session ?? SessionFactory.Initial();
+        _agents.UseLayout(session);
+        _agents.Resend();
         _texts.MoveClosedTabText(session);
         var text = _texts.Load();
         var recovery = string.Join(" ", new[] { loaded.Error, text.Error, _statusLog.LoadError }.Where(error => error is not null));
@@ -438,6 +440,7 @@ public sealed class HostBridge : IDisposable
         _writes.Enqueue(() =>
         {
             var session = element.Deserialize<SessionModel>(JsonOptions) ?? throw new InvalidOperationException("Session manquante.");
+            _agents.UseLayout(session);
             Persist(_sessions.FilePath, () =>
             {
                 var result = _sessions.Save(session);

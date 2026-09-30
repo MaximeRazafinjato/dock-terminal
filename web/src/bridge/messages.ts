@@ -1,4 +1,5 @@
 import type { Session } from '../model/session'
+import type { AgentHostMessage } from './agentMessages'
 import type { GitChangeKind, GitHostMessage, GitSettings, GitWebMessage } from './gitMessages'
 import type { PreviewHostMessage, PreviewKind, PreviewWebMessage } from './previewMessages'
 import type { StatusLogEntry, StatusLogHostMessage, StatusLogWebMessage } from './statusLogMessages'
@@ -194,6 +195,7 @@ export type HostToWebMessage =
   | WorktreeHostMessage
   | UpdateHostMessage
   | StatusLogHostMessage
+  | AgentHostMessage
 
 export type WebToHostMessage =
   | { type: 'app.ready' }

@@ -83,6 +83,7 @@ export default function App() {
       bridge.on('app.closing', (message) => receiveApplicationClosing(message.activity)),
       bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
       bridge.on('agent.states', (message) => useAgentStore.getState().setAgents(message.panes)),
+      bridge.on('agent.board', (message) => useAgentStore.getState().setCards(message.cards)),
       bridge.on('agent.join', (message) => joinPane(message.pane)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {

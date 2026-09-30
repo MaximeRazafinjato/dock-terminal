@@ -15,12 +15,16 @@ public sealed class AgentStateFeed : IDisposable
     private readonly Action<object> _post;
     private readonly AgentStateRepository _states;
     private readonly AgentMonitor _monitor;
+    private readonly AgentBoard _board = new();
     private readonly FileSystemWatcher _watcher;
     private readonly object _refreshLock = new();
     private Timer? _timer;
     private int _changePending;
+    private int _resendPending;
     private bool _disposed;
     private string _lastPosted = string.Empty;
+    private string _lastBoard = string.Empty;
+    private IReadOnlyDictionary<string, int> _paneOrder = new Dictionary<string, int>();
 
     public AgentStateFeed(string dataDirectory, TerminalManager terminals, Action<object> post)
     {
@@ -54,6 +58,18 @@ public sealed class AgentStateFeed : IDisposable
 
     public void Forget(string paneId) => _states.Delete(paneId);
 
+    public void UseLayout(SessionModel session)
+    {
+        Volatile.Write(ref _paneOrder, AgentBoard.PaneOrder(session));
+        ScheduleSoon();
+    }
+
+    public void Resend()
+    {
+        Interlocked.Exchange(ref _resendPending, 1);
+        ScheduleSoon();
+    }
+
     private void HandleFileChanged(object sender, FileSystemEventArgs args) => ScheduleSoon();
 
     private void ScheduleSoon()
@@ -80,17 +96,29 @@ public sealed class AgentStateFeed : IDisposable
                 return;
             }
 
-            var agents = _monitor.Resolve(_terminals.Probes());
-            var json = JsonSerializer.Serialize(agents, SessionRepository.JsonOptions);
-            if (json == _lastPosted)
+            if (Interlocked.Exchange(ref _resendPending, 0) == 1)
             {
-                return;
+                _lastPosted = string.Empty;
+                _lastBoard = string.Empty;
             }
 
-            _lastPosted = json;
-            _post(new { type = "agent.states", panes = agents });
+            var agents = _monitor.Resolve(_terminals.Probes());
+            var json = JsonSerializer.Serialize(agents, SessionRepository.JsonOptions);
+            if (json != _lastPosted)
+            {
+                _lastPosted = json;
+                _post(new { type = "agent.states", panes = agents });
+            }
+
+            var cards = _board.Build(agents, Volatile.Read(ref _paneOrder));
+            var board = JsonSerializer.Serialize(cards, SessionRepository.JsonOptions);
+            if (board != _lastBoard)
+            {
+                _lastBoard = board;
+                _post(new { type = "agent.board", cards });
+            }
         }
-        catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
         {
         }
         finally
