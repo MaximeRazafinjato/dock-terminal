@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { clearSeenCommandNotices } from './terminal/commandNotices'
+import { receiveAgentResponded, receiveAgentSend } from './agents/agentResponses'
 import { startAttentionNotifier } from './agents/attentionNotifier'
 import { bridge } from './bridge/bridge'
 import { AppShell } from './components/AppShell'
@@ -84,6 +85,8 @@ export default function App() {
       bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
       bridge.on('agent.states', (message) => useAgentStore.getState().setAgents(message.panes)),
       bridge.on('agent.board', (message) => useAgentStore.getState().setCards(message.cards)),
+      bridge.on('agent.responded', receiveAgentResponded),
+      bridge.on('agent.send', (message) => receiveAgentSend(message.pane, message.text)),
       bridge.on('agent.join', (message) => joinPane(message.pane)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {

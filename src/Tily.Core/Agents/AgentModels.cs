@@ -24,6 +24,9 @@ public sealed record PaneAgentModel(string PaneId, string Agent, AgentState Stat
 
     [JsonIgnore]
     public string? TranscriptPath { get; init; }
+
+    [JsonIgnore]
+    public AgentRequestModel? Request { get; init; }
 }
 
 public sealed record PaneProbeModel(string PaneId, DateTime StartedAtUtc, IReadOnlyList<string> Processes, IReadOnlyList<int>? ProcessIds = null);

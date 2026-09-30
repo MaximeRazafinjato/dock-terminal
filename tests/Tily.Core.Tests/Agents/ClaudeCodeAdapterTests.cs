@@ -58,13 +58,61 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
     }
 
     [Fact]
-    public void Detect_WhenRegistryBusy_ThenHookStateKept()
+    public void Detect_WhenRegistryBusyAfterWaiting_ThenAgentIsWorking()
     {
         WriteRegistry("busy", HookWrittenAt.AddSeconds(5));
+
+        var agent = _adapter.Detect(Probe(), Reported(AgentState.Waiting));
+
+        Assert.Equal((AgentState.Working, (string?)null), (agent?.State, agent?.Message));
+    }
+
+    [Fact]
+    public void Detect_WhenRegistryBusyBeforeWaiting_ThenStillWaiting()
+    {
+        WriteRegistry("busy", HookWrittenAt.AddSeconds(-5));
 
         var state = _adapter.Detect(Probe(), Reported(AgentState.Waiting))?.State;
 
         Assert.Equal(AgentState.Waiting, state);
+    }
+
+    [Fact]
+    public void Detect_WhenWaitingWithPendingRequest_ThenAttachesIt()
+    {
+        var requests = new AgentRequestRepository(_directory);
+        File.WriteAllText(requests.RequestPathFor("pane-a"), "{\"id\":\"0123456789abcdef0123456789abcdef\",\"hook\":{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"ls\"}}}");
+        var adapter = new ClaudeCodeAdapter(null, requests);
+
+        var request = adapter.Detect(Probe(), Reported(AgentState.Waiting))?.Request;
+
+        Assert.Equal("0123456789abcdef0123456789abcdef", request?.Id);
+    }
+
+    [Fact]
+    public void Detect_WhenAnsweredInTerminal_ThenWithdrawsTheRequest()
+    {
+        var requests = new AgentRequestRepository(_directory);
+        File.WriteAllText(requests.RequestPathFor("pane-a"), "{\"id\":\"0123456789abcdef0123456789abcdef\",\"hook\":{\"tool_name\":\"Bash\"}}");
+        File.SetLastWriteTimeUtc(requests.RequestPathFor("pane-a"), HookWrittenAt.AddSeconds(-1));
+        var adapter = new ClaudeCodeAdapter(null, requests);
+
+        adapter.Detect(Probe(), Reported(AgentState.Working));
+
+        Assert.False(File.Exists(requests.RequestPathFor("pane-a")));
+    }
+
+    [Fact]
+    public void Detect_WhenRequestNewerThanWorkingState_ThenKeepsIt()
+    {
+        var requests = new AgentRequestRepository(_directory);
+        File.WriteAllText(requests.RequestPathFor("pane-a"), "{\"id\":\"0123456789abcdef0123456789abcdef\",\"hook\":{\"tool_name\":\"Bash\"}}");
+        File.SetLastWriteTimeUtc(requests.RequestPathFor("pane-a"), HookWrittenAt.AddSeconds(1));
+        var adapter = new ClaudeCodeAdapter(null, requests);
+
+        adapter.Detect(Probe(), Reported(AgentState.Working));
+
+        Assert.True(File.Exists(requests.RequestPathFor("pane-a")));
     }
 
     [Fact]

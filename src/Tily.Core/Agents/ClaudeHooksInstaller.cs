@@ -4,13 +4,15 @@ using Tily.Core.Session;
 
 namespace Tily.Core.Agents;
 
-public sealed record ClaudeHooksStatusModel(string SettingsFile, bool Installed);
+public sealed record ClaudeHooksStatusModel(string SettingsFile, bool Installed, bool Outdated = false);
 
 public sealed class ClaudeHooksInstaller
 {
     public static readonly IReadOnlyList<string> Events = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "PermissionRequest", "Notification", "Stop", "StopFailure", "SessionEnd"];
     private static readonly Dictionary<string, string> Matchers = new() { ["PreToolUse"] = "AskUserQuestion" };
+    public const int PermissionTimeoutSeconds = 1800;
     private const int HookTimeoutSeconds = 5;
+    private static readonly Dictionary<string, int> Timeouts = new() { ["PermissionRequest"] = PermissionTimeoutSeconds };
     private static readonly JsonDocumentOptions ReadOptions = new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
     private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true, Encoder = SessionRepository.JsonOptions.Encoder };
 
@@ -29,7 +31,8 @@ public sealed class ClaudeHooksInstaller
         var root = Read();
         var hooks = root["hooks"] as JsonObject;
         var installed = hooks is not null && Events.All(eventName => GroupsOf(hooks, eventName).Any(IsTilyGroup));
-        return new ClaudeHooksStatusModel(SettingsFile, installed);
+        var outdated = installed && !Events.All(eventName => GroupsOf(hooks!, eventName).Where(IsTilyGroup).Any(group => HasTimeout(group, TimeoutFor(eventName))));
+        return new ClaudeHooksStatusModel(SettingsFile, installed, outdated);
     }
 
     public ClaudeHooksStatusModel Install()
@@ -52,7 +55,7 @@ public sealed class ClaudeHooksInstaller
                 tilyGroup["matcher"] = matcher;
             }
 
-            tilyGroup["hooks"] = new JsonArray(TilyHook());
+            tilyGroup["hooks"] = new JsonArray(TilyHook(eventName));
             groups.Add(tilyGroup);
         }
 
@@ -107,13 +110,18 @@ public sealed class ClaudeHooksInstaller
         return new ClaudeHooksStatusModel(SettingsFile, false);
     }
 
-    private JsonObject TilyHook() => new()
+    private JsonObject TilyHook(string eventName) => new()
     {
         ["type"] = "command",
         ["command"] = "powershell.exe",
         ["args"] = new JsonArray("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", _scriptPath),
-        ["timeout"] = HookTimeoutSeconds
+        ["timeout"] = TimeoutFor(eventName)
     };
+
+    private static int TimeoutFor(string eventName) => Timeouts.TryGetValue(eventName, out var timeout) ? timeout : HookTimeoutSeconds;
+
+    private static bool HasTimeout(JsonObject group, int timeout) =>
+        (group["hooks"] as JsonArray)?.OfType<JsonObject>().Any(hook => IsTilyHook(hook) && hook["timeout"] is JsonValue value && value.TryGetValue<int>(out var seconds) && seconds == timeout) == true;
 
     private static IEnumerable<JsonObject> GroupsOf(JsonObject hooks, string eventName) =>
         (hooks[eventName] as JsonArray)?.OfType<JsonObject>() ?? [];

@@ -1,5 +1,5 @@
 import type { Session } from '../model/session'
-import type { AgentHostMessage } from './agentMessages'
+import type { AgentHostMessage, AgentWebMessage } from './agentMessages'
 import type { GitChangeKind, GitHostMessage, GitSettings, GitWebMessage } from './gitMessages'
 import type { PreviewHostMessage, PreviewKind, PreviewWebMessage } from './previewMessages'
 import type { StatusLogEntry, StatusLogHostMessage, StatusLogWebMessage } from './statusLogMessages'
@@ -118,6 +118,7 @@ interface AgentHooksInfo {
   stateDirectory: string
   settingsFile: string
   hooksInstalled: boolean
+  hooksOutdated: boolean
 }
 
 interface NotificationAvailability {
@@ -237,6 +238,7 @@ export type WebToHostMessage =
   | { type: 'window.closeCancel' }
   | { type: 'window.title'; title: string }
   | GitWebMessage
+  | AgentWebMessage
   | PreviewWebMessage
   | WorktreeWebMessage
   | UpdateWebMessage

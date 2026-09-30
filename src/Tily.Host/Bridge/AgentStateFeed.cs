@@ -15,6 +15,8 @@ public sealed class AgentStateFeed : IDisposable
     private readonly Action<object> _post;
     private readonly AgentStateRepository _states;
     private readonly AgentMonitor _monitor;
+    private readonly AgentRequestRepository _requests;
+    private readonly AgentResponder _responder;
     private readonly AgentBoard _board = new();
     private readonly FileSystemWatcher _watcher;
     private readonly object _refreshLock = new();
@@ -33,7 +35,9 @@ public sealed class AgentStateFeed : IDisposable
         _states = new AgentStateRepository(dataDirectory);
         _states.Clear();
         Directory.CreateDirectory(_states.Directory);
-        _monitor = new AgentMonitor(_states, new ClaudeSessionRegistry(ClaudeSessionRegistry.DefaultDirectory()));
+        _requests = new AgentRequestRepository(_states.Directory);
+        _responder = new AgentResponder(_requests);
+        _monitor = new AgentMonitor(_states, new ClaudeSessionRegistry(ClaudeSessionRegistry.DefaultDirectory()), _requests);
         Hooks = new ClaudeHooksInstaller(ScriptPath);
         _watcher = new FileSystemWatcher(_states.Directory, "*.json") { NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName };
         _watcher.Changed += HandleFileChanged;
@@ -51,12 +55,23 @@ public sealed class AgentStateFeed : IDisposable
     public object Describe()
     {
         var status = Hooks.Status();
-        return new { script = ScriptPath, stateDirectory = StateDirectory, settingsFile = status.SettingsFile, hooksInstalled = status.Installed };
+        return new { script = ScriptPath, stateDirectory = StateDirectory, settingsFile = status.SettingsFile, hooksInstalled = status.Installed, hooksOutdated = status.Outdated };
     }
 
     public void Start() => _timer = new Timer(_ => Refresh(), null, PollInterval, PollInterval);
 
-    public void Forget(string paneId) => _states.Delete(paneId);
+    public void Forget(string paneId)
+    {
+        _states.Delete(paneId);
+        _requests.Forget(paneId);
+    }
+
+    public string? Respond(string paneId, AgentAnswerModel answer) => _responder.Respond(paneId, ResolveNow(paneId), answer);
+
+    public string? MessageError(string paneId, string? message) => AgentResponder.MessageError(ResolveNow(paneId), message);
+
+    private PaneAgentModel? ResolveNow(string paneId) =>
+        _terminals.Probe(paneId) is { } probe ? _monitor.Resolve([probe]).FirstOrDefault() : null;
 
     public void UseLayout(SessionModel session)
     {

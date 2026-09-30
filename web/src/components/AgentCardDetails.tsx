@@ -2,6 +2,8 @@ import { contextLabel } from '../agents/agentSummary'
 import type { AgentCard, AgentFileChange } from '../bridge/agentMessages'
 import { bridge } from '../bridge/bridge'
 import { AgentState } from '../bridge/messages'
+import { AgentFollowUp } from './AgentFollowUp'
+import { AgentRequestActions } from './AgentRequestActions'
 import { LazyAgentMarkdown } from './LazyAgentMarkdown'
 
 interface AgentCardDetailsProps {
@@ -39,6 +41,8 @@ export function AgentCardDetails({ card, onOpenFile }: AgentCardDetailsProps) {
           <p className="font-mono text-[11.5px] [overflow-wrap:anywhere] whitespace-pre-wrap text-tily-ink">{card.detail}</p>
         </div>
       )}
+      {card.state === AgentState.Waiting && card.request && <AgentRequestActions paneId={card.paneId} request={card.request} />}
+      {card.state === AgentState.Waiting && !card.request && <p className="text-[11.5px] text-tily-muted">Cette demande se règle dans le terminal (↗).</p>}
       {card.action && card.state !== AgentState.Waiting && (
         <p className="break-words text-tily-ink-soft">
           <span className={SECTION_LABEL}>Action en cours </span>
@@ -69,6 +73,7 @@ export function AgentCardDetails({ card, onOpenFile }: AgentCardDetailsProps) {
           )}
         </p>
       )}
+      {card.agent === 'claude' && card.state !== AgentState.Waiting && <AgentFollowUp paneId={card.paneId} />}
     </div>
   )
 }

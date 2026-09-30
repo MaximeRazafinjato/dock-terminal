@@ -250,6 +250,12 @@ public sealed class HostBridge : IDisposable
                 _agents.Hooks.Remove();
                 PostSettings(false);
                 break;
+            case "agent.respond":
+                RespondToAgent(RequirePane(command), command);
+                break;
+            case "agent.message":
+                SendAgentMessage(RequirePane(command), command.Message);
+                break;
             case "settings.export":
                 _ = ExportPreferencesAsync();
                 break;
@@ -328,6 +334,47 @@ public sealed class HostBridge : IDisposable
                 break;
         }
     }
+
+    private void RespondToAgent(string paneId, BridgeCommandModel command)
+    {
+        var answer = new AgentAnswerModel(command.RequestId ?? string.Empty, AnswerKindOf(command.Answer), command.Message, command.Option);
+        _queries.Enqueue(() =>
+        {
+            var error = _agents.Respond(paneId, answer);
+            if (error is null)
+            {
+                Post(new { type = "agent.responded", pane = paneId });
+            }
+            else
+            {
+                Post(new { type = "error", message = error });
+            }
+        });
+    }
+
+    private void SendAgentMessage(string paneId, string? message) =>
+        _queries.Enqueue(() =>
+        {
+            var error = _agents.MessageError(paneId, message);
+            if (error is null)
+            {
+                Post(new { type = "agent.send", pane = paneId, text = message!.Trim() });
+            }
+            else
+            {
+                Post(new { type = "error", message = error });
+            }
+        });
+
+    private static AgentAnswerKind AnswerKindOf(string? answer) =>
+        answer switch
+        {
+            "allow" => AgentAnswerKind.Allow,
+            "deny" => AgentAnswerKind.Deny,
+            "always" => AgentAnswerKind.Always,
+            "option" => AgentAnswerKind.Option,
+            _ => throw new InvalidOperationException("Réponse à l’agent inconnue.")
+        };
 
     private void RaiseAttention(string paneId, BridgeCommandModel command)
     {

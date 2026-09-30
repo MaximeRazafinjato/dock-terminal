@@ -15,4 +15,5 @@ public sealed record AgentCardModel(
     AgentActionModel? Action,
     IReadOnlyList<AgentFileChangeModel> Files,
     AgentContextModel? Context,
-    AgentPullRequestModel? PullRequest);
+    AgentPullRequestModel? PullRequest,
+    AgentRequestModel? Request);

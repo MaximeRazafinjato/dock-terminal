@@ -91,7 +91,8 @@ public sealed class AgentBoard
             agent.State is AgentState.Working or AgentState.Waiting ? transcript.Action : null,
             transcript.Files,
             transcript.Context,
-            transcript.PullRequest);
+            transcript.PullRequest,
+            agent.Request);
 
     private static string? SummaryLine(PaneAgentModel agent, TranscriptSummaryModel transcript) =>
         agent.State switch

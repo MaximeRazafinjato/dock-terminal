@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Tily.Core.Agents.JsonFields;
 
 namespace Tily.Core.Agents;
 
@@ -288,15 +289,4 @@ internal sealed class TranscriptAccumulator
 
     private static int LineCount(string? content) =>
         string.IsNullOrEmpty(content) ? 0 : content.TrimEnd('\n').Split('\n').Length;
-
-    private static JsonElement Property(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) ? value : default;
-
-    private static string? Text(JsonElement element, string name) =>
-        Property(element, name) is { ValueKind: JsonValueKind.String } value && !string.IsNullOrWhiteSpace(value.GetString()) ? value.GetString() : null;
-
-    private static bool IsTrue(JsonElement element, string name) => Property(element, name).ValueKind == JsonValueKind.True;
-
-    private static long Number(JsonElement element, string name) =>
-        Property(element, name) is { ValueKind: JsonValueKind.Number } value && value.TryGetInt64(out var number) ? number : 0;
 }
