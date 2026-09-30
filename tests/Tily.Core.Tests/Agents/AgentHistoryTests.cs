@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Tily.Core.Agents;
 using Xunit;
 
@@ -134,6 +135,16 @@ public sealed class AgentHistoryTests : IDisposable
         var history = new AgentHistory(_directory);
 
         Assert.Equal((0, true), (history.Items(NoneLive, _ => true).Count, history.LoadError?.Contains("mis de côté") == true));
+    }
+
+    [Fact]
+    public void Load_WhenEntryIsNull_ThenSkipsIt()
+    {
+        File.WriteAllText(Path.Combine(_directory, "agent-history.json"), $$"""{ "sessions": [null, { "sessionId": "{{SessionId}}", "directory": {{JsonSerializer.Serialize(_project)}} }] }""");
+
+        var history = new AgentHistory(_directory);
+
+        Assert.Equal((SessionId, (string?)null), (history.Items(NoneLive, _ => true).Single().SessionId, history.LoadError));
     }
 
     private PaneAgentModel Agent(AgentState state, string sessionId = SessionId) =>

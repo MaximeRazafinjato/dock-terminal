@@ -13,6 +13,7 @@ public sealed class AgentHistory
     public const string UnknownSession = "Session inconnue de l’historique.";
 
     private readonly object _sync = new();
+    private readonly object _saveLock = new();
     private readonly List<AgentHistoryEntryModel> _entries = new();
 
     public AgentHistory(string dataDirectory)
@@ -74,47 +75,51 @@ public sealed class AgentHistory
 
     public IReadOnlyList<AgentHistoryItemModel> Items(IReadOnlySet<string> liveSessionIds, Func<AgentHistoryEntryModel, bool> transcriptExists)
     {
+        List<AgentHistoryEntryModel> entries;
         lock (_sync)
         {
-            return _entries
-                .OrderByDescending(entry => entry.LastSeenAtUtc)
-                .Select(entry =>
-                {
-                    var live = liveSessionIds.Contains(entry.SessionId);
-                    var reason = Unavailability(entry, live, transcriptExists);
-                    return new AgentHistoryItemModel(
-                        entry.SessionId,
-                        entry.Directory,
-                        entry.PaneId,
-                        entry.Location,
-                        entry.Title,
-                        UnixMilliseconds(entry.StartedAtUtc),
-                        entry.EndedAtUtc is { } ended ? UnixMilliseconds(ended) : null,
-                        entry.LastMessage,
-                        entry.Files,
-                        entry.State,
-                        live,
-                        entry.PendingResume && !live,
-                        reason is null,
-                        reason);
-                })
-                .ToList();
+            entries = _entries.OrderByDescending(entry => entry.LastSeenAtUtc).Select(Copy).ToList();
         }
+
+        return entries
+            .Select(entry =>
+            {
+                var live = liveSessionIds.Contains(entry.SessionId);
+                var reason = Unavailability(entry, live, transcriptExists);
+                return new AgentHistoryItemModel(
+                    entry.SessionId,
+                    entry.Directory,
+                    entry.PaneId,
+                    entry.Location,
+                    entry.Title,
+                    UnixMilliseconds(entry.StartedAtUtc),
+                    entry.EndedAtUtc is { } ended ? UnixMilliseconds(ended) : null,
+                    entry.LastMessage,
+                    entry.Files,
+                    entry.State,
+                    live,
+                    entry.PendingResume && !live,
+                    reason is null,
+                    reason);
+            })
+            .ToList();
     }
 
     public (AgentHistoryEntryModel? Entry, string? Error) Resumable(string sessionId, IReadOnlySet<string> liveSessionIds, Func<AgentHistoryEntryModel, bool> transcriptExists)
     {
+        AgentHistoryEntryModel? entry;
         lock (_sync)
         {
-            var entry = _entries.FirstOrDefault(candidate => candidate.SessionId == sessionId);
-            if (entry is null)
-            {
-                return (null, UnknownSession);
-            }
-
-            var reason = Unavailability(entry, liveSessionIds.Contains(sessionId), transcriptExists);
-            return reason is null ? (entry, null) : (null, reason);
+            entry = _entries.FirstOrDefault(candidate => candidate.SessionId == sessionId) is { } found ? Copy(found) : null;
         }
+
+        if (entry is null)
+        {
+            return (null, UnknownSession);
+        }
+
+        var reason = Unavailability(entry, liveSessionIds.Contains(sessionId), transcriptExists);
+        return reason is null ? (entry, null) : (null, reason);
     }
 
     public bool DismissResume(string paneId)
@@ -129,14 +134,34 @@ public sealed class AgentHistory
 
     public void Save()
     {
-        string json;
-        lock (_sync)
+        lock (_saveLock)
         {
-            json = JsonSerializer.Serialize(new AgentHistoryDocumentModel { Sessions = _entries.ToList() }, SessionRepository.JsonOptions);
-        }
+            string json;
+            lock (_sync)
+            {
+                json = JsonSerializer.Serialize(new AgentHistoryDocumentModel { Sessions = _entries.ToList() }, SessionRepository.JsonOptions);
+            }
 
-        AtomicFile.Write(FilePath, json);
+            AtomicFile.Write(FilePath, json);
+        }
     }
+
+    private static AgentHistoryEntryModel Copy(AgentHistoryEntryModel entry) =>
+        new()
+        {
+            SessionId = entry.SessionId,
+            Directory = entry.Directory,
+            PaneId = entry.PaneId,
+            Location = entry.Location,
+            Title = entry.Title,
+            StartedAtUtc = entry.StartedAtUtc,
+            LastSeenAtUtc = entry.LastSeenAtUtc,
+            EndedAtUtc = entry.EndedAtUtc,
+            LastMessage = entry.LastMessage,
+            Files = entry.Files,
+            State = entry.State,
+            PendingResume = entry.PendingResume
+        };
 
     private static string? Unavailability(AgentHistoryEntryModel entry, bool live, Func<AgentHistoryEntryModel, bool> transcriptExists) =>
         live ? AlreadyRunning
@@ -174,7 +199,7 @@ public sealed class AgentHistory
             var document = JsonSerializer.Deserialize<AgentHistoryDocumentModel>(File.ReadAllText(FilePath), SessionRepository.JsonOptions);
             foreach (var entry in document?.Sessions ?? [])
             {
-                if (!Guid.TryParse(entry.SessionId, out _) || string.IsNullOrWhiteSpace(entry.Directory))
+                if (entry is null || !Guid.TryParse(entry.SessionId, out _) || string.IsNullOrWhiteSpace(entry.Directory))
                 {
                     continue;
                 }

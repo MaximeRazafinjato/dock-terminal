@@ -10,6 +10,8 @@ public sealed class AgentStateFeed : IDisposable
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan ChangeDelay = TimeSpan.FromMilliseconds(150);
+    private static readonly TimeSpan HistorySaveInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan HistoryCheckInterval = TimeSpan.FromSeconds(15);
 
     private readonly TerminalManager _terminals;
     private readonly Action<object> _post;
@@ -23,7 +25,12 @@ public sealed class AgentStateFeed : IDisposable
     private Timer? _timer;
     private int _changePending;
     private int _resendPending;
+    private int _historyStale;
+    private bool _historyDirty;
     private bool _disposed;
+    private DateTime _historySavedAtUtc = DateTime.MinValue;
+    private DateTime _historyCheckedAtUtc = DateTime.MinValue;
+    private string _liveKey = string.Empty;
     private string _lastPosted = string.Empty;
     private string _lastBoard = string.Empty;
     private string _lastHistory = string.Empty;
@@ -68,7 +75,17 @@ public sealed class AgentStateFeed : IDisposable
 
     public string? HistoryLoadError => _history.LoadError;
 
-    public bool DismissResume(string paneId) => _history.DismissResume(paneId);
+    public bool DismissResume(string paneId)
+    {
+        if (!_history.DismissResume(paneId))
+        {
+            return false;
+        }
+
+        Interlocked.Exchange(ref _historyStale, 1);
+        ScheduleSoon();
+        return true;
+    }
 
     public void SaveHistory()
     {
@@ -89,7 +106,7 @@ public sealed class AgentStateFeed : IDisposable
             throw new InvalidOperationException(error ?? AgentHistory.UnknownSession);
         }
 
-        if (paneId is not null && _history.DismissResume(paneId))
+        if (paneId is not null && DismissResume(paneId))
         {
             SaveHistory();
         }
@@ -99,13 +116,27 @@ public sealed class AgentStateFeed : IDisposable
 
     private void PostHistory(IReadOnlyList<PaneAgentModel> agents, IReadOnlyList<AgentCardModel> cards)
     {
+        var now = DateTime.UtcNow;
         var live = agents.Where(agent => agent.SessionId is not null).Select(agent => agent.SessionId!).ToHashSet();
+        var liveKey = string.Join('|', live.Order());
         Volatile.Write(ref _liveSessions, live);
-        if (_history.Observe(agents, cards, Volatile.Read(ref _paneLocations), DateTime.UtcNow))
+        var changed = _history.Observe(agents, cards, Volatile.Read(ref _paneLocations), now);
+        _historyDirty |= changed;
+        if (_historyDirty && now - _historySavedAtUtc >= HistorySaveInterval)
         {
             SaveHistory();
+            _historyDirty = false;
+            _historySavedAtUtc = now;
         }
 
+        var stale = Interlocked.Exchange(ref _historyStale, 0) == 1;
+        if (!changed && !stale && liveKey == _liveKey && _lastHistory.Length > 0 && now - _historyCheckedAtUtc < HistoryCheckInterval)
+        {
+            return;
+        }
+
+        _liveKey = liveKey;
+        _historyCheckedAtUtc = now;
         var sessions = _history.Items(live, TranscriptExists);
         var json = JsonSerializer.Serialize(sessions, SessionRepository.JsonOptions);
         if (json != _lastHistory)
@@ -211,6 +242,10 @@ public sealed class AgentStateFeed : IDisposable
         lock (_refreshLock)
         {
             _disposed = true;
+            if (_historyDirty || Volatile.Read(ref _liveSessions).Count > 0)
+            {
+                SaveHistory();
+            }
         }
     }
 }
