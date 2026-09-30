@@ -17,7 +17,7 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
 - [x] 3. Lot 2, « Répondre » (R46)
 - [x] 4. Lot 3, « Lancer » (R47)
 - [x] 5. Lot 4, « Historique et reprise » (R48)
-- [ ] 6. Finition : recettes R45 à R48, revue `code-review`, documentation, section 18 de la spec
+- [x] 6. Finition : recettes R45 à R48, revue `code-review`, documentation, section 18 de la spec ; ensuite, jusqu’au matin, robustesse et améliorations
 
 ## Itérations
 
@@ -110,7 +110,14 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
   8. Les durées des notifications et de la palette partaient de la réception par la page (remises à zéro par un rechargement), celles des cartes de l’horloge de l’hôte : elles reprennent celles des cartes (`d9d3ae9`).
   9. et 10. Doublons : l’ouverture de l’onglet de reprise réutilise celle du lancement, `waitedFor` réutilise `stateDuration` (`bcad6ca`).
 - Tests : `ClaudeCodeAdapterTests` (+1, délai de grâce), `AgentHistoryTests` (+1, entrée nulle) ; `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (571 tests verts).
-- Contrôles à l’écran après corrections, instance de dev et `claude --model haiku` dans `essai-agent` : Échap pendant une réponse → « Interrompu. » environ 4 s après la touche, sans notification ; fin normale → « En cours » puis « Terminé » sans « Interrompu » transitoire, notification « Terminé » émise (traceur posé sur `bridge.send` dans la page de dev) ; demande simulée dans les données de l’instance de dev → « Autoriser » inactif après le clic, réactivé 4 s plus tard (fichiers de la demande retirés ensuite, état d’origine rétabli) ; `agent-history.json` enregistré au plus toutes les 30 s pendant l’activité et à la fermeture de Tily, avec la dernière observation 1 s avant ; Tily relancé → « À reprendre », « Reprendre ici » rouvre la même session ; `/exit` la clôt dans l’historique.
+- Contrôles à l’écran après corrections (commit `bef190d` pour le journal), instance de dev et `claude --model haiku` dans `essai-agent` : Échap pendant une réponse → « Interrompu. » environ 4 s après la touche, sans notification ; fin normale → « En cours » puis « Terminé » sans « Interrompu » transitoire, notification « Terminé » émise (traceur posé sur `bridge.send` dans la page de dev) ; demande simulée dans les données de l’instance de dev → « Autoriser » inactif après le clic, réactivé 4 s plus tard (fichiers de la demande retirés ensuite, état d’origine rétabli) ; `agent-history.json` enregistré au plus toutes les 30 s pendant l’activité et à la fermeture de Tily, avec la dernière observation 1 s avant ; Tily relancé → « À reprendre », « Reprendre ici » rouvre la même session ; `/exit` la clôt dans l’historique.
+
+### 1/10 0 h 30 à 0 h 45 : robustesse et finitions
+
+- Premier passage sur les plus gros transcripts réels de l’utilisateur (lecture seule, programme jetable du scratchpad lié à `Tily.Core.dll`) : 44 Mo en 0,53 s, 40 Mo en 0,33 s, 39 Mo en 0,27 s, puis 0 ms aux passages suivants (ajouts seuls). Rien à optimiser : la lecture se fait hors du fil de l’interface, une fois par session.
+- Script des hooks : sans `TILY_PANE_ID` (Claude Code lancé hors de Tily), il sort aussitôt ; le hook PermissionRequest n’attend donc jamais hors de Tily.
+- `c79cd1f` : dans l’historique, un emplacement long (worktree) masquait l’heure de fin ; l’emplacement est tronqué et l’heure reste visible (vérifié à l’écran).
+- Libellés de Paramètres → Agents relus dans le code : « Hooks à mettre à jour pour répondre depuis la vue Agents » et « Mettre à jour les hooks » quand l’installation est ancienne.
 
 ## Écarts à la spec
 
@@ -139,11 +146,11 @@ Aucun pour l’instant.
 
 ### Notées seulement
 
-Aucune pour l’instant.
+- Sans hooks installés, un agent Claude Code reste « État inconnu » alors que le registre des sessions donne `busy`, `waiting` (avec `waitingFor`) ou `idle` : il pourrait donner En cours et En attente à lui seul. C’est une décision de conception (la spec et le point 9 de la section 18 retiennent le suivi par les hooks), donc laissée à l’utilisateur.
 
 ## Reste à faire
 
-Finition : recettes R45 à R48 de bout en bout après les corrections de la revue, puis robustesse et améliorations.
+Robustesse et améliorations jusqu’au matin ; arrêt de la boucle quand plus rien d’utile ne reste.
 
 ## À vérifier au réveil
 
