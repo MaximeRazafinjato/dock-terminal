@@ -10,6 +10,9 @@ public static class ClaudeLaunchCommand
 
     public static ClaudeLaunchModel Prepare(string? mode, string? before, string shellId) => Prepare(Guid.NewGuid(), mode, before, shellId);
 
+    public static string Resume(string sessionId) =>
+        Guid.TryParse(sessionId, out var id) ? $"claude --resume {id:D}" : throw new InvalidOperationException($"Identifiant de session invalide : {sessionId}.");
+
     public static ClaudeLaunchModel Prepare(Guid sessionId, string? mode, string? before, string shellId)
     {
         var chosen = string.IsNullOrWhiteSpace(mode) ? DefaultMode : mode;

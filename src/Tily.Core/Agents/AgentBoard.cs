@@ -26,6 +26,23 @@ public sealed class AgentBoard
         return order;
     }
 
+    public static IReadOnlyDictionary<string, string> PaneLocations(SessionModel session)
+    {
+        var locations = new Dictionary<string, string>();
+        foreach (var workspace in session.Workspaces)
+        {
+            foreach (var tab in workspace.Tabs)
+            {
+                foreach (var pane in SplitTree.Panes(tab.Tree))
+                {
+                    locations.TryAdd(pane.Id, $"{workspace.Name} › {tab.Name}");
+                }
+            }
+        }
+
+        return locations;
+    }
+
     public IReadOnlyList<AgentCardModel> Build(IReadOnlyList<PaneAgentModel> agents, IReadOnlyDictionary<string, int> paneOrder)
     {
         var now = _clock().ToUnixTimeMilliseconds();

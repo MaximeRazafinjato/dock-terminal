@@ -256,6 +256,9 @@ public sealed class HostBridge : IDisposable
             case "agent.message":
                 SendAgentMessage(RequirePane(command), command.Message);
                 break;
+            case "agent.prepareResume":
+                PrepareResume(command);
+                break;
             case "agent.prepareLaunch":
                 var launch = ClaudeLaunchCommand.Prepare(command.LaunchMode, null, command.Shell ?? ShellCatalog.DefaultShellId);
                 Post(new { type = "agent.launchPrepared", request = command.Request, sessionId = launch.SessionId, command = launch.Command });
@@ -274,6 +277,11 @@ public sealed class HostBridge : IDisposable
                 break;
             case "terminal.input":
                 _terminals.Require(RequirePane(command)).Write(Encoding.UTF8.GetBytes(command.Data ?? string.Empty));
+                if (command.Data?.Contains('\r') == true && _agents.DismissResume(RequirePane(command)))
+                {
+                    _queries.Enqueue(_agents.SaveHistory);
+                }
+
                 break;
             case "terminal.resize":
                 _terminals.Require(RequirePane(command)).Resize(command.Cols, command.Rows);
@@ -353,6 +361,16 @@ public sealed class HostBridge : IDisposable
             {
                 Post(new { type = "error", message = error });
             }
+        });
+    }
+
+    private void PrepareResume(BridgeCommandModel command)
+    {
+        var sessionId = command.SessionId ?? string.Empty;
+        _queries.Enqueue(() =>
+        {
+            var (directory, resume) = _agents.PrepareResume(sessionId, command.Pane);
+            Post(new { type = "agent.resumePrepared", request = command.Request, sessionId, directory, command = resume, pane = command.Pane });
         });
     }
 
@@ -468,7 +486,7 @@ public sealed class HostBridge : IDisposable
         _agents.Resend();
         _texts.MoveClosedTabText(session);
         var text = _texts.Load();
-        var recovery = string.Join(" ", new[] { loaded.Error, text.Error, _statusLog.LoadError }.Where(error => error is not null));
+        var recovery = string.Join(" ", new[] { loaded.Error, text.Error, _statusLog.LoadError, _agents.HistoryLoadError }.Where(error => error is not null));
         Post(new
         {
             type = "app.hello",

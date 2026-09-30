@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { clearSeenCommandNotices } from './terminal/commandNotices'
+import { receiveResumePrepared } from './agents/agentHistory'
 import { receiveLaunchPrepared } from './agents/agentLaunch'
 import { receiveAgentResponded, receiveAgentSend } from './agents/agentResponses'
 import { startAttentionNotifier } from './agents/attentionNotifier'
@@ -91,6 +92,8 @@ export default function App() {
       bridge.on('agent.responded', receiveAgentResponded),
       bridge.on('agent.send', (message) => receiveAgentSend(message.pane, message.text)),
       bridge.on('agent.launchPrepared', (message) => receiveLaunchPrepared(message.request, message.sessionId, message.command)),
+      bridge.on('agent.history', (message) => useAgentStore.getState().setHistory(message.sessions)),
+      bridge.on('agent.resumePrepared', (message) => receiveResumePrepared(message.directory, message.command, message.pane)),
       bridge.on('agent.join', (message) => joinPane(message.pane)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {

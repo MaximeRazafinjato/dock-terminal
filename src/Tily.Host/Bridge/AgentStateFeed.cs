@@ -26,7 +26,12 @@ public sealed class AgentStateFeed : IDisposable
     private bool _disposed;
     private string _lastPosted = string.Empty;
     private string _lastBoard = string.Empty;
+    private string _lastHistory = string.Empty;
     private IReadOnlyDictionary<string, int> _paneOrder = new Dictionary<string, int>();
+    private IReadOnlyDictionary<string, string> _paneLocations = new Dictionary<string, string>();
+    private IReadOnlySet<string> _liveSessions = new HashSet<string>();
+    private readonly ClaudeSessionRegistry _registry = new(ClaudeSessionRegistry.DefaultDirectory());
+    private readonly AgentHistory _history;
 
     public AgentStateFeed(string dataDirectory, TerminalManager terminals, Action<object> post)
     {
@@ -37,7 +42,8 @@ public sealed class AgentStateFeed : IDisposable
         Directory.CreateDirectory(_states.Directory);
         _requests = new AgentRequestRepository(_states.Directory);
         _responder = new AgentResponder(_requests);
-        _monitor = new AgentMonitor(_states, new ClaudeSessionRegistry(ClaudeSessionRegistry.DefaultDirectory()), _requests);
+        _monitor = new AgentMonitor(_states, _registry, _requests);
+        _history = new AgentHistory(dataDirectory);
         Hooks = new ClaudeHooksInstaller(ScriptPath);
         _watcher = new FileSystemWatcher(_states.Directory, "*.json") { NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName };
         _watcher.Changed += HandleFileChanged;
@@ -60,6 +66,58 @@ public sealed class AgentStateFeed : IDisposable
 
     public void Start() => _timer = new Timer(_ => Refresh(), null, PollInterval, PollInterval);
 
+    public string? HistoryLoadError => _history.LoadError;
+
+    public bool DismissResume(string paneId) => _history.DismissResume(paneId);
+
+    public void SaveHistory()
+    {
+        try
+        {
+            _history.Save();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    public (string Directory, string Command) PrepareResume(string sessionId, string? paneId)
+    {
+        var (entry, error) = _history.Resumable(sessionId, Volatile.Read(ref _liveSessions), TranscriptExists);
+        if (entry is null)
+        {
+            throw new InvalidOperationException(error ?? AgentHistory.UnknownSession);
+        }
+
+        if (paneId is not null && _history.DismissResume(paneId))
+        {
+            SaveHistory();
+        }
+
+        return (entry.Directory, ClaudeLaunchCommand.Resume(entry.SessionId));
+    }
+
+    private void PostHistory(IReadOnlyList<PaneAgentModel> agents, IReadOnlyList<AgentCardModel> cards)
+    {
+        var live = agents.Where(agent => agent.SessionId is not null).Select(agent => agent.SessionId!).ToHashSet();
+        Volatile.Write(ref _liveSessions, live);
+        if (_history.Observe(agents, cards, Volatile.Read(ref _paneLocations), DateTime.UtcNow))
+        {
+            SaveHistory();
+        }
+
+        var sessions = _history.Items(live, TranscriptExists);
+        var json = JsonSerializer.Serialize(sessions, SessionRepository.JsonOptions);
+        if (json != _lastHistory)
+        {
+            _lastHistory = json;
+            _post(new { type = "agent.history", sessions });
+        }
+    }
+
+    private bool TranscriptExists(AgentHistoryEntryModel entry) =>
+        _registry.TranscriptPathFor(new ClaudeSessionModel(0, entry.SessionId, entry.Directory, ClaudeSessionStatus.Unknown, null, null)) is { } path && File.Exists(path);
+
     public void Forget(string paneId)
     {
         _states.Delete(paneId);
@@ -76,6 +134,7 @@ public sealed class AgentStateFeed : IDisposable
     public void UseLayout(SessionModel session)
     {
         Volatile.Write(ref _paneOrder, AgentBoard.PaneOrder(session));
+        Volatile.Write(ref _paneLocations, AgentBoard.PaneLocations(session));
         ScheduleSoon();
     }
 
@@ -115,6 +174,7 @@ public sealed class AgentStateFeed : IDisposable
             {
                 _lastPosted = string.Empty;
                 _lastBoard = string.Empty;
+                _lastHistory = string.Empty;
             }
 
             var agents = _monitor.Resolve(_terminals.Probes());
@@ -132,6 +192,8 @@ public sealed class AgentStateFeed : IDisposable
                 _lastBoard = board;
                 _post(new { type = "agent.board", cards });
             }
+
+            PostHistory(agents, cards);
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
         {

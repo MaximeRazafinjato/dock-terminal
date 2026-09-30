@@ -48,6 +48,22 @@ public sealed class ClaudeLaunchCommandTests
     }
 
     [Fact]
+    public void Resume_WhenSessionIdValid_ThenResumesIt()
+    {
+        var command = ClaudeLaunchCommand.Resume("3F2C8A51-6D0E-4B7A-9C1F-2E5D7A9B0C14");
+
+        Assert.Equal("claude --resume 3f2c8a51-6d0e-4b7a-9c1f-2e5d7a9b0c14", command);
+    }
+
+    [Fact]
+    public void Resume_WhenSessionIdInvalid_ThenFrenchError()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => ClaudeLaunchCommand.Resume("x; rm -rf"));
+
+        Assert.Equal("Identifiant de session invalide : x; rm -rf.", error.Message);
+    }
+
+    [Fact]
     public void Prepare_WhenNoSessionGiven_ThenEachLaunchGetsItsOwnSession()
     {
         var first = ClaudeLaunchCommand.Prepare("plan", null, "powershell").SessionId;

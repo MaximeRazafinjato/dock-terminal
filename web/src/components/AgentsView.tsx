@@ -8,6 +8,7 @@ import { useAgentStore } from '../store/agentStore'
 import { useHostStore } from '../store/hostStore'
 import { joinPane } from '../terminal/terminalActions'
 import { AgentCardView } from './AgentCardView'
+import { AgentHistorySection } from './AgentHistorySection'
 import { useClock } from './useClock'
 
 interface AgentsViewProps {
@@ -19,11 +20,14 @@ const EXPAND_KEYS: Record<string, boolean> = { ArrowRight: true, ArrowLeft: fals
 
 export function AgentsView({ session }: AgentsViewProps) {
   const cards = useAgentStore((state) => state.cards)
+  const history = useAgentStore((state) => state.history)
   const contexts = useHostStore((state) => state.contexts)
-  const now = useClock(cards.length > 0, CLOCK_INTERVAL_MS)
+  const now = useClock(cards.length > 0 || history.length > 0, CLOCK_INTERVAL_MS)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const locations = useMemo(() => paneLocations(session), [session])
   const groups = useMemo(() => consecutiveGroups(cards), [cards])
+  const toResume = history.filter((item) => item.pendingResume && item.paneId !== undefined && locations[item.paneId] !== undefined && !cards.some((card) => card.paneId === item.paneId))
+  const past = history.filter((item) => !item.live)
   const workspace = activeWorkspace(session)
   const activePaneId = workspace ? activeTab(workspace).active : undefined
 
@@ -53,20 +57,17 @@ export function AgentsView({ session }: AgentsViewProps) {
     }
   }
 
-  if (cards.length === 0) {
-    return (
-      <div data-agents-view="" tabIndex={-1} className="flex min-h-0 flex-1 flex-col gap-[6px] px-[14px] py-[10px] text-[12px] text-tily-muted outline-none">
-        <p className="text-tily-ink-soft">Aucun agent pour l’instant.</p>
-        <p>Lancez Claude Code (<code className="font-mono">claude</code>) dans un terminal : il apparaîtra ici avec son état, son dernier message et les fichiers qu’il modifie.</p>
-        <button type="button" className="self-start cursor-pointer rounded border border-tily-green px-3 py-1 text-[12px] text-tily-green-deep hover:bg-tily-green-soft" onClick={openAgentLaunch}>
-          Lancer un agent…
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div data-agents-view="" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-[8px] pb-[8px] outline-none" onKeyDown={handleKeyDown}>
+      {cards.length === 0 && (
+        <div className="flex flex-col gap-[6px] px-[6px] py-[10px] text-[12px] text-tily-muted">
+          <p className="text-tily-ink-soft">Aucun agent en cours.</p>
+          <p>Lancez Claude Code (<code className="font-mono">claude</code>) dans un terminal : il apparaîtra ici avec son état, son dernier message et les fichiers qu’il modifie.</p>
+          <button type="button" className="self-start cursor-pointer rounded border border-tily-green px-3 py-1 text-[12px] text-tily-green-deep hover:bg-tily-green-soft" onClick={openAgentLaunch}>
+            Lancer un agent…
+          </button>
+        </div>
+      )}
       {groups.map((group) => (
         <section key={group.state} aria-label={`${STATE_LABELS[group.state]} : ${group.cards.length}`} className="mt-[4px]">
           <h3 className="flex items-center gap-[6px] px-[6px] py-[4px] text-[11px] font-semibold tracking-[0.06em] text-tily-muted uppercase">
@@ -91,6 +92,7 @@ export function AgentsView({ session }: AgentsViewProps) {
           </ul>
         </section>
       ))}
+      <AgentHistorySection toResume={toResume} past={past} locations={locations} now={now} />
     </div>
   )
 }

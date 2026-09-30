@@ -77,16 +77,36 @@ export interface AgentCard {
   request?: AgentRequest
 }
 
+export interface AgentHistoryItem {
+  sessionId: string
+  directory: string
+  paneId?: string
+  location?: string
+  title?: string
+  startedAt: number
+  endedAt?: number
+  lastMessage?: string
+  files: AgentFileChange[]
+  state: AgentState
+  live: boolean
+  pendingResume: boolean
+  resumable: boolean
+  reason?: string
+}
+
 export type AgentHostMessage =
   | { type: 'agent.board'; cards: AgentCard[] }
   | { type: 'agent.responded'; pane: string }
   | { type: 'agent.send'; pane: string; text: string }
   | { type: 'agent.launchPrepared'; request: number; sessionId: string; command: string }
+  | { type: 'agent.history'; sessions: AgentHistoryItem[] }
+  | { type: 'agent.resumePrepared'; request: number; sessionId: string; directory: string; command: string; pane?: string }
 
 export type AgentWebMessage =
   | { type: 'agent.respond'; pane: string; requestId: string; answer: AgentAnswer; message?: string; option?: string }
   | { type: 'agent.message'; pane: string; message: string }
   | { type: 'agent.prepareLaunch'; request: number; launchMode: AgentLaunchMode; shell: string }
+  | { type: 'agent.prepareResume'; request: number; sessionId: string; pane?: string }
 
 export interface AgentLaunchCommand {
   sessionId: string
