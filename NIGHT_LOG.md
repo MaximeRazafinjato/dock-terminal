@@ -7,12 +7,12 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
 ## Plan
 
 - [x] 0. #121 : recouper l’état des hooks avec le registre `~/.claude/sessions/<pid>.json` ; lien pane → `sessionId` → `cwd` → transcript
-- [ ] 1. Lot 1, « Voir » (R45)
-  - [ ] 1.1 Lecture incrémentale du transcript dans `Tily.Core` (titre, dernier message, action en cours, fichiers modifiés, contexte, PR) et tests
-  - [ ] 1.2 Message du pont et store
-  - [ ] 1.3 Bascule du panneau et liste groupée par urgence
-  - [ ] 1.4 Cartes, « Rejoindre », raccourcis, masquage des cartes d’attention
-  - [ ] 1.5 Vérification à l’écran
+- [x] 1. Lot 1, « Voir » (R45)
+  - [x] 1.1 Lecture incrémentale du transcript dans `Tily.Core` (titre, dernier message, action en cours, fichiers modifiés, contexte, PR) et tests
+  - [x] 1.2 Message du pont et store
+  - [x] 1.3 Bascule du panneau et liste groupée par urgence
+  - [x] 1.4 Cartes, « Rejoindre », raccourcis, masquage des cartes d’attention
+  - [x] 1.5 Vérification à l’écran (recette R45 déroulée)
 - [ ] 2. Essai du hook PermissionRequest (protocole du mandat)
 - [ ] 3. Lot 2, « Répondre » (R46)
 - [ ] 4. Lot 3, « Lancer » (R47)
@@ -31,11 +31,29 @@ Branche `feature/vue-agents`, créée depuis `main` (73c55a9) le 30 septembre 20
 - Tests : `ClaudeSessionRegistryTests` (10), `ClaudeCodeAdapterTests` (8), un test de bout en bout dans `AgentMonitorTests`.
 - Vérifié en réel sur l’instance de dev (`TILY_DATA_DIR` du scratchpad, `claude --model haiku --permission-mode default` dans un dossier jetable) : Échap sur un dialogue de permission, puis Échap pendant une réponse → l’agent passe à « Terminé » (« Interrompu. ») en moins de 2 s, alors que le fichier des hooks dit toujours `waiting` puis `working`.
 - Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (489 tests verts).
+- Commit `8f6e5f1`, poussé ; PR brouillon https://github.com/MaximeRazafinjato/tily/pull/123 (`Closes #121`).
+
+### 30/09 22 h 40 à 23 h 10 : lot 1, « Voir »
+
+- À la demande de l’utilisateur (réveil toutes les 5 s), les étapes s’enchaînent désormais dans le même tour ; le réveil de la boucle ne peut pas descendre sous 60 s et ne sert plus que de secours.
+- Transcript analysé sur 2.1.286 : les métadonnées (`custom-title`, `agent-name`, `ai-title`, `last-prompt`, `pr-link`) sont réécrites régulièrement ; un résultat d’Edit ou de Write porte `structuredPatch`, un Write de création `type: "create"` et `content`, un résultat de Bash peut porter `bashEditDiff` (fichiers modifiés par la commande) ; un refus donne un `tool_result` puis `[Request interrupted by user for tool use]` ; les commandes (`/clear`, `/exit`) sont des messages utilisateur balisés `<command-name>`.
+- Fenêtres de contexte vérifiées avec le skill `claude-api` : 1 M pour Fable 5, Opus 4.6 et suivants, Sonnet 4.6 et suivants ; 200 000 pour Haiku 4.5 ; les autres modèles restent sans pourcentage.
+- `Tily.Core` : `TranscriptReader` (lecture complète au premier passage, 64 derniers Mo au plus, puis ajouts seuls), `TranscriptAccumulator`, `TranscriptSummaryModel`, `ModelContextWindows`, `AgentBoard` (cartes groupées et triées, `since`, ligne de résumé), `AgentCardModel`. Hôte : `agent.board` envoyé par `AgentStateFeed` quand il change, ordre du panneau tiré de la session (`UseLayout`), renvoi à `app.ready` (`Resend`). Session : `sidebarView` (`agents` ou absente), validée par `SessionValidator`.
+- Web : `LeftPanel` (onglets Workspaces / Agents avec le nombre d’attentes), `AgentsView`, `AgentCardView`, `AgentCardDetails`, `AgentMarkdown` chargé à la demande (rendu `marked` + DOMPurify de l’aperçu, en version compacte) ; `agentsView.ts` ; commande `ToggleAgents` (Leader puis I, Ctrl + Maj + I, palette « Afficher les agents ») ; « Aller au panneau des workspaces » et le glisser d’un onglet sur le panneau affichent d’abord la vue Workspaces ; cartes d’attention masquées tant que la vue Agents est affichée.
+- Tests : `TranscriptReaderTests` (14), `AgentBoardTests` (10), deux tests de `SessionValidatorTests`.
+- Recette R45 déroulée sur l’instance de dev : trois `claude --model haiku` dans deux workspaces, une permission Bash, une question AskUserQuestion, un long poème. Vue Agents : « En attente » (la permission, la plus ancienne, puis la question), « En cours » (le poème, pane actif, carte dépliée) ; Entrée sur une carte rejoint le bon pane, y compris dans l’autre workspace, sans quitter la vue ; Ctrl + Maj + I revient à la vue Workspaces ; cartes d’attention masquées dans la vue Agents ; Échap sur le poème → « Terminé », « Interrompu. ». Une session précédente a aussi montré le dernier message rendu en Markdown, `notes.md +3 −0` et « Contexte : 19 % (38 967 jetons) », identique au `Ctx: 39.0k` de Claude Code.
+- Constat pour le lot 2 : sur 2.1.286, le hook PermissionRequest se déclenche aussi pour AskUserQuestion (le script installé écrit alors « Autorisation demandée : AskUserQuestion »).
+- Vérifications : `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (515 tests verts).
+- Commits `190f970` (transcript et pont), `4a533e6` (vue), poussés.
 
 ## Écarts à la spec
 
 - Section 12, convention proposée « L’hôte lit le transcript de chaque session suivie, dont les hooks lui donnent le chemin » : le chemin vient du registre des sessions (`sessionId` et `cwd`), pas des hooks. Raison : les hooks de l’utilisateur exécutent le script de la version installée, qui n’écrit pas ce chemin, et le registre ne dépend pas de la version du script.
 - Un agent interrompu (#121) est « Terminé » avec le message « Interrompu. » (détail non spécifié).
+- Section 12, convention proposée « lit le transcript par la fin » : le premier passage lit tout le fichier (les 64 derniers Mo au plus), pour que les fichiers modifiés et leurs lignes couvrent toute la session ; seuls les ajouts sont lus ensuite.
+- Titre : entre `/rename` (`custom-title`) et le titre généré (`ai-title`), Tily prend aussi `agent-name` (nom donné à la session par l’utilisateur), absent de la spec.
+- Ordre à l’intérieur des groupes (non spécifié hors attentes) : En erreur comme En attente, du plus ancien au plus récent ; En cours, Terminé et État inconnu, du changement le plus récent au plus ancien.
+- Le pourcentage de contexte n’est affiché que pour les modèles dont la fenêtre est connue de Tily (liste fixe dans `ModelContextWindows`).
 
 ## Blocages
 
@@ -45,7 +63,7 @@ Aucun pour l’instant.
 
 ### Faites
 
-Aucune pour l’instant.
+- `app.ready` fait renvoyer `agent.states` (et `agent.board`) : après un rechargement de la page (développement), les indications d’agents restaient vides jusqu’au prochain changement (inclus dans `190f970`, car `agent.board` en a besoin).
 
 ### Notées seulement
 
@@ -53,8 +71,9 @@ Aucune pour l’instant.
 
 ## Reste à faire
 
-Tout le plan à partir du lot 1.
+Essai PermissionRequest, lots 2, 3 et 4, finition.
 
 ## À vérifier au réveil
 
 - Échap sur un agent Claude Code dans le Tily installé après la mise à jour : l’agent ne doit plus rester « En cours » ni « En attente ».
+- Vue Agents (Ctrl + Maj + I) avec de vraies sessions longues : titre, dernier message, fichiers modifiés et contexte ; durée du premier affichage sur un gros transcript.
