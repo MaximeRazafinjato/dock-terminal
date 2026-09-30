@@ -24,8 +24,10 @@ export function AgentHistoryRow({ item, now }: AgentHistoryRowProps) {
           <AgentStateIcon state={item.state} />
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-[12px] text-tily-ink">{item.title ?? 'Session sans titre'}</span>
-            <span className="truncate text-[11px] text-tily-muted" data-tip={item.directory}>
-              {[item.location, endedLabel(item.endedAt, now)].filter(Boolean).join(' · ')}
+            <span className="flex min-w-0 gap-[4px] text-[11px] text-tily-muted" data-tip={item.directory}>
+              {item.location && <span className="truncate">{item.location}</span>}
+              {item.location && <span>·</span>}
+              <span className="shrink-0">{endedLabel(item.endedAt, now)}</span>
             </span>
           </span>
         </button>
