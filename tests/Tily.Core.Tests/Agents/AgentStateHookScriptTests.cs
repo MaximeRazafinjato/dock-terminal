@@ -40,6 +40,14 @@ public sealed class AgentStateHookScriptTests : IDisposable
     }
 
     [Fact]
+    public void Run_WhenPlanApprovalRequested_ThenWritesPlanAsDetail()
+    {
+        var (state, _) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"ExitPlanMode\", \"tool_input\": { \"plan\": \"# Plan\\n1. Créer CHANGELOG.md\" } }", null);
+
+        Assert.Equal("# Plan\n1. Créer CHANGELOG.md", state["detail"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Run_WhenQuestionReachesPermissionRequest_ThenMessageIsQuestion()
     {
         var (state, _) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"AskUserQuestion\", \"tool_input\": { \"questions\": [ { \"question\": \"Quelle couleur ?\", \"options\": [ { \"label\": \"Vert\" } ] } ] } }", null);

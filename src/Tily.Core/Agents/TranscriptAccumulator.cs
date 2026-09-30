@@ -8,7 +8,8 @@ internal sealed class TranscriptAccumulator
     public const int MaxLastMessageLength = 100_000;
     public const int MaxFiles = 100;
 
-    private static readonly string[] TargetFields = ["command", "file_path", "notebook_path", "url", "query", "pattern", "description", "skill"];
+    private static readonly string[] TargetFields = ["command", "file_path", "notebook_path", "url", "query", "pattern", "description", "skill", "plan"];
+    private static readonly string[] IgnoredFolders = [@"\.claude\plans\", "/.claude/plans/"];
 
     private readonly string? _baseDirectory;
     private readonly List<string> _responseTexts = new();
@@ -235,6 +236,11 @@ internal sealed class TranscriptAccumulator
 
     private void Count(string path, int added, int removed)
     {
+        if (IgnoredFolders.Any(folder => path.Contains(folder, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
         var (previousAdded, previousRemoved, _) = _files.TryGetValue(path, out var tally) ? tally : (0, 0, 0L);
         _files[path] = (previousAdded + added, previousRemoved + removed, ++_fileOrder);
     }

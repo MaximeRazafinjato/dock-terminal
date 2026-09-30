@@ -17,7 +17,7 @@ if ($eventName -eq 'SessionEnd') {
 function Get-ToolDetail($toolInput) {
     if ($null -eq $toolInput) { return $null }
     if ($toolInput.questions) { return [string]@($toolInput.questions)[0].question }
-    foreach ($name in 'command', 'file_path', 'notebook_path', 'url', 'query', 'pattern', 'description') {
+    foreach ($name in 'command', 'file_path', 'notebook_path', 'url', 'query', 'pattern', 'description', 'plan') {
         $property = $toolInput.PSObject.Properties[$name]
         if ($property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) { return [string]$property.Value }
     }

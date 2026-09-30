@@ -92,6 +92,16 @@ public sealed class TranscriptReaderTests : IDisposable
     }
 
     [Fact]
+    public void Read_WhenClaudeWritesItsPlan_ThenPlanFileNotListed()
+    {
+        Append(ToolResult("t1", new { type = "create", filePath = @"C:\Users\moi\.claude\plans\plan-du-jour.md", content = "# Plan\n" }));
+
+        var files = Reader(@"C:\repo").Read().Files;
+
+        Assert.Empty(files);
+    }
+
+    [Fact]
     public void Read_WhenModelWindowKnown_ThenContextHasPercent()
     {
         Append(Assistant("m1", Text("ok"), "claude-haiku-4-5-20251001", new { input_tokens = 2, cache_creation_input_tokens = 18, cache_read_input_tokens = 49980, output_tokens = 900 }));
