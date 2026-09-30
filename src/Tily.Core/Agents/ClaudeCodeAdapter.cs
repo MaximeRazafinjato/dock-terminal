@@ -3,8 +3,11 @@ namespace Tily.Core.Agents;
 public sealed class ClaudeCodeAdapter : IAgentAdapter
 {
     public const string InterruptedMessage = "Interrompu.";
+    public const string PermissionWaitingMessage = "Autorisation demandée.";
+    public const string InputWaitingMessage = "Saisie attendue.";
 
     public static readonly TimeSpan InterruptionGrace = TimeSpan.FromSeconds(3);
+    public static readonly TimeSpan WaitingGrace = TimeSpan.FromSeconds(10);
 
     private readonly ClaudeSessionRegistry? _registry;
     private readonly AgentRequestRepository? _requests;
@@ -63,7 +66,11 @@ public sealed class ClaudeCodeAdapter : IAgentAdapter
         {
             (AgentState.Working or AgentState.Waiting, ClaudeSessionStatus.Idle) when _clock() - changedAtUtc >= InterruptionGrace => (agent with { State = AgentState.Done, Message = InterruptedMessage, Detail = null, Interrupted = true }, changedAtUtc),
             (AgentState.Waiting, ClaudeSessionStatus.Busy or ClaudeSessionStatus.Shell) => (agent with { State = AgentState.Working, Message = null, Detail = null }, changedAtUtc),
+            (AgentState.Working, ClaudeSessionStatus.Waiting) when _clock() - changedAtUtc >= WaitingGrace => (agent with { State = AgentState.Waiting, Message = WaitingMessageFor(session.WaitingFor), Detail = null }, changedAtUtc),
             _ => (agent, reported.UpdatedAtUtc)
         };
     }
+
+    private static string WaitingMessageFor(string? waitingFor) =>
+        waitingFor?.Contains("permission", StringComparison.OrdinalIgnoreCase) == true ? PermissionWaitingMessage : InputWaitingMessage;
 }

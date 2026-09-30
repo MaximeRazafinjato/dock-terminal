@@ -68,6 +68,28 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
     }
 
     [Fact]
+    public void Detect_WhenRegistryWaitingLongAfterWorkingState_ThenAgentIsWaiting()
+    {
+        WriteRegistry("waiting", HookWrittenAt.AddSeconds(5), "permission prompt");
+        var adapter = new ClaudeCodeAdapter(new ClaudeSessionRegistry(_directory, processId => processId == ProcessId ? ProcessStart : null), clock: () => HookWrittenAt.AddSeconds(5) + ClaudeCodeAdapter.WaitingGrace);
+
+        var agent = adapter.Detect(Probe(), Reported(AgentState.Working));
+
+        Assert.Equal((AgentState.Waiting, ClaudeCodeAdapter.PermissionWaitingMessage, (string?)null), (agent?.State, agent?.Message, agent?.Detail));
+    }
+
+    [Fact]
+    public void Detect_WhenRegistryWaitingForLessThanGrace_ThenStillWorking()
+    {
+        WriteRegistry("waiting", HookWrittenAt.AddSeconds(5), "permission prompt");
+        var adapter = new ClaudeCodeAdapter(new ClaudeSessionRegistry(_directory, processId => processId == ProcessId ? ProcessStart : null), clock: () => HookWrittenAt.AddSeconds(8));
+
+        var state = adapter.Detect(Probe(), Reported(AgentState.Working))?.State;
+
+        Assert.Equal(AgentState.Working, state);
+    }
+
+    [Fact]
     public void Detect_WhenRegistryBusyBeforeWaiting_ThenStillWaiting()
     {
         WriteRegistry("busy", HookWrittenAt.AddSeconds(-5));
@@ -161,7 +183,7 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
 
     private string TranscriptPath() => Path.Combine(_directory, "projects", "C--repo-app", SessionId + ".jsonl");
 
-    private void WriteRegistry(string status, DateTime statusUpdatedAt) =>
+    private void WriteRegistry(string status, DateTime statusUpdatedAt, string? waitingFor = null) =>
         File.WriteAllText(RegistryPath(), JsonSerializer.Serialize(new
         {
             pid = ProcessId,
@@ -169,6 +191,7 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
             cwd = @"C:\repo\app",
             procStart = ProcessStart.ToFileTimeUtc().ToString(CultureInfo.InvariantCulture),
             status,
+            waitingFor,
             statusUpdatedAt = new DateTimeOffset(statusUpdatedAt).ToUnixTimeMilliseconds()
         }));
 
