@@ -110,6 +110,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
   8. Les durées des notifications et de la palette partaient de la réception par la page (remises à zéro par un rechargement), celles des cartes de l’horloge de l’hôte : elles reprennent celles des cartes (`d9d3ae9`).
   9. et 10. Doublons : l’ouverture de l’onglet de reprise réutilise celle du lancement, `waitedFor` réutilise `stateDuration` (`bcad6ca`).
 - Tests : `ClaudeCodeAdapterTests` (+1, délai de grâce), `AgentHistoryTests` (+1, entrée nulle) ; `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (571 tests verts).
+- Contrôles à l’écran après corrections, instance de dev et `claude --model haiku` dans `essai-agent` : Échap pendant une réponse → « Interrompu. » environ 4 s après la touche, sans notification ; fin normale → « En cours » puis « Terminé » sans « Interrompu » transitoire, notification « Terminé » émise (traceur posé sur `bridge.send` dans la page de dev) ; demande simulée dans les données de l’instance de dev → « Autoriser » inactif après le clic, réactivé 4 s plus tard (fichiers de la demande retirés ensuite, état d’origine rétabli) ; `agent-history.json` enregistré au plus toutes les 30 s pendant l’activité et à la fermeture de Tily, avec la dernière observation 1 s avant ; Tily relancé → « À reprendre », « Reprendre ici » rouvre la même session ; `/exit` la clôt dans l’historique.
 
 ## Écarts à la spec
 
