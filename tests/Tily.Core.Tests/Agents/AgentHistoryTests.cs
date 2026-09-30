@@ -128,6 +128,46 @@ public sealed class AgentHistoryTests : IDisposable
     }
 
     [Fact]
+    public void Resumable_WhenResumeJustPrepared_ThenRefused()
+    {
+        var history = new AgentHistory(_directory);
+        history.Observe([Agent(AgentState.Done)], [], Locations, Now);
+        history.Observe([], [], Locations, Now.AddMinutes(1));
+        history.MarkResuming(SessionId, Now.AddMinutes(2));
+
+        var (entry, error) = history.Resumable(SessionId, NoneLive, _ => true);
+
+        Assert.Equal(((AgentHistoryEntryModel?)null, AgentHistory.ResumeInProgress, AgentHistory.ResumeInProgress), (entry, error, history.Items(NoneLive, _ => true).Single().Reason));
+    }
+
+    [Fact]
+    public void Observe_WhenResumedSessionSeen_ThenResumableOnceEnded()
+    {
+        var history = new AgentHistory(_directory);
+        history.Observe([Agent(AgentState.Done)], [], Locations, Now);
+        history.Observe([], [], Locations, Now.AddMinutes(1));
+        history.MarkResuming(SessionId, Now.AddMinutes(2));
+
+        history.Observe([Agent(AgentState.Working)], [], Locations, Now.AddMinutes(2).AddSeconds(5));
+        history.Observe([], [], Locations, Now.AddMinutes(2).AddSeconds(10));
+
+        Assert.NotNull(history.Resumable(SessionId, NoneLive, _ => true).Entry);
+    }
+
+    [Fact]
+    public void Observe_WhenResumeNeverStarted_ThenMarkExpires()
+    {
+        var history = new AgentHistory(_directory);
+        history.Observe([Agent(AgentState.Done)], [], Locations, Now);
+        history.Observe([], [], Locations, Now.AddMinutes(1));
+        history.MarkResuming(SessionId, Now.AddMinutes(2));
+
+        var changed = history.Observe([], [], Locations, Now.AddMinutes(2) + AgentHistory.ResumeWindow);
+
+        Assert.Equal((true, true), (changed, history.Resumable(SessionId, NoneLive, _ => true).Entry is not null));
+    }
+
+    [Fact]
     public void Load_WhenFileUnreadable_ThenStartsEmptyAndKeepsTheFile()
     {
         File.WriteAllText(Path.Combine(_directory, "agent-history.json"), "{ pas du json");

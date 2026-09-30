@@ -106,6 +106,9 @@ public sealed class AgentStateFeed : IDisposable
             throw new InvalidOperationException(error ?? AgentHistory.UnknownSession);
         }
 
+        _history.MarkResuming(entry.SessionId, DateTime.UtcNow);
+        Interlocked.Exchange(ref _historyStale, 1);
+        ScheduleSoon();
         if (paneId is not null && DismissResume(paneId))
         {
             SaveHistory();

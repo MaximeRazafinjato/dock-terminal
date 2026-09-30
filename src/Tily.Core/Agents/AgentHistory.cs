@@ -11,10 +11,14 @@ public sealed class AgentHistory
     public const string MissingTranscript = "Claude Code a effacé le transcript de cette session (30 jours par défaut).";
     public const string AlreadyRunning = "Cette session tourne déjà dans un terminal.";
     public const string UnknownSession = "Session inconnue de l’historique.";
+    public const string ResumeInProgress = "Cette session est déjà en cours de reprise.";
+
+    public static readonly TimeSpan ResumeWindow = TimeSpan.FromMinutes(1);
 
     private readonly object _sync = new();
     private readonly object _saveLock = new();
     private readonly List<AgentHistoryEntryModel> _entries = new();
+    private readonly Dictionary<string, DateTime> _resuming = new();
 
     public AgentHistory(string dataDirectory)
     {
@@ -62,6 +66,12 @@ public sealed class AgentHistory
                 changed = true;
             }
 
+            foreach (var sessionId in _resuming.Where(pair => seen.Contains(pair.Key) || nowUtc - pair.Value >= ResumeWindow).Select(pair => pair.Key).ToList())
+            {
+                _resuming.Remove(sessionId);
+                changed = true;
+            }
+
             if (_entries.Count > MaxSessions)
             {
                 _entries.Sort((first, second) => second.LastSeenAtUtc.CompareTo(first.LastSeenAtUtc));
@@ -76,16 +86,18 @@ public sealed class AgentHistory
     public IReadOnlyList<AgentHistoryItemModel> Items(IReadOnlySet<string> liveSessionIds, Func<AgentHistoryEntryModel, bool> transcriptExists)
     {
         List<AgentHistoryEntryModel> entries;
+        HashSet<string> resuming;
         lock (_sync)
         {
             entries = _entries.OrderByDescending(entry => entry.LastSeenAtUtc).Select(Copy).ToList();
+            resuming = _resuming.Keys.ToHashSet();
         }
 
         return entries
             .Select(entry =>
             {
                 var live = liveSessionIds.Contains(entry.SessionId);
-                var reason = Unavailability(entry, live, transcriptExists);
+                var reason = Unavailability(entry, live, resuming.Contains(entry.SessionId), transcriptExists);
                 return new AgentHistoryItemModel(
                     entry.SessionId,
                     entry.Directory,
@@ -108,9 +120,11 @@ public sealed class AgentHistory
     public (AgentHistoryEntryModel? Entry, string? Error) Resumable(string sessionId, IReadOnlySet<string> liveSessionIds, Func<AgentHistoryEntryModel, bool> transcriptExists)
     {
         AgentHistoryEntryModel? entry;
+        bool resuming;
         lock (_sync)
         {
             entry = _entries.FirstOrDefault(candidate => candidate.SessionId == sessionId) is { } found ? Copy(found) : null;
+            resuming = _resuming.ContainsKey(sessionId);
         }
 
         if (entry is null)
@@ -118,8 +132,16 @@ public sealed class AgentHistory
             return (null, UnknownSession);
         }
 
-        var reason = Unavailability(entry, liveSessionIds.Contains(sessionId), transcriptExists);
+        var reason = Unavailability(entry, liveSessionIds.Contains(sessionId), resuming, transcriptExists);
         return reason is null ? (entry, null) : (null, reason);
+    }
+
+    public void MarkResuming(string sessionId, DateTime nowUtc)
+    {
+        lock (_sync)
+        {
+            _resuming[sessionId] = nowUtc;
+        }
     }
 
     public bool DismissResume(string paneId)
@@ -163,8 +185,9 @@ public sealed class AgentHistory
             PendingResume = entry.PendingResume
         };
 
-    private static string? Unavailability(AgentHistoryEntryModel entry, bool live, Func<AgentHistoryEntryModel, bool> transcriptExists) =>
+    private static string? Unavailability(AgentHistoryEntryModel entry, bool live, bool resuming, Func<AgentHistoryEntryModel, bool> transcriptExists) =>
         live ? AlreadyRunning
+        : resuming ? ResumeInProgress
         : !System.IO.Directory.Exists(entry.Directory) ? MissingDirectory
         : !transcriptExists(entry) ? MissingTranscript
         : null;
