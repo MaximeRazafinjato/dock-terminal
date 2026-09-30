@@ -112,7 +112,7 @@ Conséquences pour le lot 2 : réponses par le hook (le dialogue reste utilisabl
 - Tests : `ClaudeCodeAdapterTests` (+1, délai de grâce), `AgentHistoryTests` (+1, entrée nulle) ; `pnpm lint`, `pnpm build`, `dotnet build`, `dotnet test` (571 tests verts).
 - Contrôles à l’écran après corrections (commit `bef190d` pour le journal), instance de dev et `claude --model haiku` dans `essai-agent` : Échap pendant une réponse → « Interrompu. » environ 4 s après la touche, sans notification ; fin normale → « En cours » puis « Terminé » sans « Interrompu » transitoire, notification « Terminé » émise (traceur posé sur `bridge.send` dans la page de dev) ; demande simulée dans les données de l’instance de dev → « Autoriser » inactif après le clic, réactivé 4 s plus tard (fichiers de la demande retirés ensuite, état d’origine rétabli) ; `agent-history.json` enregistré au plus toutes les 30 s pendant l’activité et à la fermeture de Tily, avec la dernière observation 1 s avant ; Tily relancé → « À reprendre », « Reprendre ici » rouvre la même session ; `/exit` la clôt dans l’historique.
 
-### 1/10 0 h 30 à 0 h 45 : robustesse et finitions
+### 1/10 0 h 29 à 1 h : robustesse et finitions
 
 - Premier passage sur les plus gros transcripts réels de l’utilisateur (lecture seule, programme jetable du scratchpad lié à `Tily.Core.dll`) : 44 Mo en 0,53 s, 40 Mo en 0,33 s, 39 Mo en 0,27 s, puis 0 ms aux passages suivants (ajouts seuls). Rien à optimiser : la lecture se fait hors du fil de l’interface, une fois par session.
 - Script des hooks : sans `TILY_PANE_ID` (Claude Code lancé hors de Tily), il sort aussitôt ; le hook PermissionRequest n’attend donc jamais hors de Tily.
@@ -159,13 +159,13 @@ Aucun pour l’instant.
 
 ## Reste à faire
 
-Robustesse et améliorations jusqu’au matin ; arrêt de la boucle quand plus rien d’utile ne reste.
+Rien dans le périmètre du mandat : les six étapes du plan sont faites, la revue est corrigée, les finitions trouvées sont faites, et les pistes restantes (suivi par le registre seul sans hooks, sessions vides dans l’historique) demandent une décision de l’utilisateur. Boucle arrêtée le 1er octobre à 1 h. PR #123 prête, fusionnable sans conflit, non mergée.
 
 ## À vérifier au réveil
 
 - Échap sur un agent Claude Code dans le Tily installé après la mise à jour : l’agent ne doit plus rester « En cours » ni « En attente ».
 - Vue Agents (Ctrl + Maj + I) avec de vraies sessions longues : titre, dernier message, fichiers modifiés et contexte ; durée du premier affichage sur un gros transcript.
-- **Réinstaller les hooks** après la mise à jour (Paramètres → Agents → « Mettre à jour les hooks ») : sans cela, le hook PermissionRequest garde son délai de 5 s et la vue ne peut pas répondre (elle l’indique : « Cette demande se règle dans le terminal »).
+- **Réinstaller les hooks** après la mise à jour (Paramètres → Agents → « Mettre à jour les hooks ») : sans cela, le hook PermissionRequest garde son délai de 5 s et la vue ne peut pas répondre (la carte l’indique et invite à les mettre à jour).
 - Répondre depuis la vue à une vraie permission (Autoriser, Refuser… avec une raison, Toujours) et à une question ; vérifier la règle ajoutée par « Toujours » dans `.claude/settings.local.json` du projet.
 - « Lancer un agent… » depuis un vrai projet (Défaut garde votre mode `auto`) et depuis un nouveau worktree : la tâche doit être collée puis envoyée seule.
 - Fermer Tily avec un agent ouvert, le rouvrir : « À reprendre » et « Reprendre Claude » dans l’en-tête du pane ; reprendre depuis l’historique.
