@@ -1,3 +1,4 @@
+import type { AgentLaunchCommand } from '../bridge/agentMessages'
 import { WorktreeOperation, type WorktreePlan } from '../bridge/worktreeMessages'
 import { StatusLevel, useHostStore } from '../store/hostStore'
 import { useWorktreeStore } from '../store/worktreeStore'
@@ -10,10 +11,11 @@ export const receiveWorktreeProgress = (operation: WorktreeOperation, message: s
   useHostStore.getState().setStatus(message)
 }
 
-export const receiveWorktreeCreated = (path: string, name: string, install: string | undefined): void => {
+export const receiveWorktreeCreated = (path: string, name: string, install: string | undefined, launch: AgentLaunchCommand | undefined): void => {
   useWorktreeStore.getState().setDraft(null)
-  openCreatedWorktree(path, name, install)
-  useHostStore.getState().setStatus(install ? `Worktree « ${name} » ouvert : ${install} tourne dans son terminal.` : `Worktree « ${name} » ouvert.`)
+  openCreatedWorktree(path, name, install, launch)
+  const started = launch ? launch.command : install
+  useHostStore.getState().setStatus(started ? `Worktree « ${name} » ouvert : ${started} tourne dans son terminal.` : `Worktree « ${name} » ouvert.`)
 }
 
 export const receiveWorktreeDone = (operation: WorktreeOperation, message: string, warnings: string[]): void => {

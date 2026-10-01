@@ -106,6 +106,9 @@ public sealed class TerminalManager : IDisposable
             .Select(Probe)
             .ToList();
 
+    public PaneProbeModel? Probe(string paneId) =>
+        _sessions.TryGetValue(paneId, out var session) && !session.HasExited ? Probe(session) : null;
+
     private static PaneProbeModel Probe(TerminalSession session)
     {
         var processes = session.ActiveProcesses();

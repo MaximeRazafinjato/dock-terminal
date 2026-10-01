@@ -1,4 +1,5 @@
 import type { Session } from '../model/session'
+import type { AgentHostMessage, AgentWebMessage } from './agentMessages'
 import type { GitChangeKind, GitHostMessage, GitSettings, GitWebMessage } from './gitMessages'
 import type { PreviewHostMessage, PreviewKind, PreviewWebMessage } from './previewMessages'
 import type { StatusLogEntry, StatusLogHostMessage, StatusLogWebMessage } from './statusLogMessages'
@@ -117,6 +118,7 @@ interface AgentHooksInfo {
   stateDirectory: string
   settingsFile: string
   hooksInstalled: boolean
+  hooksOutdated: boolean
 }
 
 interface NotificationAvailability {
@@ -164,7 +166,7 @@ export interface PaneAgent {
 
 export type HostToWebMessage =
   | { type: 'appearance.changed'; fontSize: number }
-  | { type: 'app.hello'; version: string; session: Session; shells: ShellProfile[]; home: string; text: Record<string, string>; persistence: PersistenceSettings; appearance: AppearanceSettings; statusLog: StatusLogEntry[]; recovery?: string }
+  | { type: 'app.hello'; version: string; session: Session; shells: ShellProfile[]; home: string; text: Record<string, string>; persistence: PersistenceSettings; appearance: AppearanceSettings; statusLog: StatusLogEntry[]; hooksOutdated: boolean; recovery?: string }
   | { type: 'app.closing'; activity: PaneActivity[] }
   | { type: 'session.saved' }
   | { type: 'session.saveFailed'; message: string }
@@ -194,6 +196,7 @@ export type HostToWebMessage =
   | WorktreeHostMessage
   | UpdateHostMessage
   | StatusLogHostMessage
+  | AgentHostMessage
 
 export type WebToHostMessage =
   | { type: 'app.ready' }
@@ -235,6 +238,7 @@ export type WebToHostMessage =
   | { type: 'window.closeCancel' }
   | { type: 'window.title'; title: string }
   | GitWebMessage
+  | AgentWebMessage
   | PreviewWebMessage
   | WorktreeWebMessage
   | UpdateWebMessage

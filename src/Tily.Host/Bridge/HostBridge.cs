@@ -250,6 +250,19 @@ public sealed class HostBridge : IDisposable
                 _agents.Hooks.Remove();
                 PostSettings(false);
                 break;
+            case "agent.respond":
+                RespondToAgent(RequirePane(command), command);
+                break;
+            case "agent.message":
+                SendAgentMessage(RequirePane(command), command.Message);
+                break;
+            case "agent.prepareResume":
+                PrepareResume(command);
+                break;
+            case "agent.prepareLaunch":
+                var launch = ClaudeLaunchCommand.Prepare(command.LaunchMode, null, command.Shell ?? ShellCatalog.DefaultShellId);
+                Post(new { type = "agent.launchPrepared", request = command.Request, sessionId = launch.SessionId, command = launch.Command });
+                break;
             case "settings.export":
                 _ = ExportPreferencesAsync();
                 break;
@@ -264,6 +277,11 @@ public sealed class HostBridge : IDisposable
                 break;
             case "terminal.input":
                 _terminals.Require(RequirePane(command)).Write(Encoding.UTF8.GetBytes(command.Data ?? string.Empty));
+                if (command.Data?.Contains('\r') == true && _agents.DismissResume(RequirePane(command)))
+                {
+                    _queries.Enqueue(_agents.SaveHistory);
+                }
+
                 break;
             case "terminal.resize":
                 _terminals.Require(RequirePane(command)).Resize(command.Cols, command.Rows);
@@ -328,6 +346,57 @@ public sealed class HostBridge : IDisposable
                 break;
         }
     }
+
+    private void RespondToAgent(string paneId, BridgeCommandModel command)
+    {
+        var answer = new AgentAnswerModel(command.RequestId ?? string.Empty, AnswerKindOf(command.Answer), command.Message, command.Option);
+        _queries.Enqueue(() =>
+        {
+            var error = _agents.Respond(paneId, answer);
+            if (error is null)
+            {
+                Post(new { type = "agent.responded", pane = paneId });
+            }
+            else
+            {
+                Post(new { type = "error", message = error });
+            }
+        });
+    }
+
+    private void PrepareResume(BridgeCommandModel command)
+    {
+        var sessionId = command.SessionId ?? string.Empty;
+        _queries.Enqueue(() =>
+        {
+            var (directory, resume) = _agents.PrepareResume(sessionId, command.Pane);
+            Post(new { type = "agent.resumePrepared", request = command.Request, sessionId, directory, command = resume, pane = command.Pane });
+        });
+    }
+
+    private void SendAgentMessage(string paneId, string? message) =>
+        _queries.Enqueue(() =>
+        {
+            var error = _agents.MessageError(paneId, message);
+            if (error is null)
+            {
+                Post(new { type = "agent.send", pane = paneId, text = message!.Trim() });
+            }
+            else
+            {
+                Post(new { type = "error", message = error });
+            }
+        });
+
+    private static AgentAnswerKind AnswerKindOf(string? answer) =>
+        answer switch
+        {
+            "allow" => AgentAnswerKind.Allow,
+            "deny" => AgentAnswerKind.Deny,
+            "always" => AgentAnswerKind.Always,
+            "option" => AgentAnswerKind.Option,
+            _ => throw new InvalidOperationException("Réponse à l’agent inconnue.")
+        };
 
     private void RaiseAttention(string paneId, BridgeCommandModel command)
     {
@@ -413,9 +482,11 @@ public sealed class HostBridge : IDisposable
     {
         var loaded = _sessions.Load();
         var session = loaded.Session ?? SessionFactory.Initial();
+        _agents.UseLayout(session);
+        _agents.Resend();
         _texts.MoveClosedTabText(session);
         var text = _texts.Load();
-        var recovery = string.Join(" ", new[] { loaded.Error, text.Error, _statusLog.LoadError }.Where(error => error is not null));
+        var recovery = string.Join(" ", new[] { loaded.Error, text.Error, _statusLog.LoadError, _agents.HistoryLoadError }.Where(error => error is not null));
         Post(new
         {
             type = "app.hello",
@@ -427,6 +498,7 @@ public sealed class HostBridge : IDisposable
             persistence = _persistence,
             appearance = _settings.Appearance,
             statusLog = _statusLog.Entries(),
+            hooksOutdated = _agents.HooksOutdated(),
             recovery = recovery.Length > 0 ? recovery : null
         });
         _updates.PostState();
@@ -438,6 +510,7 @@ public sealed class HostBridge : IDisposable
         _writes.Enqueue(() =>
         {
             var session = element.Deserialize<SessionModel>(JsonOptions) ?? throw new InvalidOperationException("Session manquante.");
+            _agents.UseLayout(session);
             Persist(_sessions.FilePath, () =>
             {
                 var result = _sessions.Save(session);

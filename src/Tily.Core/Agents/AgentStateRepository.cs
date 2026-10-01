@@ -53,7 +53,7 @@ public sealed class AgentStateRepository
         return new AgentStateModel(file.Agent.Trim().ToLowerInvariant(), state, message, SingleLine(file.Detail)) { UpdatedAtUtc = writtenAtUtc };
     }
 
-    private static string? SingleLine(string? detail)
+    internal static string? SingleLine(string? detail)
     {
         if (string.IsNullOrWhiteSpace(detail))
         {

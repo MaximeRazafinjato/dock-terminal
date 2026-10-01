@@ -15,10 +15,44 @@ public sealed class AgentStateHookScriptTests : IDisposable
     [Fact]
     public void Run_WhenBashPermissionRequested_ThenWritesCommandAsDetail()
     {
-        var state = Run("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"Bash\", \"tool_input\": { \"command\": \"git push --force origin main\", \"description\": \"Pousser\" } }");
+        var (state, _) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"Bash\", \"tool_input\": { \"command\": \"git push --force origin main\", \"description\": \"Pousser\" } }", null);
 
         Assert.Equal("Autorisation demandée : Bash", state["message"]!.GetValue<string>());
         Assert.Equal("git push --force origin main", state["detail"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Run_WhenPermissionAnsweredByTily_ThenPrintsTheDecision()
+    {
+        const string decision = "{\"hookSpecificOutput\":{\"hookEventName\":\"PermissionRequest\",\"decision\":{\"behavior\":\"deny\",\"message\":\"Pas sur main \\u00e0 cette heure\"}}}";
+
+        var (_, output) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"Bash\", \"tool_input\": { \"command\": \"git push\" } }", decision);
+
+        Assert.Equal(decision, output);
+    }
+
+    [Fact]
+    public void Run_WhenPermissionWithdrawnByTily_ThenPrintsNothing()
+    {
+        var (_, output) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"Bash\", \"tool_input\": { \"command\": \"git push\" } }", null);
+
+        Assert.Equal(string.Empty, output);
+    }
+
+    [Fact]
+    public void Run_WhenPlanApprovalRequested_ThenWritesPlanAsDetail()
+    {
+        var (state, _) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"ExitPlanMode\", \"tool_input\": { \"plan\": \"# Plan\\n1. Créer CHANGELOG.md\" } }", null);
+
+        Assert.Equal("# Plan\n1. Créer CHANGELOG.md", state["detail"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Run_WhenQuestionReachesPermissionRequest_ThenMessageIsQuestion()
+    {
+        var (state, _) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"AskUserQuestion\", \"tool_input\": { \"questions\": [ { \"question\": \"Quelle couleur ?\", \"options\": [ { \"label\": \"Vert\" } ] } ] } }", null);
+
+        Assert.Equal(("Question posée.", "Quelle couleur ?"), (state["message"]!.GetValue<string>(), state["detail"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -32,7 +66,7 @@ public sealed class AgentStateHookScriptTests : IDisposable
     [Fact]
     public void Run_WhenUnknownToolPermissionRequested_ThenWritesInputAsJson()
     {
-        var state = Run("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"mcp__jira__create\", \"tool_input\": { \"summary\": \"Bug\" } }");
+        var (state, _) = RunPermission("{ \"hook_event_name\": \"PermissionRequest\", \"tool_name\": \"mcp__jira__create\", \"tool_input\": { \"summary\": \"Bug\" } }", null);
 
         Assert.Equal("{\"summary\":\"Bug\"}", state["detail"]!.GetValue<string>());
     }
@@ -82,6 +116,46 @@ public sealed class AgentStateHookScriptTests : IDisposable
         Assert.True(process.WaitForExit(TimeSpan.FromSeconds(30)), "Le script du hook n’a pas terminé dans le délai.");
 
         return JsonNode.Parse(File.ReadAllText(Path.Combine(_directory, "agents", PaneId + ".json"), Encoding.UTF8))!;
+    }
+
+    private (JsonNode State, string Output) RunPermission(string payload, string? decision)
+    {
+        var start = new ProcessStartInfo("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ScriptPath()])
+        {
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            StandardInputEncoding = new UTF8Encoding(false),
+            StandardOutputEncoding = new UTF8Encoding(false)
+        };
+        start.Environment["TILY_PANE_ID"] = PaneId;
+        start.Environment["TILY_DATA_DIR"] = _directory;
+        var requestFile = Path.Combine(_directory, "agents", PaneId + ".request.json");
+
+        using var process = Process.Start(start)!;
+        process.StandardInput.Write(payload);
+        process.StandardInput.Close();
+        var output = process.StandardOutput.ReadToEndAsync();
+        var waited = Stopwatch.StartNew();
+        while (!File.Exists(requestFile) && waited.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            Thread.Sleep(50);
+        }
+
+        var request = JsonNode.Parse(File.ReadAllText(requestFile, Encoding.UTF8))!;
+        if (decision is null)
+        {
+            File.Delete(requestFile);
+        }
+        else
+        {
+            File.WriteAllText(Path.Combine(_directory, "agents", PaneId + ".answer.json"), request["id"]!.GetValue<string>() + "\n" + decision + "\n", new UTF8Encoding(false));
+        }
+
+        Assert.True(process.WaitForExit(TimeSpan.FromSeconds(30)), "Le script du hook n’a pas terminé dans le délai.");
+        Assert.Equal(JsonNode.Parse(payload)!["tool_name"]!.GetValue<string>(), request["hook"]!["tool_name"]!.GetValue<string>());
+        return (JsonNode.Parse(File.ReadAllText(Path.Combine(_directory, "agents", PaneId + ".json"), Encoding.UTF8))!, output.Result);
     }
 
     private static string ScriptPath()

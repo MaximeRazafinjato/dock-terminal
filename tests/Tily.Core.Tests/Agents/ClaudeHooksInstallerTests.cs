@@ -48,6 +48,38 @@ public sealed class ClaudeHooksInstallerTests : IDisposable
     }
 
     [Fact]
+    public void Install_WhenPermissionRequest_ThenWaitsLongEnoughForAnAnswer()
+    {
+        _installer.Install();
+
+        var hooks = JsonNode.Parse(File.ReadAllText(_file))!["hooks"]!;
+        Assert.Equal((ClaudeHooksInstaller.PermissionTimeoutSeconds, 5), (hooks["PermissionRequest"]![0]!["hooks"]![0]!["timeout"]!.GetValue<int>(), hooks["Stop"]![0]!["hooks"]![0]!["timeout"]!.GetValue<int>()));
+    }
+
+    [Fact]
+    public void Status_WhenInstalledWithOldTimeout_ThenOutdated()
+    {
+        _installer.Install();
+        var root = JsonNode.Parse(File.ReadAllText(_file))!;
+        root["hooks"]!["PermissionRequest"]![0]!["hooks"]![0]!["timeout"] = 5;
+        File.WriteAllText(_file, root.ToJsonString());
+
+        var status = _installer.Status();
+
+        Assert.Equal((true, true), (status.Installed, status.Outdated));
+    }
+
+    [Fact]
+    public void Status_WhenFreshlyInstalled_ThenNotOutdated()
+    {
+        _installer.Install();
+
+        var status = _installer.Status();
+
+        Assert.Equal((true, false), (status.Installed, status.Outdated));
+    }
+
+    [Fact]
     public void Status_WhenNotInstalled_ThenFalse()
     {
         var status = _installer.Status();

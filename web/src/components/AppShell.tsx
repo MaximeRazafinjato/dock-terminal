@@ -5,6 +5,7 @@ import { PickTarget, type AttentionKind, type NotificationSettings, type Project
 import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, EXPLORER_DEFAULT, EXPLORER_MAX, EXPLORER_MIN, findWorkspace, RightPanelView, SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN, type Session, type SplitAxis, type SplitPath, type Workspace } from '../model/session'
 import { toggleFavoriteCommand, type PaletteItem } from '../palette/paletteItems'
 import { waitingPanes } from '../agents/agentSummary'
+import { agentsViewShown } from '../agents/agentsView'
 import { Command, handleDocumentShortcut, handleLeaderKeyCapture, runCommand } from '../keyboard/shortcuts'
 import { agentKey, useAgentStore } from '../store/agentStore'
 import { useHostStore } from '../store/hostStore'
@@ -24,6 +25,7 @@ import { changePaneShell, dismissPaneState, restartPane, restartPaneIn } from '.
 import { closeOtherTabsKeepingText, closePaneKeepingText, closeTabKeepingText, closeWorkspaceKeepingText, duplicateTabKeepingLayout, restoreClosedTab } from '../terminal/tabLifecycle'
 import { focusPane, joinPane } from '../terminal/terminalActions'
 import { togglePaneZoom, useEndZoomWhenPaneChanges, zoomedPaneOf } from '../terminal/paneZoom'
+import { AgentLaunch } from './AgentLaunch'
 import { AttentionToasts } from './AttentionToasts'
 import { CloseConfirmDialog } from './CloseConfirmDialog'
 import { PasteConfirmDialog } from './PasteConfirmDialog'
@@ -42,6 +44,7 @@ import { FilePicker } from './FilePicker'
 import { CommitPicker } from './CommitPicker'
 import { RightPanel } from './RightPanel'
 import { SettingsDialog } from './SettingsDialog'
+import { LeftPanel } from './LeftPanel'
 import { SidebarResizer } from './SidebarResizer'
 import { SplitView } from './SplitView'
 import { StatusBar } from './StatusBar'
@@ -50,7 +53,6 @@ import { Tooltip } from './Tooltip'
 import { useWindowTitle } from './useWindowTitle'
 import type { WorkspacePanelActions } from './workspacePanel'
 import type { HeaderWorkspaceActions } from './workspaceStrip'
-import { WorkspaceTree } from './WorkspaceTree'
 import { WorktreeDialogs } from './WorktreeDialogs'
 
 interface AppShellProps {
@@ -384,7 +386,7 @@ export function AppShell({ session }: AppShellProps) {
       <div className="flex min-h-0 flex-1">
         {!session.sidebarCollapsed && (
           <>
-            <WorkspaceTree
+            <LeftPanel
               session={session}
               renamingWorkspaceId={renameOrigin === RenameOrigin.Panel ? renamingWorkspaceId : null}
               renamingTabId={tabRenameOrigin === RenameOrigin.Panel ? renamingTabId : null}
@@ -403,7 +405,7 @@ export function AppShell({ session }: AppShellProps) {
           </>
         )}
       </div>
-      <AttentionToasts waiting={waiting} onJoin={handleJoinPane} onDismiss={handleDismissAttention} />
+      {!agentsViewShown(session) && <AttentionToasts waiting={waiting} onJoin={handleJoinPane} onDismiss={handleDismissAttention} />}
       <FilePicker />
       <CommitPicker />
       {projectPickerOpen && <ProjectPicker projects={projects} root={projectsRoot} error={projectsError} onClose={handleCloseProjectPicker} onSelect={handleSelectProject} />}
@@ -411,6 +413,7 @@ export function AppShell({ session }: AppShellProps) {
       {paletteOpen && <CommandPalette session={session} shells={availableShells} onClose={handleClosePalette} onRun={handleRunPaletteItem} onToggleFavorite={toggleFavoriteCommand} />}
       {deleteRequest && <DeleteConfirmDialog request={deleteRequest} onConfirm={confirmDelete} onCancel={handleCancelDelete} />}
       <WorktreeDialogs />
+      <AgentLaunch />
       {gitConfirmation && <GitConfirmDialog confirmation={gitConfirmation} onConfirm={handleConfirmGit} onCancel={handleCancelGit} />}
       {closeConfirmation && <CloseConfirmDialog confirmation={closeConfirmation} onConfirm={confirmClose} onCancel={handleCancelClose} />}
       <PasteConfirmDialog />

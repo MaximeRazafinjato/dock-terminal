@@ -343,7 +343,14 @@ export function SettingsDialog({ snapshot, pickedPath, imported, onClose, onSave
         <p className={`${HINT} font-mono`}>{current.agents.script}</p>
         <p className={HINT}>{`Les états sont écrits dans ${current.agents.stateDirectory} et purgés à chaque nouveau terminal. Les hooks ne sont ajoutés ou retirés de ${current.agents.settingsFile} que sur votre clic ; les autres réglages et hooks de ce fichier sont conservés.`}</p>
         <span className="flex items-center gap-3">
-          <span className={`text-[11px] ${current.agents.hooksInstalled ? 'text-tily-green' : 'text-tily-warning'}`}>{current.agents.hooksInstalled ? 'Hooks installés' : 'Hooks non installés'}</span>
+          <span className={`text-[11px] ${current.agents.hooksInstalled && !current.agents.hooksOutdated ? 'text-tily-green' : 'text-tily-warning'}`}>
+            {!current.agents.hooksInstalled ? 'Hooks non installés' : current.agents.hooksOutdated ? 'Hooks à mettre à jour pour répondre depuis la vue Agents' : 'Hooks installés'}
+          </span>
+          {current.agents.hooksOutdated && (
+            <button type="button" className={PRIMARY} data-tip="Réinstalle les hooks Tily : PermissionRequest attend alors la réponse de la vue Agents" onClick={onInstallHooks}>
+              Mettre à jour les hooks
+            </button>
+          )}
           {current.agents.hooksInstalled ? (
             <button type="button" className={SECONDARY} data-tip="Retire les hooks Tily de settings.json de Claude Code, sans toucher au reste" onClick={onRemoveHooks}>
               Retirer les hooks

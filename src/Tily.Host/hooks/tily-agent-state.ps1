@@ -17,7 +17,7 @@ if ($eventName -eq 'SessionEnd') {
 function Get-ToolDetail($toolInput) {
     if ($null -eq $toolInput) { return $null }
     if ($toolInput.questions) { return [string]@($toolInput.questions)[0].question }
-    foreach ($name in 'command', 'file_path', 'notebook_path', 'url', 'query', 'pattern', 'description') {
+    foreach ($name in 'command', 'file_path', 'notebook_path', 'url', 'query', 'pattern', 'description', 'plan') {
         $property = $toolInput.PSObject.Properties[$name]
         if ($property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) { return [string]$property.Value }
     }
@@ -40,6 +40,7 @@ function Get-LastAssistantText($hook) {
 
 $waitingNotifications = @('permission_prompt', 'elicitation_dialog', 'agent_needs_input')
 $state = $null
+$request = $false
 $message = $null
 $detail = $null
 switch ($eventName) {
@@ -49,7 +50,12 @@ switch ($eventName) {
     'PostToolUse' { $state = 'working' }
     'Stop' { $state = 'done'; $detail = Get-LastAssistantText $hook }
     'StopFailure' { $state = 'error'; $message = 'Erreur signalée par Claude Code.' }
-    'PermissionRequest' { $state = 'waiting'; $message = "Autorisation demandée : $($hook.tool_name)"; $detail = Get-ToolDetail $hook.tool_input }
+    'PermissionRequest' {
+        $state = 'waiting'
+        $message = if ($hook.tool_name -eq 'AskUserQuestion') { 'Question posée.' } else { "Autorisation demandée : $($hook.tool_name)" }
+        $detail = Get-ToolDetail $hook.tool_input
+        $request = $true
+    }
     'Notification' {
         if ($hook.notification_type -in $waitingNotifications) {
             if (Test-Path -LiteralPath $file) {
@@ -64,4 +70,44 @@ if (-not $state) { exit 0 }
 
 New-Item -ItemType Directory -Path $directory -Force | Out-Null
 $json = @{ agent = 'claude'; state = $state; message = $message; detail = $detail } | ConvertTo-Json -Compress
-[System.IO.File]::WriteAllText($file, $json, [System.Text.UTF8Encoding]::new($false))
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[System.IO.File]::WriteAllText($file, $json, $utf8)
+if (-not $request) { exit 0 }
+
+$requestId = [guid]::NewGuid().ToString('N')
+$requestPrefix = '{"id":"' + $requestId + '"'
+$requestFile = Join-Path $directory "$paneId.request.json"
+$answerFile = Join-Path $directory "$paneId.answer.json"
+[System.IO.File]::WriteAllText($requestFile, $requestPrefix + ',"hook":' + $raw + '}', $utf8)
+
+function Test-OwnRequest {
+    try {
+        $stream = [System.IO.File]::Open($requestFile, 'Open', 'Read', 'ReadWrite, Delete')
+        try {
+            $buffer = New-Object byte[] $requestPrefix.Length
+            $read = $stream.Read($buffer, 0, $buffer.Length)
+            return $utf8.GetString($buffer, 0, $read) -eq $requestPrefix
+        } finally { $stream.Dispose() }
+    } catch { return $false }
+}
+
+$deadline = [DateTime]::UtcNow.AddSeconds(1790)
+$tick = 0
+while ([DateTime]::UtcNow -lt $deadline) {
+    Start-Sleep -Milliseconds 200
+    if (Test-Path -LiteralPath $answerFile) {
+        try { $answer = [System.IO.File]::ReadAllLines($answerFile, $utf8) } catch { $answer = @() }
+        if ($answer.Count -ge 2 -and $answer[0] -eq $requestId) {
+            Remove-Item -LiteralPath $answerFile, $requestFile -Force -ErrorAction SilentlyContinue
+            $bytes = $utf8.GetBytes($answer[1])
+            $output = [Console]::OpenStandardOutput()
+            $output.Write($bytes, 0, $bytes.Length)
+            $output.Flush()
+            exit 0
+        }
+    }
+    $tick++
+    if (($tick % 5) -eq 0 -and -not (Test-OwnRequest)) { exit 0 }
+}
+if (Test-OwnRequest) { Remove-Item -LiteralPath $requestFile -Force -ErrorAction SilentlyContinue }
+exit 0

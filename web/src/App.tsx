@@ -1,6 +1,10 @@
 import { useEffect } from 'react'
 import { clearSeenCommandNotices } from './terminal/commandNotices'
+import { receiveResumePrepared } from './agents/agentHistory'
+import { receiveLaunchPrepared } from './agents/agentLaunch'
+import { receiveAgentResponded, receiveAgentSend } from './agents/agentResponses'
 import { startAttentionNotifier } from './agents/attentionNotifier'
+import { startLaunchTaskWatcher } from './agents/launchTasks'
 import { bridge } from './bridge/bridge'
 import { AppShell } from './components/AppShell'
 import { allPanes, restoredSessionLabel } from './model/session'
@@ -36,12 +40,13 @@ export default function App() {
     const { setHello, setStatus, setProjects, setUnsaved, applySettings, setPickedPath, setImportedPreferences } = useHostStore.getState()
     let stopAutosave: (() => void) | undefined
     const stopNotifier = startAttentionNotifier()
+    const stopLaunchTasks = startLaunchTaskWatcher()
     const stopExternalDrops = startExternalDrops()
     const stopStatusLog = startStatusLog()
     const { markFailed, markExited, markPathMissing, markAlive } = usePaneStore.getState()
     const subscriptions = [
       bridge.on('app.hello', (message) => {
-        setHello(message.version, message.shells, message.home, message.persistence)
+        setHello(message.version, message.shells, message.home, message.persistence, message.hooksOutdated)
         useStatusLogStore.getState().load(message.statusLog)
         terminalRegistry.configure(message.persistence.linesPerPane)
         terminalRegistry.setFontSize(message.appearance.fontSize)
@@ -83,6 +88,12 @@ export default function App() {
       bridge.on('app.closing', (message) => receiveApplicationClosing(message.activity)),
       bridge.on('terminal.activityResult', (message) => receiveActivity(message.panes)),
       bridge.on('agent.states', (message) => useAgentStore.getState().setAgents(message.panes)),
+      bridge.on('agent.board', (message) => useAgentStore.getState().setCards(message.cards)),
+      bridge.on('agent.responded', receiveAgentResponded),
+      bridge.on('agent.send', (message) => receiveAgentSend(message.pane, message.text)),
+      bridge.on('agent.launchPrepared', (message) => receiveLaunchPrepared(message.request, message.sessionId, message.command)),
+      bridge.on('agent.history', (message) => useAgentStore.getState().setHistory(message.sessions)),
+      bridge.on('agent.resumePrepared', (message) => receiveResumePrepared(message.directory, message.command, message.pane)),
       bridge.on('agent.join', (message) => joinPane(message.pane)),
       bridge.on('session.saved', () => setUnsaved(false)),
       bridge.on('session.saveFailed', (message) => {
@@ -119,7 +130,7 @@ export default function App() {
       bridge.on('git.autoFetchEnded', receiveGitAutoFetchEnded),
       bridge.on('worktrees.planned', (message) => receiveWorktreePlan(message.request, message.plan)),
       bridge.on('worktrees.progress', (message) => receiveWorktreeProgress(message.operation, message.message)),
-      bridge.on('worktrees.created', (message) => receiveWorktreeCreated(message.path, message.name, message.install)),
+      bridge.on('worktrees.created', (message) => receiveWorktreeCreated(message.path, message.name, message.install, message.launch)),
       bridge.on('worktrees.done', (message) => receiveWorktreeDone(message.operation, message.message, message.warnings)),
       bridge.on('worktrees.failed', (message) => receiveWorktreeFailed(message.operation, message.message, message.output, message.lockedBy)),
       bridge.on('update.state', (message) => receiveUpdateState(message)),
@@ -144,6 +155,7 @@ export default function App() {
     }
     return () => {
       stopNotifier()
+      stopLaunchTasks()
       stopExternalDrops()
       stopStatusLog()
       stopAutosave?.()

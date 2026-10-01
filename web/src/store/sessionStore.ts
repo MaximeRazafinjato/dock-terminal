@@ -30,7 +30,9 @@ import {
   RightPanelView,
   SIDEBAR_MAX,
   SIDEBAR_MIN,
+  SidebarView,
   SplitAxis,
+  type AgentLaunchPreferences,
   type ClosedTab,
   type GitGraphLayout,
   type Session,
@@ -48,6 +50,9 @@ interface SessionState {
   toggleWorkspace: (workspaceId: string) => void
   collapseOtherWorkspaces: (workspaceId: string) => void
   toggleSidebar: () => void
+  setSidebarView: (view: SidebarView) => void
+  setAgentLaunch: (preferences: AgentLaunchPreferences) => void
+  splitPaneAt: (path: string, shell: string) => void
   setSidebarWidth: (width: number) => void
   toggleExplorer: () => boolean
   togglePanelView: (view: RightPanelView) => boolean
@@ -157,6 +162,34 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
 
   toggleSidebar: () =>
     set((state) => ({ session: mutateSession(state.session, (draft) => { draft.sidebarCollapsed = !draft.sidebarCollapsed }) })),
+
+  setAgentLaunch: (preferences) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        if (draft.agentLaunch?.mode !== preferences.mode || draft.agentLaunch?.target !== preferences.target) {
+          draft.agentLaunch = { ...preferences }
+        }
+      }),
+    })),
+
+  splitPaneAt: (path, shell) =>
+    set((state) => ({
+      session: mutateTab(state.session, (tab) => {
+        const fresh = createPane(path, shell)
+        tab.tree = splitLeaf(tab.tree, activePane(tab).id, SplitAxis.Horizontal, fresh)
+        tab.active = fresh.id
+      }),
+    })),
+
+  setSidebarView: (view) =>
+    set((state) => ({
+      session: mutateSession(state.session, (draft) => {
+        draft.sidebarCollapsed = false
+        if ((draft.sidebarView ?? SidebarView.Workspaces) !== view) {
+          draft.sidebarView = view
+        }
+      }),
+    })),
 
   setSidebarWidth: (width) =>
     set((state) => ({

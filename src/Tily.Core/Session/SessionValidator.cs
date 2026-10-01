@@ -1,3 +1,5 @@
+using Tily.Core.Agents;
+
 namespace Tily.Core.Session;
 
 public sealed record ValidationResultModel(bool IsValid, string? Error)
@@ -44,6 +46,12 @@ public static class SessionValidator
 
         session.Favorites = session.Favorites.Distinct().ToList();
         session.Sidebar = Math.Clamp(session.Sidebar, SessionLimits.MinSidebarWidth, SessionLimits.MaxSidebarWidth);
+        session.SidebarView = session.SidebarView == SessionLimits.AgentsSidebarView ? session.SidebarView : null;
+        if (session.AgentLaunch is { } launch)
+        {
+            launch.Mode = ClaudeLaunchCommand.Modes.Contains(launch.Mode) ? launch.Mode : ClaudeLaunchCommand.DefaultMode;
+            launch.Target = SessionLimits.AgentLaunchTargets.Contains(launch.Target) ? launch.Target : SessionLimits.AgentLaunchTargets[0];
+        }
         session.ExplorerWidth = Math.Clamp(session.ExplorerWidth, SessionLimits.MinExplorerWidth, SessionLimits.MaxExplorerWidth);
         session.GitGraph = ClampGitGraph(session.GitGraph ?? new GitGraphLayoutModel());
         return ValidationResultModel.Ok();

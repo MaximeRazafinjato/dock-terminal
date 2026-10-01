@@ -3,12 +3,14 @@ namespace Tily.Core.Agents;
 public sealed class AgentMonitor
 {
     private readonly AgentStateRepository _states;
+    private readonly AgentRequestRepository? _requests;
     private readonly IReadOnlyList<IAgentAdapter> _adapters;
 
-    public AgentMonitor(AgentStateRepository states, ClaudeSessionRegistry? registry = null)
+    public AgentMonitor(AgentStateRepository states, ClaudeSessionRegistry? registry = null, AgentRequestRepository? requests = null)
     {
         _states = states;
-        _adapters = [new ClaudeCodeAdapter(registry), new CodexAdapter()];
+        _requests = requests;
+        _adapters = [new ClaudeCodeAdapter(registry, requests), new CodexAdapter()];
     }
 
     public IReadOnlyList<PaneAgentModel> Resolve(IEnumerable<PaneProbeModel> probes)
@@ -19,6 +21,7 @@ public sealed class AgentMonitor
             if (probe.Processes.Count == 0)
             {
                 _states.Delete(probe.PaneId);
+                _requests?.Forget(probe.PaneId);
                 continue;
             }
 

@@ -1,5 +1,7 @@
+using Tily.Core.Agents;
 using Tily.Core.Git;
 using Tily.Core.Settings;
+using Tily.Core.Shell;
 using Tily.Core.StatusLog;
 using Tily.Core.Worktrees;
 
@@ -61,7 +63,8 @@ public sealed class WorktreeFeed
             Progress(CreateOperation, "Randomisation des ports…");
             var ports = Ports(creation.Path);
             var install = WorktreeCreator.InstallCommandFor(creation.Path, command.Install);
-            _post(new { type = "worktrees.created", path = creation.Path, name = creation.Name, branch = creation.Branch, install });
+            var launch = command.LaunchMode is null ? null : ClaudeLaunchCommand.Prepare(command.LaunchMode, install, ShellCatalog.DefaultShellId);
+            _post(new { type = "worktrees.created", path = creation.Path, name = creation.Name, branch = creation.Branch, install, launch });
             _changed();
             List<WorktreeStepModel> steps = [.. creation.Steps, ports];
             if (command.Database)

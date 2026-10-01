@@ -1,7 +1,9 @@
+import { rememberWorktreeTask, registerLaunchTask, takeWorktreeTask } from '../agents/launchTasks'
+import type { AgentLaunchCommand } from '../bridge/agentMessages'
 import { bridge } from '../bridge/bridge'
 import { WorktreeBranchMode, WorktreeOperation } from '../bridge/worktreeMessages'
 import { focusActivePane } from '../explorer/fileExplorerActions'
-import { activePane, activeTab, activeWorkspace, DEFAULT_SHELL, panesOf } from '../model/session'
+import { activePane, activeTab, activeWorkspace, AgentLaunchMode, AgentLaunchTarget, DEFAULT_SHELL, panesOf } from '../model/session'
 import { useAgentStore } from '../store/agentStore'
 import { useHostStore } from '../store/hostStore'
 import { useSessionStore } from '../store/sessionStore'
@@ -15,7 +17,7 @@ const PLAN_DELAY_MS = 250
 
 let planTimer: ReturnType<typeof setTimeout> | undefined
 
-type DraftPreset = Partial<Pick<WorktreeDraft, 'branch' | 'mode' | 'base'>>
+type DraftPreset = Partial<Pick<WorktreeDraft, 'branch' | 'mode' | 'base' | 'launch' | 'task' | 'launchMode'>>
 
 const sendPlan = (request: number): void => {
   const { draft, planRequest } = useWorktreeStore.getState()
@@ -35,7 +37,8 @@ export const openWorktreeDialog = (repository: string, preset: DraftPreset = {})
   const { setPicker, setDraft, setCreateFailure } = useWorktreeStore.getState()
   setPicker(null)
   setCreateFailure(null)
-  setDraft({ repository, branch: '', mode: WorktreeBranchMode.New, base: '', install: true, database: true, ...preset })
+  const launchMode = useSessionStore.getState().session?.agentLaunch?.mode ?? AgentLaunchMode.Default
+  setDraft({ repository, branch: '', mode: WorktreeBranchMode.New, base: '', install: true, database: true, launch: false, task: '', launchMode, ...preset })
   schedulePlan(0)
 }
 
@@ -64,7 +67,12 @@ export const submitWorktree = (): void => {
   setCreateFailure(null)
   setBusy(WorktreeOperation.Create)
   useHostStore.getState().setStatus('Création du worktree…')
-  bridge.send({ type: 'worktrees.create', repository: draft.repository, branch: draft.branch, mode: draft.mode, base: draft.base || undefined, install: draft.install, database: draft.database })
+  const launch = draft.launch && draft.task.trim().length > 0
+  rememberWorktreeTask(launch ? draft.task : null)
+  if (launch) {
+    useSessionStore.getState().setAgentLaunch({ ...(useSessionStore.getState().session?.agentLaunch ?? { target: AgentLaunchTarget.Tab }), mode: draft.launchMode })
+  }
+  bridge.send({ type: 'worktrees.create', repository: draft.repository, branch: draft.branch, mode: draft.mode, base: draft.base || undefined, install: draft.install, database: draft.database, launchMode: launch ? draft.launchMode : undefined })
 }
 
 export const openWorktreePicker = (kind: WorktreePickerKind): void => {
@@ -102,11 +110,18 @@ export const openWorktree = (path: string, inActiveWorkspace = false): void => {
   }
 }
 
-export const openCreatedWorktree = (path: string, name: string, install: string | undefined): void => {
+export const openCreatedWorktree = (path: string, name: string, install: string | undefined, launch: AgentLaunchCommand | undefined): void => {
   const { newWorkspace } = useSessionStore.getState()
   const workspaceId = newWorkspace(name, path, DEFAULT_SHELL)
   const workspace = useSessionStore.getState().session?.workspaces.find((candidate) => candidate.id === workspaceId)
-  if (workspace && install) {
+  const task = takeWorktreeTask()
+  if (workspace && launch) {
+    const paneId = activeTab(workspace).active
+    terminalRegistry.runAtStart(paneId, launch.command)
+    if (task) {
+      registerLaunchTask(paneId, launch.sessionId, task)
+    }
+  } else if (workspace && install) {
     terminalRegistry.runAtStart(activeTab(workspace).active, install)
   }
 }

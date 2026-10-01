@@ -10,6 +10,7 @@ import { clearPaneScrollback, copyLastCommandOutput, copyPaneSelection, focusPan
 import { movePaneToNewTab } from '../terminal/tabLifecycle'
 import { TerminalPane } from '../terminal/TerminalPane'
 import { AgentBadge } from './AgentBadge'
+import { ResumeClaudeButton } from './ResumeClaudeButton'
 import { PaneOverlay } from './PaneOverlay'
 import { TerminalContextMenu, type TerminalMenuActions, type TerminalMenuRequest } from './TerminalContextMenu'
 
@@ -97,6 +98,7 @@ export const PaneView = memo(function PaneView({ pane, active, zoomed, onToggleZ
   const paneState = usePaneStore((state) => state.states[pane.id])
   const context = useHostStore((state) => state.contexts[pane.id])
   const agent = useAgentStore((state) => state.agents[pane.id])
+  const resumable = useAgentStore((state) => state.history.find((item) => item.pendingResume && item.paneId === pane.id))
   const [menu, setMenu] = useState<TerminalMenuRequest | null>(null)
 
   useEffect(() => {
@@ -171,6 +173,7 @@ export const PaneView = memo(function PaneView({ pane, active, zoomed, onToggleZ
       >
         <span className="mr-1 min-w-[2em] truncate font-semibold text-tily-ink">{pane.shell}</span>
         {agent && <AgentBadge agent={agent} />}
+        {!agent && resumable && <ResumeClaudeButton paneId={pane.id} item={resumable} />}
         <span className="flex min-w-0 flex-1 font-mono whitespace-nowrap text-tily-green" data-tip={pane.path}>
           {parent && <span className="min-w-[1.2em] truncate">{parent}</span>}
           <span className={parent ? 'max-w-[calc(100%_-_1.2em)] shrink-0 truncate' : 'truncate'}>{folder}</span>

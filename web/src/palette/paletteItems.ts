@@ -1,4 +1,6 @@
 import { longestWaitingFirst, waitedFor, waitingPanes } from '../agents/agentSummary'
+import { openAgentLaunch } from '../agents/agentLaunch'
+import { agentsViewShown } from '../agents/agentsView'
 import { bridge } from '../bridge/bridge'
 import type { GitContext, ShellProfile } from '../bridge/messages'
 import { Command, revealWorkspacePanel, runCommand } from '../keyboard/shortcuts'
@@ -96,6 +98,8 @@ const commandItems = (session: Session, shells: ShellProfile[]): PaletteItem[] =
     command('restore-tab', 'Rouvrir le dernier onglet fermé', restoreClosedTab, 'Ctrl + Maj + Z'),
     command('toggle-sidebar', session.sidebarCollapsed ? 'Afficher les workspaces' : 'Masquer les workspaces', () => runCommand(Command.ToggleSidebar), 'Ctrl + Maj + B'),
     command('focus-sidebar', 'Aller au panneau des workspaces', revealWorkspacePanel),
+    command('launch-agent', 'Lancer un agent…', openAgentLaunch),
+    command('toggle-agents', agentsViewShown(session) ? 'Revenir à la vue Workspaces' : 'Afficher les agents', () => runCommand(Command.ToggleAgents), 'Ctrl + Maj + I'),
   ]
   if (workspace) {
     items.push(

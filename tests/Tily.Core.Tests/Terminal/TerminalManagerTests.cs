@@ -32,6 +32,31 @@ public sealed class TerminalManagerTests
     }
 
     [Fact]
+    public async Task Start_WhenLaunchedFromClaudeCode_ThenSessionMarkersNotInherited()
+    {
+        var previous = Environment.GetEnvironmentVariable("CLAUDE_CODE_CHILD_SESSION");
+        Environment.SetEnvironmentVariable("CLAUDE_CODE_CHILD_SESSION", "1");
+        try
+        {
+            using var manager = new TerminalManager();
+            var directory = new TaskCompletionSource<string>();
+            var output = new StringBuilder();
+            manager.CurrentDirectoryChanged += (_, path) => directory.TrySetResult(path);
+            manager.OutputReceived += (_, data) => { lock (output) { output.Append(Encoding.UTF8.GetString(data.Span)); } };
+
+            var session = manager.Start("pane-marker", ShellCatalog.DefaultShellId, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), 100, 30);
+            await directory.Task.WaitAsync(Timeout);
+            session.Write(Encoding.UTF8.GetBytes("Write-Host ('MARQUEUR|' + $env:CLAUDE_CODE_CHILD_SESSION + '|FIN')\r"));
+
+            await WaitForAsync(() => { lock (output) { return output.ToString().Contains("MARQUEUR||FIN"); } });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CLAUDE_CODE_CHILD_SESSION", previous);
+        }
+    }
+
+    [Fact]
     public async Task Stop_WhenChildProcessesRunning_ThenNoneSurvive()
     {
         using var manager = new TerminalManager();

@@ -1,3 +1,4 @@
+import type { AgentCard, AgentContext } from '../bridge/agentMessages'
 import { AgentState, type PaneAgent } from '../bridge/messages'
 import { folderName, panesOf, type Session, type Tab, type Workspace } from '../model/session'
 
@@ -30,7 +31,7 @@ export interface AttentionNotice {
 
 export type AgentMap = Record<string, PaneAgent>
 
-export const agentLabel = (agent: PaneAgent): string => AGENT_LABELS[agent.agent] ?? agent.agent
+export const agentLabel = (agent: Pick<PaneAgent, 'agent'>): string => AGENT_LABELS[agent.agent] ?? agent.agent
 
 export const describeAgent = (agent: PaneAgent): string => {
   const base = `${agentLabel(agent)} : ${STATE_LABELS[agent.state]}`
@@ -124,16 +125,18 @@ export const nextPaneInState = (tabs: Tab[], agents: AgentMap, state: AgentState
 const MINUTE_MS = 60_000
 const MINUTES_PER_HOUR = 60
 
-export const waitedFor = (elapsedMs: number): string => {
+export const stateDuration = (elapsedMs: number): string => {
   const minutes = Math.floor(elapsedMs / MINUTE_MS)
   if (minutes < 1) {
-    return 'depuis moins d’une minute'
+    return '< 1 min'
   }
   if (minutes < MINUTES_PER_HOUR) {
-    return `depuis ${minutes} min`
+    return `${minutes} min`
   }
-  return `depuis ${Math.floor(minutes / MINUTES_PER_HOUR)} h ${String(minutes % MINUTES_PER_HOUR).padStart(2, '0')}`
+  return `${Math.floor(minutes / MINUTES_PER_HOUR)} h ${String(minutes % MINUTES_PER_HOUR).padStart(2, '0')}`
 }
+
+export const waitedFor = (elapsedMs: number): string => (elapsedMs < MINUTE_MS ? 'depuis moins d’une minute' : `depuis ${stateDuration(elapsedMs)}`)
 
 export const longestWaitingFirst = (panes: WaitingPane[], since: Record<string, number>, now: number): WaitingPane[] =>
   panes.toSorted((first, second) => (since[first.paneId] ?? now) - (since[second.paneId] ?? now))
@@ -157,3 +160,37 @@ export const panesInState = (session: Session, agents: AgentMap, state: AgentSta
   )
 
 export const waitingPanes = (session: Session, agents: AgentMap): WaitingPane[] => panesInState(session, agents, AgentState.Waiting)
+
+export interface PaneLocation {
+  workspaceName: string
+  tabName: string
+  path: string
+}
+
+export const paneLocations = (session: Session): Record<string, PaneLocation> =>
+  Object.fromEntries(
+    session.workspaces.flatMap((workspace) =>
+      workspace.tabs.flatMap((tab) => panesOf(tab.tree).map((pane) => [pane.id, { workspaceName: workspace.name, tabName: tab.name, path: pane.path }])),
+    ),
+  )
+
+export interface CardGroup {
+  state: AgentState
+  cards: AgentCard[]
+}
+
+export const consecutiveGroups = (cards: AgentCard[]): CardGroup[] =>
+  cards.reduce<CardGroup[]>((groups, card) => {
+    const last = groups.at(-1)
+    if (last?.state === card.state) {
+      last.cards.push(card)
+    } else {
+      groups.push({ state: card.state, cards: [card] })
+    }
+    return groups
+  }, [])
+
+const formatTokens = (tokens: number): string => tokens.toLocaleString('fr-FR')
+
+export const contextLabel = (context: AgentContext): string =>
+  context.percent === undefined ? `${formatTokens(context.tokens)} jetons de contexte` : `Contexte : ${context.percent} % (${formatTokens(context.tokens)} jetons)`

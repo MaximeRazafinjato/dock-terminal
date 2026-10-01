@@ -58,13 +58,83 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
     }
 
     [Fact]
-    public void Detect_WhenRegistryBusy_ThenHookStateKept()
+    public void Detect_WhenRegistryBusyAfterWaiting_ThenAgentIsWorking()
     {
         WriteRegistry("busy", HookWrittenAt.AddSeconds(5));
+
+        var agent = _adapter.Detect(Probe(), Reported(AgentState.Waiting));
+
+        Assert.Equal((AgentState.Working, (string?)null), (agent?.State, agent?.Message));
+    }
+
+    [Fact]
+    public void Detect_WhenRegistryWaitingLongAfterWorkingState_ThenAgentIsWaiting()
+    {
+        WriteRegistry("waiting", HookWrittenAt.AddSeconds(5), "permission prompt");
+        var adapter = new ClaudeCodeAdapter(new ClaudeSessionRegistry(_directory, processId => processId == ProcessId ? ProcessStart : null), clock: () => HookWrittenAt.AddSeconds(5) + ClaudeCodeAdapter.WaitingGrace);
+
+        var agent = adapter.Detect(Probe(), Reported(AgentState.Working));
+
+        Assert.Equal((AgentState.Waiting, ClaudeCodeAdapter.PermissionWaitingMessage, (string?)null), (agent?.State, agent?.Message, agent?.Detail));
+    }
+
+    [Fact]
+    public void Detect_WhenRegistryWaitingForLessThanGrace_ThenStillWorking()
+    {
+        WriteRegistry("waiting", HookWrittenAt.AddSeconds(5), "permission prompt");
+        var adapter = new ClaudeCodeAdapter(new ClaudeSessionRegistry(_directory, processId => processId == ProcessId ? ProcessStart : null), clock: () => HookWrittenAt.AddSeconds(8));
+
+        var state = adapter.Detect(Probe(), Reported(AgentState.Working))?.State;
+
+        Assert.Equal(AgentState.Working, state);
+    }
+
+    [Fact]
+    public void Detect_WhenRegistryBusyBeforeWaiting_ThenStillWaiting()
+    {
+        WriteRegistry("busy", HookWrittenAt.AddSeconds(-5));
 
         var state = _adapter.Detect(Probe(), Reported(AgentState.Waiting))?.State;
 
         Assert.Equal(AgentState.Waiting, state);
+    }
+
+    [Fact]
+    public void Detect_WhenWaitingWithPendingRequest_ThenAttachesIt()
+    {
+        var requests = new AgentRequestRepository(_directory);
+        File.WriteAllText(requests.RequestPathFor("pane-a"), "{\"id\":\"0123456789abcdef0123456789abcdef\",\"hook\":{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"ls\"}}}");
+        var adapter = new ClaudeCodeAdapter(null, requests);
+
+        var request = adapter.Detect(Probe(), Reported(AgentState.Waiting))?.Request;
+
+        Assert.Equal("0123456789abcdef0123456789abcdef", request?.Id);
+    }
+
+    [Fact]
+    public void Detect_WhenAnsweredInTerminal_ThenWithdrawsTheRequest()
+    {
+        var requests = new AgentRequestRepository(_directory);
+        File.WriteAllText(requests.RequestPathFor("pane-a"), "{\"id\":\"0123456789abcdef0123456789abcdef\",\"hook\":{\"tool_name\":\"Bash\"}}");
+        File.SetLastWriteTimeUtc(requests.RequestPathFor("pane-a"), HookWrittenAt.AddSeconds(-1));
+        var adapter = new ClaudeCodeAdapter(null, requests);
+
+        adapter.Detect(Probe(), Reported(AgentState.Working));
+
+        Assert.False(File.Exists(requests.RequestPathFor("pane-a")));
+    }
+
+    [Fact]
+    public void Detect_WhenRequestNewerThanWorkingState_ThenKeepsIt()
+    {
+        var requests = new AgentRequestRepository(_directory);
+        File.WriteAllText(requests.RequestPathFor("pane-a"), "{\"id\":\"0123456789abcdef0123456789abcdef\",\"hook\":{\"tool_name\":\"Bash\"}}");
+        File.SetLastWriteTimeUtc(requests.RequestPathFor("pane-a"), HookWrittenAt.AddSeconds(1));
+        var adapter = new ClaudeCodeAdapter(null, requests);
+
+        adapter.Detect(Probe(), Reported(AgentState.Working));
+
+        Assert.True(File.Exists(requests.RequestPathFor("pane-a")));
     }
 
     [Fact]
@@ -113,7 +183,7 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
 
     private string TranscriptPath() => Path.Combine(_directory, "projects", "C--repo-app", SessionId + ".jsonl");
 
-    private void WriteRegistry(string status, DateTime statusUpdatedAt) =>
+    private void WriteRegistry(string status, DateTime statusUpdatedAt, string? waitingFor = null) =>
         File.WriteAllText(RegistryPath(), JsonSerializer.Serialize(new
         {
             pid = ProcessId,
@@ -121,6 +191,7 @@ public sealed class ClaudeCodeAdapterTests : IDisposable
             cwd = @"C:\repo\app",
             procStart = ProcessStart.ToFileTimeUtc().ToString(CultureInfo.InvariantCulture),
             status,
+            waitingFor,
             statusUpdatedAt = new DateTimeOffset(statusUpdatedAt).ToUnixTimeMilliseconds()
         }));
 

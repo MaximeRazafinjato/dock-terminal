@@ -27,6 +27,7 @@ export enum Command {
   ToggleNotes = 'toggleNotes',
   ToggleStatusLog = 'toggleStatusLog',
   ToggleSidebar = 'toggleSidebar',
+  ToggleAgents = 'toggleAgents',
   TogglePaneZoom = 'togglePaneZoom',
   EqualizePanes = 'equalizePanes',
   MovePaneToNewTab = 'movePaneToNewTab',
@@ -47,6 +48,7 @@ export const LEADER_KEYS: Record<string, Command> = {
   o: Command.ToggleNotes,
   l: Command.ToggleStatusLog,
   b: Command.ToggleSidebar,
+  i: Command.ToggleAgents,
   ',': Command.Settings,
   x: Command.ClosePane,
   m: Command.TogglePaneZoom,
@@ -88,6 +90,7 @@ export const DIRECT_LETTER_KEYS: Record<string, Command> = {
   o: Command.ToggleNotes,
   l: Command.ToggleStatusLog,
   b: Command.ToggleSidebar,
+  i: Command.ToggleAgents,
   a: Command.JoinWaitingAgent,
 }
 

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { AgentLaunchMode } from '../model/session'
 import type { WorktreeBranchMode, WorktreeOperation, WorktreePlan } from '../bridge/worktreeMessages'
 
 export enum WorktreePickerKind {
@@ -13,6 +14,9 @@ export interface WorktreeDraft {
   base: string
   install: boolean
   database: boolean
+  launch: boolean
+  task: string
+  launchMode: AgentLaunchMode
 }
 
 export interface WorktreeRemovalPane {
